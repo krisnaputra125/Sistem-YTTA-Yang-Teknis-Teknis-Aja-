@@ -5817,93 +5817,128 @@
                                                                                 <tbody>
                                                                                     {activeProjectsForRes.length === 0 ? (
                                                                                         <tr><td colSpan="5" className="border border-black p-1.5 text-center italic">Sedang tidak memegang proyek aktif (Available).</td></tr>
-                                                                                    ) : activeProjectsForRes.map(p => {
-                                                                                        const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
-                                                                                        let deadlineStr = '-';
-                                                                                        let roleStr = '-';
-                                                                                        let statusLapangan = '-';
-                                                                                        let manMonthStr = '-';
+                                                                                    ) : (() => {
+                                                                                        const renderRow = (p) => {
+                                                                                            const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
+                                                                                            let deadlineStr = '-';
+                                                                                            let roleStr = '-';
+                                                                                            let statusLapangan = '-';
+                                                                                            let manMonthStr = '-';
 
-                                                                                        if (p.teamLeader === res.name) {
-                                                                                            roleStr = 'Team Leader';
-                                                                                            if (isPengawasan) {
-                                                                                                deadlineStr = p.deadline ? formatDateIndo(p.deadline) : '-';
+                                                                                            if (p.teamLeader === res.name) {
+                                                                                                roleStr = 'Team Leader';
+                                                                                                if (isPengawasan) {
+                                                                                                    deadlineStr = p.deadline ? formatDateIndo(p.deadline) : '-';
+                                                                                                    const details = p.pengawasanDetails?.[res.name] || {};
+                                                                                                    statusLapangan = details.statusTurun || 'Tidak Turun';
+                                                                                                    manMonthStr = details.manMonth || '-';
+                                                                                                } else {
+                                                                                                    statusLapangan = p.computedStatus || '-';
+
+                                                                                                    // Kalkulasi Man Month Team Leader Perencanaan
+                                                                                                    const cats = ['Arsitek', 'QS', 'Struktur', 'MEP', 'Tata Ruang', 'Surveyor', 'Lainnya'];
+                                                                                                    let minDate = null;
+                                                                                                    let maxDate = null;
+
+                                                                                                    cats.forEach(cat => {
+                                                                                                        const d = p.categoryDetails?.[cat];
+                                                                                                        if (d) {
+                                                                                                            const startDateSource = d.startDate ? d.startDate : p.spmk;
+                                                                                                            if (startDateSource) {
+                                                                                                                const sd = new Date(startDateSource);
+                                                                                                                if (!minDate || sd < minDate) minDate = sd;
+                                                                                                            }
+                                                                                                            if (d.deadline) {
+                                                                                                                const ed = new Date(d.deadline);
+                                                                                                                if (!maxDate || ed > maxDate) maxDate = ed;
+                                                                                                            }
+                                                                                                        }
+                                                                                                    });
+
+                                                                                                    if (minDate && maxDate) {
+                                                                                                        minDate.setHours(0, 0, 0, 0);
+                                                                                                        maxDate.setHours(0, 0, 0, 0);
+                                                                                                        const diffDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+                                                                                                        if (diffDays > 0) {
+                                                                                                            manMonthStr = parseFloat((diffDays / 30).toFixed(1)).toString();
+                                                                                                        }
+                                                                                                    }
+
+                                                                                                    deadlineStr = maxDate ? formatDateIndo(maxDate.toISOString().split('T')[0]) : (p.deadline ? formatDateIndo(p.deadline) : '-');
+                                                                                                }
+                                                                                            } else if (isPengawasan) {
                                                                                                 const details = p.pengawasanDetails?.[res.name] || {};
+                                                                                                deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
+                                                                                                roleStr = details.role || 'Inspector';
                                                                                                 statusLapangan = details.statusTurun || 'Tidak Turun';
                                                                                                 manMonthStr = details.manMonth || '-';
                                                                                             } else {
-                                                                                                statusLapangan = p.computedStatus || '-';
+                                                                                                const effectiveCat = getEffectiveEmpCategory(p, res.name, res.role);
+                                                                                                const details = p.categoryDetails?.[effectiveCat] || {};
+                                                                                                deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
+                                                                                                roleStr = effectiveCat === 'Surveyor' ? 'Tim Surveyor' : effectiveCat;
 
-                                                                                                // Kalkulasi Man Month Team Leader Perencanaan
-                                                                                                const cats = ['Arsitek', 'QS', 'Struktur', 'MEP', 'Tata Ruang', 'Surveyor', 'Lainnya'];
-                                                                                                let minDate = null;
-                                                                                                let maxDate = null;
-
-                                                                                                cats.forEach(cat => {
-                                                                                                    const d = p.categoryDetails?.[cat];
-                                                                                                    if (d) {
-                                                                                                        const startDateSource = d.startDate ? d.startDate : p.spmk;
-                                                                                                        if (startDateSource) {
-                                                                                                            const sd = new Date(startDateSource);
-                                                                                                            if (!minDate || sd < minDate) minDate = sd;
-                                                                                                        }
-                                                                                                        if (d.deadline) {
-                                                                                                            const ed = new Date(d.deadline);
-                                                                                                            if (!maxDate || ed > maxDate) maxDate = ed;
-                                                                                                        }
-                                                                                                    }
-                                                                                                });
-
-                                                                                                if (minDate && maxDate) {
-                                                                                                    minDate.setHours(0, 0, 0, 0);
-                                                                                                    maxDate.setHours(0, 0, 0, 0);
-                                                                                                    const diffDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+                                                                                                // Kalkulasi Man Month dari startDate ke deadline tim
+                                                                                                const startDateSource = details.startDate ? details.startDate : p.spmk;
+                                                                                                if (startDateSource && details.deadline) {
+                                                                                                    const startD = new Date(startDateSource);
+                                                                                                    const endD = new Date(details.deadline);
+                                                                                                    startD.setHours(0, 0, 0, 0);
+                                                                                                    endD.setHours(0, 0, 0, 0);
+                                                                                                    const diffDays = Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24));
                                                                                                     if (diffDays > 0) {
                                                                                                         manMonthStr = parseFloat((diffDays / 30).toFixed(1)).toString();
                                                                                                     }
                                                                                                 }
 
-                                                                                                deadlineStr = maxDate ? formatDateIndo(maxDate.toISOString().split('T')[0]) : (p.deadline ? formatDateIndo(p.deadline) : '-');
+                                                                                                // Status Lapangan diambil dari status sub tim
+                                                                                                statusLapangan = getMicroStatus(details.progress || 0, details.deadline);
                                                                                             }
-                                                                                        } else if (isPengawasan) {
-                                                                                            const details = p.pengawasanDetails?.[res.name] || {};
-                                                                                            deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
-                                                                                            roleStr = details.role || 'Inspector';
-                                                                                            statusLapangan = details.statusTurun || 'Tidak Turun';
-                                                                                            manMonthStr = details.manMonth || '-';
+
+                                                                                            return (
+                                                                                                <tr key={p.id}>
+                                                                                                    <td className="border border-black p-1.5">{p.name}</td>
+                                                                                                    <td className="border border-black p-1.5">{roleStr}</td>
+                                                                                                    <td className="border border-black p-1.5 text-center">{manMonthStr}</td>
+                                                                                                    <td className="border border-black p-1.5 font-semibold">{deadlineStr}</td>
+                                                                                                    <td className="border border-black p-1.5 font-semibold">{statusLapangan}</td>
+                                                                                                </tr>
+                                                                                            );
+                                                                                        };
+
+                                                                                        if (printData.type === 'all' || printData.type === 'personnel' || (printData.type === 'custom' && printData.options.projectType === 'Semua')) {
+                                                                                            const categories = ['Perencanaan', 'Pengawasan', 'Manajemen Konstruksi'];
+                                                                                            const grouped = categories.map(kategoriTipe => {
+                                                                                                return {
+                                                                                                    kategoriTipe,
+                                                                                                    proyeks: activeProjectsForRes.filter(p => {
+                                                                                                        const pType = (p.type || '').toLowerCase();
+                                                                                                        if (kategoriTipe === 'Perencanaan') return pType.includes('perencana');
+                                                                                                        if (kategoriTipe === 'Pengawasan') return pType === 'pengawasan' || pType === 'supervisi';
+                                                                                                        if (kategoriTipe === 'Manajemen Konstruksi') return pType.includes('manajemen konstruksi') || pType === 'mk';
+                                                                                                        return false;
+                                                                                                    })
+                                                                                                };
+                                                                                            }).filter(cat => cat.proyeks.length > 0);
+
+                                                                                            const mappedIds = new Set(grouped.flatMap(g => g.proyeks.map(p => p.id)));
+                                                                                            const others = activeProjectsForRes.filter(p => !mappedIds.has(p.id));
+                                                                                            if (others.length > 0) {
+                                                                                                grouped.push({ kategoriTipe: 'Lainnya', proyeks: others });
+                                                                                            }
+
+                                                                                            return grouped.flatMap(cat => [
+                                                                                                <tr key={`sep-${cat.kategoriTipe}`}>
+                                                                                                    <td colSpan="5" className="border border-black bg-gray-200 p-1.5 font-bold text-center text-xs">
+                                                                                                        {cat.kategoriTipe}
+                                                                                                    </td>
+                                                                                                </tr>,
+                                                                                                ...cat.proyeks.map(renderRow)
+                                                                                            ]);
                                                                                         } else {
-                                                                                            const effectiveCat = getEffectiveEmpCategory(p, res.name, res.role);
-                                                                                            const details = p.categoryDetails?.[effectiveCat] || {};
-                                                                                            deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
-                                                                                            roleStr = effectiveCat === 'Surveyor' ? 'Tim Surveyor' : effectiveCat;
-
-                                                                                            // Kalkulasi Man Month dari startDate ke deadline tim
-                                                                                            const startDateSource = details.startDate ? details.startDate : p.spmk;
-                                                                                            if (startDateSource && details.deadline) {
-                                                                                                const startD = new Date(startDateSource);
-                                                                                                const endD = new Date(details.deadline);
-                                                                                                startD.setHours(0, 0, 0, 0);
-                                                                                                endD.setHours(0, 0, 0, 0);
-                                                                                                const diffDays = Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24));
-                                                                                                if (diffDays > 0) {
-                                                                                                    manMonthStr = parseFloat((diffDays / 30).toFixed(1)).toString();
-                                                                                                }
-                                                                                            }
-
-                                                                                            // Status Lapangan diambil dari status sub tim
-                                                                                            statusLapangan = getMicroStatus(details.progress || 0, details.deadline);
+                                                                                            return activeProjectsForRes.map(renderRow);
                                                                                         }
-
-                                                                                        return (
-                                                                                            <tr key={p.id}>
-                                                                                                <td className="border border-black p-1.5">{p.name}</td>
-                                                                                                <td className="border border-black p-1.5">{roleStr}</td>
-                                                                                                <td className="border border-black p-1.5 text-center">{manMonthStr}</td>
-                                                                                                <td className="border border-black p-1.5 font-semibold">{deadlineStr}</td>
-                                                                                                <td className="border border-black p-1.5 font-semibold">{statusLapangan}</td>
-                                                                                            </tr>
-                                                                                        )
-                                                                                    })}
+                                                                                    })()}
                                                                                 </tbody>
                                                                             </table>
                                                                         </div>
