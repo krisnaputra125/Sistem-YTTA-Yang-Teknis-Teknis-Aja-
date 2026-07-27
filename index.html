@@ -811,10 +811,19 @@
             const [alertModal, setAlertModal] = useState({ isOpen: false, title: 'Perhatian', message: '' });
             React.useEffect(() => {
                 if (printData) {
-                    setTimeout(() => {
-                        window.print();
+                    const handleAfterPrint = () => {
                         setPrintData(null);
-                    }, 300);
+                    };
+                    window.addEventListener('afterprint', handleAfterPrint);
+                    
+                    const printTimeout = setTimeout(() => {
+                        window.print();
+                    }, 500);
+
+                    return () => {
+                        clearTimeout(printTimeout);
+                        window.removeEventListener('afterprint', handleAfterPrint);
+                    };
                 }
             }, [printData]);
 
@@ -1061,7 +1070,21 @@
                                     exp.certificates.forEach(c => {
                                         if (c && c.certName) {
                                             const cKey = c.certName.toLowerCase().replace(/\s+/g, ' ');
-                                            if (!existing.certificates.find(xc => xc.certName && xc.certName.toLowerCase().replace(/\s+/g, ' ') === cKey)) {
+                                            const lKey = c.certLevel ? c.certLevel.toLowerCase().replace(/\s+/g, ' ') : '';
+                                            
+                                            const existingCertIndex = existing.certificates.findIndex(xc => {
+                                                const xcKey = xc.certName ? xc.certName.toLowerCase().replace(/\s+/g, ' ') : '';
+                                                const xlKey = xc.certLevel ? xc.certLevel.toLowerCase().replace(/\s+/g, ' ') : '';
+                                                return xcKey === cKey && xlKey === lKey;
+                                            });
+
+                                            if (existingCertIndex !== -1) {
+                                                // Update expired date if same name and same level
+                                                if (c.expiredDate) {
+                                                    existing.certificates[existingCertIndex].expiredDate = c.expiredDate;
+                                                }
+                                            } else {
+                                                // Add as new certificate if name is new, or if name is same but level is different
                                                 existing.certificates.push(c);
                                             }
                                         }
@@ -1535,11 +1558,25 @@
                             if (certName) {
                                 const certNameStr = certName.toString().trim();
                                 const cKey = certNameStr.toLowerCase().replace(/\s+/g, ' ');
-                                const existingCert = currentExpert.certificates.find(c => c.certName && c.certName.toLowerCase().replace(/\s+/g, ' ') === cKey);
-                                if (!existingCert) {
+                                const newLevelStr = certLevel ? certLevel.toString().trim() : 'Ahli Muda';
+                                const lKey = newLevelStr.toLowerCase().replace(/\s+/g, ' ');
+
+                                const existingCertIndex = currentExpert.certificates.findIndex(c => {
+                                    const xcKey = c.certName ? c.certName.toLowerCase().replace(/\s+/g, ' ') : '';
+                                    const xlKey = c.certLevel ? c.certLevel.toLowerCase().replace(/\s+/g, ' ') : '';
+                                    return xcKey === cKey && xlKey === lKey;
+                                });
+
+                                if (existingCertIndex !== -1) {
+                                    // Update expired date if same name and same level
+                                    if (expiredDateStr) {
+                                        currentExpert.certificates[existingCertIndex].expiredDate = expiredDateStr;
+                                    }
+                                } else {
+                                    // Add new certificate if name is new, or same name but different level
                                     currentExpert.certificates.push({
                                         certName: certNameStr,
-                                        certLevel: certLevel ? certLevel.toString().trim() : 'Ahli Muda',
+                                        certLevel: newLevelStr,
                                         issuedDate: '',
                                         expiredDate: expiredDateStr
                                     });
@@ -3948,7 +3985,14 @@
                                                                 <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Sertifikat Terpakai</label>
                                                                 <select value={expPlot.certificateName} onChange={e => handleExpertRowChange(idx, 'certificateName', e.target.value)} className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
                                                                     <option value="">-- Tidak Pakai / Kosong --</option>
-                                                                    {availableCerts.map((c, i) => <option key={i} value={c.certName}>{c.certName} ({c.certLevel})</option>)}
+                                                                    {availableCerts.map((c, i) => {
+                                                                        const isExpired = c.expiredDate && new Date(c.expiredDate) < new Date();
+                                                                        return (
+                                                                            <option key={i} value={c.certName} disabled={isExpired} className={isExpired ? "text-slate-400" : ""}>
+                                                                                {c.certName} ({c.certLevel}) {isExpired ? '(EXPIRED)' : ''}
+                                                                            </option>
+                                                                        );
+                                                                    })}
                                                                 </select>
                                                             </div>
                                                             <div className="w-full md:w-24">
@@ -5628,7 +5672,10 @@
                 };
 
                 return (
-                    <div className="hidden print:block text-black bg-white w-full h-auto min-h-screen font-sans relative">
+                    <div className="fixed inset-0 z-[99999] overflow-y-auto print:static print:inset-auto print:overflow-visible text-black bg-white w-full h-auto min-h-screen font-sans">
+                        <button onClick={() => setPrintData(null)} className="fixed top-4 right-4 z-[100000] px-4 py-2 bg-red-600 text-white font-bold rounded-lg shadow-lg print:hidden hover:bg-red-700 transition-colors flex items-center">
+                            <Icon name="x" size={16} className="mr-2" /> Tutup Preview PDF
+                        </button>
                         <style type="text/css">
                             {`
                             @media print {
@@ -5818,126 +5865,114 @@
                                                                                     {activeProjectsForRes.length === 0 ? (
                                                                                         <tr><td colSpan="5" className="border border-black p-1.5 text-center italic">Sedang tidak memegang proyek aktif (Available).</td></tr>
                                                                                     ) : (() => {
-                                                                                        const renderRow = (p) => {
-                                                                                            const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
-                                                                                            let deadlineStr = '-';
-                                                                                            let roleStr = '-';
-                                                                                            let statusLapangan = '-';
-                                                                                            let manMonthStr = '-';
+                                                                                        const groupedProjects = {};
+                                                                                        activeProjectsForRes.forEach(p => {
+                                                                                            const pType = normalizeProjectType(p.type);
+                                                                                            if (!groupedProjects[pType]) groupedProjects[pType] = [];
+                                                                                            groupedProjects[pType].push(p);
+                                                                                        });
 
-                                                                                            if (p.teamLeader === res.name) {
-                                                                                                roleStr = 'Team Leader';
-                                                                                                if (isPengawasan) {
-                                                                                                    deadlineStr = p.deadline ? formatDateIndo(p.deadline) : '-';
-                                                                                                    const details = p.pengawasanDetails?.[res.name] || {};
-                                                                                                    statusLapangan = details.statusTurun || 'Tidak Turun';
-                                                                                                    manMonthStr = details.manMonth || '-';
-                                                                                                } else {
-                                                                                                    statusLapangan = p.computedStatus || '-';
-
-                                                                                                    // Kalkulasi Man Month Team Leader Perencanaan
-                                                                                                    const cats = ['Arsitek', 'QS', 'Struktur', 'MEP', 'Tata Ruang', 'Surveyor', 'Lainnya'];
-                                                                                                    let minDate = null;
-                                                                                                    let maxDate = null;
-
-                                                                                                    cats.forEach(cat => {
-                                                                                                        const d = p.categoryDetails?.[cat];
-                                                                                                        if (d) {
-                                                                                                            const startDateSource = d.startDate ? d.startDate : p.spmk;
-                                                                                                            if (startDateSource) {
-                                                                                                                const sd = new Date(startDateSource);
-                                                                                                                if (!minDate || sd < minDate) minDate = sd;
-                                                                                                            }
-                                                                                                            if (d.deadline) {
-                                                                                                                const ed = new Date(d.deadline);
-                                                                                                                if (!maxDate || ed > maxDate) maxDate = ed;
-                                                                                                            }
-                                                                                                        }
-                                                                                                    });
-
-                                                                                                    if (minDate && maxDate) {
-                                                                                                        minDate.setHours(0, 0, 0, 0);
-                                                                                                        maxDate.setHours(0, 0, 0, 0);
-                                                                                                        const diffDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
-                                                                                                        if (diffDays > 0) {
-                                                                                                            manMonthStr = parseFloat((diffDays / 30).toFixed(1)).toString();
-                                                                                                        }
-                                                                                                    }
-
-                                                                                                    deadlineStr = maxDate ? formatDateIndo(maxDate.toISOString().split('T')[0]) : (p.deadline ? formatDateIndo(p.deadline) : '-');
-                                                                                                }
-                                                                                            } else if (isPengawasan) {
-                                                                                                const details = p.pengawasanDetails?.[res.name] || {};
-                                                                                                deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
-                                                                                                roleStr = details.role || 'Inspector';
-                                                                                                statusLapangan = details.statusTurun || 'Tidak Turun';
-                                                                                                manMonthStr = details.manMonth || '-';
-                                                                                            } else {
-                                                                                                const effectiveCat = getEffectiveEmpCategory(p, res.name, res.role);
-                                                                                                const details = p.categoryDetails?.[effectiveCat] || {};
-                                                                                                deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
-                                                                                                roleStr = effectiveCat === 'Surveyor' ? 'Tim Surveyor' : effectiveCat;
-
-                                                                                                // Kalkulasi Man Month dari startDate ke deadline tim
-                                                                                                const startDateSource = details.startDate ? details.startDate : p.spmk;
-                                                                                                if (startDateSource && details.deadline) {
-                                                                                                    const startD = new Date(startDateSource);
-                                                                                                    const endD = new Date(details.deadline);
-                                                                                                    startD.setHours(0, 0, 0, 0);
-                                                                                                    endD.setHours(0, 0, 0, 0);
-                                                                                                    const diffDays = Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24));
-                                                                                                    if (diffDays > 0) {
-                                                                                                        manMonthStr = parseFloat((diffDays / 30).toFixed(1)).toString();
-                                                                                                    }
-                                                                                                }
-
-                                                                                                // Status Lapangan diambil dari status sub tim
-                                                                                                statusLapangan = getMicroStatus(details.progress || 0, details.deadline);
-                                                                                            }
-
-                                                                                            return (
-                                                                                                <tr key={p.id}>
-                                                                                                    <td className="border border-black p-1.5">{p.name}</td>
-                                                                                                    <td className="border border-black p-1.5">{roleStr}</td>
-                                                                                                    <td className="border border-black p-1.5 text-center">{manMonthStr}</td>
-                                                                                                    <td className="border border-black p-1.5 font-semibold">{deadlineStr}</td>
-                                                                                                    <td className="border border-black p-1.5 font-semibold">{statusLapangan}</td>
-                                                                                                </tr>
-                                                                                            );
-                                                                                        };
-
-                                                                                        if (printData.type === 'all' || printData.type === 'personnel' || (printData.type === 'custom' && printData.options.projectType === 'Semua')) {
-                                                                                            const categories = ['Perencanaan', 'Pengawasan', 'Manajemen Konstruksi'];
-                                                                                            const grouped = categories.map(kategoriTipe => {
-                                                                                                return {
-                                                                                                    kategoriTipe,
-                                                                                                    proyeks: activeProjectsForRes.filter(p => {
-                                                                                                        const pType = (p.type || '').toLowerCase();
-                                                                                                        if (kategoriTipe === 'Perencanaan') return pType.includes('perencana');
-                                                                                                        if (kategoriTipe === 'Pengawasan') return pType === 'pengawasan' || pType === 'supervisi';
-                                                                                                        if (kategoriTipe === 'Manajemen Konstruksi') return pType.includes('manajemen konstruksi') || pType === 'mk';
-                                                                                                        return false;
-                                                                                                    })
-                                                                                                };
-                                                                                            }).filter(cat => cat.proyeks.length > 0);
-
-                                                                                            const mappedIds = new Set(grouped.flatMap(g => g.proyeks.map(p => p.id)));
-                                                                                            const others = activeProjectsForRes.filter(p => !mappedIds.has(p.id));
-                                                                                            if (others.length > 0) {
-                                                                                                grouped.push({ kategoriTipe: 'Lainnya', proyeks: others });
-                                                                                            }
-
-                                                                                            return grouped.flatMap(cat => [
-                                                                                                <tr key={`sep-${cat.kategoriTipe}`}>
-                                                                                                    <td colSpan="5" className="border border-black bg-gray-200 p-1.5 font-bold text-center text-xs">
-                                                                                                        {cat.kategoriTipe}
+                                                                                        const typeKeys = Object.keys(groupedProjects).sort((a, b) => {
+                                                                                            const order = { 'Perencanaan': 1, 'Pengawasan': 2, 'Manajemen Konstruksi': 3 };
+                                                                                            return (order[a] || 99) - (order[b] || 99);
+                                                                                        });
+                                                                                        
+                                                                                        return typeKeys.map(pType => (
+                                                                                            <React.Fragment key={pType}>
+                                                                                                <tr>
+                                                                                                    <td colSpan="5" className="border border-black p-1.5 text-center font-bold bg-gray-200 text-[10px] uppercase">
+                                                                                                        {pType}
                                                                                                     </td>
-                                                                                                </tr>,
-                                                                                                ...cat.proyeks.map(renderRow)
-                                                                                            ]);
-                                                                                        } else {
-                                                                                            return activeProjectsForRes.map(renderRow);
-                                                                                        }
+                                                                                                </tr>
+                                                                                                {groupedProjects[pType].map(p => {
+                                                                                                    const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
+                                                                                                    let deadlineStr = '-';
+                                                                                                    let roleStr = '-';
+                                                                                                    let statusLapangan = '-';
+                                                                                                    let manMonthStr = '-';
+
+                                                                                                    if (p.teamLeader === res.name) {
+                                                                                                        roleStr = 'Team Leader';
+                                                                                                        if (isPengawasan) {
+                                                                                                            deadlineStr = p.deadline ? formatDateIndo(p.deadline) : '-';
+                                                                                                            const details = p.pengawasanDetails?.[res.name] || {};
+                                                                                                            statusLapangan = details.statusTurun || 'Tidak Turun';
+                                                                                                            manMonthStr = details.manMonth || '-';
+                                                                                                        } else {
+                                                                                                            statusLapangan = p.computedStatus || '-';
+
+                                                                                                            // Kalkulasi Man Month Team Leader Perencanaan
+                                                                                                            const cats = ['Arsitek', 'QS', 'Struktur', 'MEP', 'Tata Ruang', 'Surveyor', 'Lainnya'];
+                                                                                                            let minDate = null;
+                                                                                                            let maxDate = null;
+
+                                                                                                            cats.forEach(cat => {
+                                                                                                                const d = p.categoryDetails?.[cat];
+                                                                                                                if (d) {
+                                                                                                                    const startDateSource = d.startDate ? d.startDate : p.spmk;
+                                                                                                                    if (startDateSource) {
+                                                                                                                        const sd = new Date(startDateSource);
+                                                                                                                        if (!minDate || sd < minDate) minDate = sd;
+                                                                                                                    }
+                                                                                                                    if (d.deadline) {
+                                                                                                                        const ed = new Date(d.deadline);
+                                                                                                                        if (!maxDate || ed > maxDate) maxDate = ed;
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            });
+
+                                                                                                            if (minDate && maxDate) {
+                                                                                                                minDate.setHours(0, 0, 0, 0);
+                                                                                                                maxDate.setHours(0, 0, 0, 0);
+                                                                                                                const diffDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+                                                                                                                if (diffDays > 0) {
+                                                                                                                    manMonthStr = parseFloat((diffDays / 30).toFixed(1)).toString();
+                                                                                                                }
+                                                                                                            }
+
+                                                                                                            deadlineStr = maxDate ? formatDateIndo(maxDate.toISOString().split('T')[0]) : (p.deadline ? formatDateIndo(p.deadline) : '-');
+                                                                                                        }
+                                                                                                    } else if (isPengawasan) {
+                                                                                                        const details = p.pengawasanDetails?.[res.name] || {};
+                                                                                                        deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
+                                                                                                        roleStr = details.role || 'Inspector';
+                                                                                                        statusLapangan = details.statusTurun || 'Tidak Turun';
+                                                                                                        manMonthStr = details.manMonth || '-';
+                                                                                                    } else {
+                                                                                                        const effectiveCat = getEffectiveEmpCategory(p, res.name, res.role);
+                                                                                                        const details = p.categoryDetails?.[effectiveCat] || {};
+                                                                                                        deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
+                                                                                                        roleStr = effectiveCat === 'Surveyor' ? 'Tim Surveyor' : effectiveCat;
+
+                                                                                                        // Kalkulasi Man Month dari startDate ke deadline tim
+                                                                                                        const startDateSource = details.startDate ? details.startDate : p.spmk;
+                                                                                                        if (startDateSource && details.deadline) {
+                                                                                                            const startD = new Date(startDateSource);
+                                                                                                            const endD = new Date(details.deadline);
+                                                                                                            startD.setHours(0, 0, 0, 0);
+                                                                                                            endD.setHours(0, 0, 0, 0);
+                                                                                                            const diffDays = Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24));
+                                                                                                            if (diffDays > 0) {
+                                                                                                                manMonthStr = parseFloat((diffDays / 30).toFixed(1)).toString();
+                                                                                                            }
+                                                                                                        }
+
+                                                                                                        // Status Lapangan diambil dari status sub tim
+                                                                                                        statusLapangan = getMicroStatus(details.progress || 0, details.deadline);
+                                                                                                    }
+
+                                                                                                    return (
+                                                                                                        <tr key={p.id}>
+                                                                                                            <td className="border border-black p-1.5">{p.name}</td>
+                                                                                                            <td className="border border-black p-1.5">{roleStr}</td>
+                                                                                                            <td className="border border-black p-1.5 text-center">{manMonthStr}</td>
+                                                                                                            <td className="border border-black p-1.5 font-semibold">{deadlineStr}</td>
+                                                                                                            <td className="border border-black p-1.5 font-semibold">{statusLapangan}</td>
+                                                                                                        </tr>
+                                                                                                    )
+                                                                                                })}
+                                                                                            </React.Fragment>
+                                                                                        ));
                                                                                     })()}
                                                                                 </tbody>
                                                                             </table>
@@ -5998,10 +6033,12 @@
                                                                         ) : (asg.experts || []).map((expPlot, idx) => {
                                                                             const exp = experts.find(e => e.id === expPlot.expertId);
                                                                             const expertName = exp ? exp.name : 'Unknown';
+                                                                            const certObj = exp ? (exp.certificates || []).find(c => c.certName === expPlot.certificateName) : null;
+                                                                            const certDisplay = certObj && certObj.certLevel ? `${expPlot.certificateName} (${certObj.certLevel})` : (expPlot.certificateName || '-');
                                                                             return (
                                                                                 <tr key={idx}>
                                                                                     <td className="border border-black p-1.5 font-semibold">{expertName}</td>
-                                                                                    <td className="border border-black p-1.5">{expPlot.certificateName || '-'}</td>
+                                                                                    <td className="border border-black p-1.5">{certDisplay}</td>
                                                                                     <td className="border border-black p-1.5 text-center">{expPlot.role || '-'}</td>
                                                                                     <td className="border border-black p-1.5 text-center font-bold">{expPlot.manMonth}</td>
                                                                                 </tr>
@@ -6796,6 +6833,8 @@
                                                         {(asg.experts || []).map((expPlot, idx) => {
                                                             const exp = experts.find(e => e.id === expPlot.expertId);
                                                             const expertName = exp ? exp.name : 'Unknown';
+                                                            const certObj = exp ? (exp.certificates || []).find(c => c.certName === expPlot.certificateName) : null;
+                                                            const certDisplay = certObj && certObj.certLevel ? `${expPlot.certificateName} (${certObj.certLevel})` : expPlot.certificateName;
                                                             return (
                                                                 <div key={idx} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700/50">
                                                                     <div>
@@ -6803,7 +6842,7 @@
                                                                             {expertName}
                                                                             {expPlot.role && <span className="ml-2 font-normal text-slate-500">({expPlot.role})</span>}
                                                                         </p>
-                                                                        {expPlot.certificateName && <p className="text-[10px] text-slate-500">SKA: {expPlot.certificateName}</p>}
+                                                                        {expPlot.certificateName && <p className="text-[10px] text-slate-500">SKA: {certDisplay}</p>}
                                                                     </div>
                                                                     <div className="text-right">
                                                                         <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-0.5 rounded-full">{expPlot.manMonth} MM</span>
@@ -7001,7 +7040,13 @@
                                                                     {tender.jobName} ({tender.tenderType})
                                                                 </div>
                                                                 <div className="mt-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-semibold flex flex-wrap gap-x-3 gap-y-1">
-                                                                    <span>SKA: {tender.plotData.certificateName || '-'}</span>
+                                                                    {
+                                                                        (() => {
+                                                                            const certObj = exp.certificates?.find(c => c.certName === tender.plotData.certificateName);
+                                                                            const certDisplay = certObj && certObj.certLevel ? `${tender.plotData.certificateName} (${certObj.certLevel})` : (tender.plotData.certificateName || '-');
+                                                                            return <span>SKA: {certDisplay}</span>;
+                                                                        })()
+                                                                    }
                                                                     <span>MM: {tender.plotData.manMonth}</span>
                                                                     <span>Kontrak: {tender.contractType || '-'}</span>
                                                                     <span>Selesai: {tender.endDate ? new Date(tender.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</span>
