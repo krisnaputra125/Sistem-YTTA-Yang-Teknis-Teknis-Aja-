@@ -1,7 +1,7 @@
 {
-  "name": "Project Management System & Personel Assignment",
-  "short_name": "PMC Gaharu",
-  "description": "Aplikasi Manajemen Proyek dan Penilaian KPI Personil - PMC Gaharu",
+  "name": "SIDAMON Sistem Database & Monitoring",
+  "short_name": "SIDAMON",
+  "description": "Sistem Database & Monitoring - Gaharu Sempana Group",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0f172a",
