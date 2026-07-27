@@ -5672,10 +5672,7 @@
                 };
 
                 return (
-                    <div className="fixed inset-0 z-[99999] overflow-y-auto print:static print:inset-auto print:overflow-visible text-black bg-white w-full h-auto min-h-screen font-sans">
-                        <button onClick={() => setPrintData(null)} className="fixed top-4 right-4 z-[100000] px-4 py-2 bg-red-600 text-white font-bold rounded-lg shadow-lg print:hidden hover:bg-red-700 transition-colors flex items-center">
-                            <Icon name="x" size={16} className="mr-2" /> Tutup Preview PDF
-                        </button>
+                    <div className="fixed inset-0 -z-50 opacity-0 pointer-events-none print:static print:inset-auto print:z-auto print:opacity-100 print:pointer-events-auto print:overflow-visible text-black bg-white w-full h-auto min-h-screen font-sans">
                         <style type="text/css">
                             {`
                             @media print {
