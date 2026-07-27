@@ -353,8 +353,10 @@
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays < 0) {
+                if (isPengawasan) return "Done";
                 return "Terlambat";
             } else if (diffDays <= 14) {
+                if (isPengawasan) return "On Progress";
                 return "Beresiko";
             }
             return baseStatus;
@@ -4684,6 +4686,7 @@
                                                                                 >
                                                                                     <option value="Turun">Turun</option>
                                                                                     <option value="Tidak Turun">Tidak Turun</option>
+                                                                                    <option value="Belum Diketahui">Belum Diketahui</option>
                                                                                 </select>
                                                                             </div>
                                                                             <div className="flex flex-col justify-end">
