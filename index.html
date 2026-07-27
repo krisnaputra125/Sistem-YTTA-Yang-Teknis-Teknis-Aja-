@@ -42,7 +42,7 @@
     <!-- Babel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
     <!-- SheetJS for Excel Import -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <style>
         .btn-clean-check {
             width: 36px;
@@ -5312,6 +5312,418 @@
                     </div>
                 );
             };
+            const handleExportExcel = (options) => {
+                let filteredProjects = [...computedProjects].filter(p => p.computedStatus !== 'Done' && !p.notStarted);
+                let filteredResources = [...calculatedResources];
+                let title = "Laporan Eksekutif";
+
+                if (options.section === 'ProyekSaja') title = "Laporan Eksekutif Status Proyek";
+                if (options.section === 'PegawaiSaja') title = "Laporan Eksekutif Penugasan Personil";
+
+                if (options.projectType !== 'Semua') {
+                    title += ` (Tipe: ${options.projectType})`;
+                    filteredProjects = filteredProjects.filter(p => {
+                        const pType = (p.type || '').toLowerCase();
+                        if (options.projectType === 'Perencanaan') return pType.includes('perencana');
+                        if (options.projectType === 'Pengawasan') return pType === 'pengawasan' || pType === 'supervisi';
+                        if (options.projectType === 'Manajemen Konstruksi') return pType.includes('manajemen konstruksi') || pType === 'mk';
+                        return true;
+                    });
+                }
+                
+                filteredProjects.sort((a, b) => {
+                    const dateA = a.deadline ? new Date(a.deadline) : new Date('2100-01-01');
+                    const dateB = b.deadline ? new Date(b.deadline) : new Date('2100-01-01');
+                    return dateA - dateB;
+                });
+
+                const aoa = [];
+                const merges = [];
+                const cardRanges = [];
+                let rowIndex = 0;
+
+                const addRow = (row, mergeToCol = -1) => {
+                    aoa.push(row);
+                    if (mergeToCol > 0) {
+                        merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: mergeToCol } });
+                    }
+                    rowIndex++;
+                };
+
+                addRow([title], 5);
+                addRow([`Tanggal Cetak: ${formatDateIndo(new Date().toISOString().split('T')[0])}`], 5);
+                addRow([]);
+
+                if (options.section !== 'PegawaiSaja') {
+                    addRow(["BAGIAN A: LAPORAN STATUS PROYEK"], 5);
+                    if (filteredProjects.length === 0) {
+                        addRow(["Tidak ada proyek aktif untuk kriteria ini."], 5);
+                    } else {
+                        const categoriesToRender = (options.projectType !== 'Semua' ? [options.projectType] : ['Perencanaan', 'Pengawasan', 'Manajemen Konstruksi']).map(kategoriTipe => {
+                            return {
+                                kategoriTipe,
+                                proyeksInKategori: filteredProjects.filter(p => {
+                                    const pType = (p.type || '').toLowerCase();
+                                    if (kategoriTipe === 'Perencanaan') return pType.includes('perencana');
+                                    if (kategoriTipe === 'Pengawasan') return pType === 'pengawasan' || pType === 'supervisi';
+                                    if (kategoriTipe === 'Manajemen Konstruksi') return pType.includes('manajemen konstruksi') || pType === 'mk';
+                                    return false;
+                                })
+                            };
+                        }).filter(cat => cat.proyeksInKategori.length > 0);
+
+                        if (options.projectType === 'Semua') {
+                            const mappedIds = new Set(categoriesToRender.flatMap(g => g.proyeksInKategori.map(p => p.id)));
+                            const others = filteredProjects.filter(p => !mappedIds.has(p.id));
+                            if (others.length > 0) {
+                                categoriesToRender.push({ kategoriTipe: 'Lainnya', proyeksInKategori: others });
+                            }
+                        }
+
+                        categoriesToRender.forEach(cat => {
+                            if (options.projectType === 'Semua') {
+                                addRow([`Sub Bab: ${cat.kategoriTipe}`], 5);
+                            }
+                            
+                            cat.proyeksInKategori.forEach(p => {
+                                const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
+                                
+                                const startRow = rowIndex;
+                                
+                                addRow([`NAMA PROYEK: ${p.name || '-'}`], 5);
+                                if (isPengawasan) {
+                                    addRow([
+                                        `Klien: ${p.client || '-'}`,
+                                        `Tanggal SPMK: ${p.spmk ? formatDateIndo(p.spmk) : '-'}`,
+                                        `Tenggat Kontrak: ${p.deadline ? formatDateIndo(p.deadline) : '-'}`,
+                                        `Status Makro: ${p.computedStatus || '-'}`,
+                                        ""
+                                    ]);
+                                } else {
+                                    addRow([
+                                        `Klien: ${p.client || '-'}`,
+                                        `Team Leader: ${p.teamLeader || '-'}`,
+                                        `Tanggal SPMK: ${p.spmk ? formatDateIndo(p.spmk) : '-'}`,
+                                        `Tenggat Kontrak: ${p.deadline ? formatDateIndo(p.deadline) : '-'}`,
+                                        `Status Makro: ${p.computedStatus || '-'}`
+                                    ]);
+                                }
+                                
+                                addRow(["Rincian Penugasan & Target Sub-Tim"], 5);
+                                
+                                if (isPengawasan) {
+                                    addRow(["Nama Personil", "Peran", "Man Month", "Deadline Spesifik", "Status Lapangan", "Nominal Gaji"]);
+                                    if (!p.team || p.team.length === 0) {
+                                        addRow(["Belum ada personil diplot.", "", "", "", "", ""], 4);
+                                    } else {
+                                        p.team.forEach(member => {
+                                            const details = p.pengawasanDetails?.[member] || {};
+                                            addRow([
+                                                member,
+                                                details.role || 'Inspector',
+                                                details.manMonth || '-',
+                                                details.deadline ? formatDateIndo(details.deadline) : '-',
+                                                details.statusTurun || 'Tidak Turun',
+                                                ""
+                                            ]);
+                                        });
+                                    }
+                                } else {
+                                    addRow(["Kategori Sub Tim", "Target Progress", "Tenggat Waktu Tim", "Status Target", "Personil Terploting", "Nominal Gaji"]);
+                                    const cats = ['Arsitek', 'Struktur', 'MEP', 'QS', 'Tata Ruang', 'Lainnya', 'Surveyor'];
+                                    let hasAny = false;
+                                    cats.forEach(cat => {
+                                        let catMembers = [];
+                                        if (cat === 'Surveyor') {
+                                            catMembers = p.surveyorTeam || [];
+                                        } else {
+                                            catMembers = (p.team || []).filter(m => {
+                                                const isSurveyor = (p.surveyorTeam || []).includes(m);
+                                                if (isSurveyor) return false;
+                                                const r = calculatedResources.find(res => res.name === m);
+                                                if (cat === 'Lainnya') {
+                                                    const matchesOther = ['Arsitek', 'Struktur', 'MEP', 'QS', 'Tata Ruang'].some(other => getCategoryFromRole(r?.role) === other);
+                                                    return !matchesOther;
+                                                } else {
+                                                    return getCategoryFromRole(r?.role) === cat;
+                                                }
+                                            });
+                                        }
+                                        if (catMembers.length > 0) {
+                                            hasAny = true;
+                                            const details = p.categoryDetails?.[cat] || {};
+                                            const progressVal = details.progress || 0;
+                                            const statusTarget = getMicroStatus(progressVal, details.deadline);
+                                            addRow([
+                                                cat,
+                                                `${progressVal}% Tercapai`,
+                                                details.deadline ? formatDateIndo(details.deadline) : '-',
+                                                statusTarget,
+                                                catMembers.join(', '),
+                                                ""
+                                            ]);
+                                        }
+                                    });
+                                    if (!hasAny) {
+                                        addRow(["Belum ada personil diplot.", "", "", "", "", ""], 4);
+                                    }
+                                }
+                                cardRanges.push({ s: { r: startRow, c: 0 }, e: { r: rowIndex - 1, c: 5 } });
+                                addRow([]);
+                                addRow([]);
+                            });
+                        });
+                    }
+                    addRow([]);
+                }
+
+                if (options.section !== 'ProyekSaja') {
+                    addRow(["BAGIAN B: LAPORAN RINCIAN PENUGASAN PEGAWAI"], 5);
+                    if (filteredResources.length === 0) {
+                        addRow(["Tidak ada personil untuk kriteria ini."], 5);
+                    } else {
+                        const resourcesBySubTeam = {};
+                        filteredResources.forEach(res => {
+                            const activeProjectsForRes = filteredProjects.filter(p => (p.team?.includes(res.name) || p.teamLeader === res.name || p.surveyorTeam?.includes(res.name)) && !p.notStarted);
+                            if (options.projectType !== 'Semua' && activeProjectsForRes.length === 0) return;
+                            
+                            const subTeam = getCategoryFromRole(res.role);
+                            if (!resourcesBySubTeam[subTeam]) resourcesBySubTeam[subTeam] = [];
+                            resourcesBySubTeam[subTeam].push({ res, activeProjectsForRes });
+                        });
+
+                        const subTeamKeys = Object.keys(resourcesBySubTeam).sort();
+                        if (subTeamKeys.length === 0) {
+                            addRow(["Tidak ada personil yang terlibat di kriteria ini."], 5);
+                        } else {
+                            subTeamKeys.forEach(subTeam => {
+                                addRow([`Sub Bab: Tim ${subTeam}`], 5);
+                                resourcesBySubTeam[subTeam].forEach(({ res, activeProjectsForRes }) => {
+                                    const startRow = rowIndex;
+                                    addRow([`Nama: ${res.name}`, `Peran: ${res.role}`, `Jumlah Proyek: ${activeProjectsForRes.length} Proyek Aktif`, "", "", ""]);
+                                    merges.push({ s: { r: rowIndex - 1, c: 2 }, e: { r: rowIndex - 1, c: 4 } });
+                                    
+                                    addRow(["Nama Proyek", "Peran/Tim Lapangan", "Man Month", "Deadline Spesifik Tugas", "Status Lapangan", "Nominal Gaji"]);
+                                    
+                                    if (activeProjectsForRes.length === 0) {
+                                        addRow(["Sedang tidak memegang proyek aktif (Available).", "", "", "", "", ""], 4);
+                                    } else {
+                                        const categories = ['Perencanaan', 'Pengawasan', 'Manajemen Konstruksi'];
+                                        const renderRowData = (p) => {
+                                            const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
+                                            let deadlineStr = '-';
+                                            let roleStr = '-';
+                                            let statusLapangan = '-';
+                                            let manMonthStr = '-';
+
+                                            if (p.teamLeader === res.name) {
+                                                roleStr = 'Team Leader';
+                                                if (isPengawasan) {
+                                                    deadlineStr = p.deadline ? formatDateIndo(p.deadline) : '-';
+                                                    const details = p.pengawasanDetails?.[res.name] || {};
+                                                    statusLapangan = details.statusTurun || 'Tidak Turun';
+                                                    manMonthStr = details.manMonth || '-';
+                                                } else {
+                                                    statusLapangan = p.computedStatus || '-';
+                                                    const cats = ['Arsitek', 'QS', 'Struktur', 'MEP', 'Tata Ruang', 'Surveyor', 'Lainnya'];
+                                                    let minDate = null;
+                                                    let maxDate = null;
+                                                    cats.forEach(cat => {
+                                                        const d = p.categoryDetails?.[cat];
+                                                        if (d) {
+                                                            const startDateSource = d.startDate ? d.startDate : p.spmk;
+                                                            if (startDateSource) {
+                                                                const sd = new Date(startDateSource);
+                                                                if (!minDate || sd < minDate) minDate = sd;
+                                                            }
+                                                            if (d.deadline) {
+                                                                const ed = new Date(d.deadline);
+                                                                if (!maxDate || ed > maxDate) maxDate = ed;
+                                                            }
+                                                        }
+                                                    });
+                                                    if (minDate && maxDate) {
+                                                        minDate.setHours(0, 0, 0, 0);
+                                                        maxDate.setHours(0, 0, 0, 0);
+                                                        const diffDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+                                                        if (diffDays > 0) {
+                                                            manMonthStr = parseFloat((diffDays / 30).toFixed(1)).toString();
+                                                        }
+                                                    }
+                                                    deadlineStr = maxDate ? formatDateIndo(maxDate.toISOString().split('T')[0]) : (p.deadline ? formatDateIndo(p.deadline) : '-');
+                                                }
+                                            } else if (isPengawasan) {
+                                                const details = p.pengawasanDetails?.[res.name] || {};
+                                                deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
+                                                roleStr = details.role || 'Inspector';
+                                                statusLapangan = details.statusTurun || 'Tidak Turun';
+                                                manMonthStr = details.manMonth || '-';
+                                            } else {
+                                                const effectiveCat = getEffectiveEmpCategory(p, res.name, res.role);
+                                                const details = p.categoryDetails?.[effectiveCat] || {};
+                                                deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
+                                                roleStr = effectiveCat === 'Surveyor' ? 'Tim Surveyor' : effectiveCat;
+
+                                                const startDateSource = details.startDate ? details.startDate : p.spmk;
+                                                if (startDateSource && details.deadline) {
+                                                    const startD = new Date(startDateSource);
+                                                    const endD = new Date(details.deadline);
+                                                    startD.setHours(0, 0, 0, 0);
+                                                    endD.setHours(0, 0, 0, 0);
+                                                    const diffDays = Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24));
+                                                    if (diffDays > 0) {
+                                                        manMonthStr = parseFloat((diffDays / 30).toFixed(1)).toString();
+                                                    }
+                                                }
+                                                statusLapangan = getMicroStatus(details.progress || 0, details.deadline);
+                                            }
+
+                                            return [p.name, roleStr, manMonthStr, deadlineStr, statusLapangan, ""];
+                                        };
+
+                                        const dataStartRow = rowIndex;
+                                        
+                                        if (options.projectType === 'Semua') {
+                                            const grouped = categories.map(kategoriTipe => {
+                                                return {
+                                                    kategoriTipe,
+                                                    proyeks: activeProjectsForRes.filter(p => {
+                                                        const pType = (p.type || '').toLowerCase();
+                                                        if (kategoriTipe === 'Perencanaan') return pType.includes('perencana');
+                                                        if (kategoriTipe === 'Pengawasan') return pType === 'pengawasan' || pType === 'supervisi';
+                                                        if (kategoriTipe === 'Manajemen Konstruksi') return pType.includes('manajemen konstruksi') || pType === 'mk';
+                                                        return false;
+                                                    })
+                                                };
+                                            }).filter(cat => cat.proyeks.length > 0);
+                                            
+                                            const mappedIds = new Set(grouped.flatMap(g => g.proyeks.map(p => p.id)));
+                                            const others = activeProjectsForRes.filter(p => !mappedIds.has(p.id));
+                                            if (others.length > 0) {
+                                                grouped.push({ kategoriTipe: 'Lainnya', proyeks: others });
+                                            }
+
+                                            grouped.forEach(cat => {
+                                                addRow([cat.kategoriTipe, "", "", "", "", ""], 4);
+                                                cat.proyeks.forEach(p => {
+                                                    addRow(renderRowData(p));
+                                                });
+                                            });
+                                        } else {
+                                            activeProjectsForRes.forEach(p => {
+                                                addRow(renderRowData(p));
+                                            });
+                                        }
+                                        
+                                        const dataEndRow = rowIndex - 1;
+                                        if (dataEndRow >= dataStartRow) {
+                                            merges.push({ s: { r: dataStartRow, c: 5 }, e: { r: dataEndRow, c: 5 } });
+                                        }
+                                    }
+                                    cardRanges.push({ s: { r: startRow, c: 0 }, e: { r: rowIndex - 1, c: 5 } });
+                                    addRow([]);
+                                    addRow([]);
+                                });
+                            });
+                        }
+                    }
+                }
+
+                const ws = XLSX.utils.aoa_to_sheet(aoa);
+                ws['!merges'] = merges;
+                
+                // Add Styling for Borders and Bold
+                for (let R = 0; R < rowIndex; ++R) {
+                    let isEmptyRow = true;
+                    for (let C = 0; C < 6; ++C) {
+                        const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                        if (ws[cellRef] && ws[cellRef].v !== undefined && ws[cellRef].v !== "") {
+                            isEmptyRow = false;
+                            break;
+                        }
+                    }
+
+                    if (!isEmptyRow) {
+                        // Find if this row is part of a card
+                        let card = cardRanges.find(c => R >= c.s.r && R <= c.e.r);
+                        
+                        for (let C = 0; C < 6; ++C) {
+                            const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                            if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                            
+                            let isBold = false;
+                            let align = { vertical: "center", wrapText: true };
+                            let fill = undefined;
+                            
+                            const val = ws[cellRef].v;
+                            if (typeof val === 'string') {
+                                if (val.startsWith('NAMA PROYEK:') || val.startsWith('BAGIAN') || val.startsWith('Sub Bab:') || val.includes('Laporan Eksekutif') || val === 'Rincian Penugasan & Target Sub-Tim') {
+                                    isBold = true;
+                                }
+                                if (val.startsWith('NAMA PROYEK:') || val.startsWith('Nama:') || val.startsWith('Peran:') || val.startsWith('Jumlah Proyek:')) {
+                                    fill = { fgColor: { rgb: "F1F5F9" } }; // Light gray background for card headers
+                                }
+                                
+                                const catSeparators = ['Perencanaan', 'Pengawasan', 'Manajemen Konstruksi', 'Lainnya'];
+                                if (catSeparators.includes(val)) {
+                                    const nextCellRef = XLSX.utils.encode_cell({r: R, c: 1});
+                                    if (!ws[nextCellRef] || ws[nextCellRef].v === "") {
+                                        isBold = true;
+                                        align.horizontal = "center";
+                                        fill = { fgColor: { rgb: "F1F5F9" } };
+                                    }
+                                }
+
+                                const headers = ["Nama Personil", "Peran", "Man Month", "Deadline Spesifik", "Status Lapangan", "Nominal Gaji", "Kategori Sub Tim", "Target Progress", "Tenggat Waktu Tim", "Status Target", "Personil Terploting", "Nama Proyek", "Peran/Tim Lapangan", "Deadline Spesifik Tugas"];
+                                if (headers.includes(val)) {
+                                    isBold = true;
+                                    align.horizontal = "center";
+                                }
+                                if (val.startsWith("Klien:") || val.startsWith("Team Leader:") || val.startsWith("Tanggal SPMK:") || val.startsWith("Tenggat Kontrak:") || val.startsWith("Status Makro:") || val.startsWith("Nama:") || val.startsWith("Peran:") || val.startsWith("Jumlah Proyek:")) {
+                                    isBold = true;
+                                }
+                            }
+
+                            // Determine borders based on card position
+                            let bTop = 'thin', bBottom = 'thin', bLeft = 'thin', bRight = 'thin';
+                            if (card) {
+                                if (R === card.s.r) bTop = 'medium';
+                                if (R === card.e.r) bBottom = 'medium';
+                                if (C === card.s.c) bLeft = 'medium';
+                                if (C === card.e.c) bRight = 'medium';
+                            } else {
+                                bTop = 'medium'; bBottom = 'medium'; bLeft = 'medium'; bRight = 'medium';
+                            }
+
+                            ws[cellRef].s = {
+                                font: { bold: isBold },
+                                fill: fill,
+                                border: {
+                                    top: { style: bTop, color: { rgb: "000000" } },
+                                    bottom: { style: bBottom, color: { rgb: "000000" } },
+                                    left: { style: bLeft, color: { rgb: "000000" } },
+                                    right: { style: bRight, color: { rgb: "000000" } }
+                                },
+                                alignment: align
+                            };
+                        }
+                    }
+                }
+
+                // Set column widths for better visibility
+                ws['!cols'] = [
+                    {wch: 35}, // Nama Proyek
+                    {wch: 20}, // Peran
+                    {wch: 15}, // Man Month
+                    {wch: 20}, // Deadline
+                    {wch: 15}, // Status Lapangan
+                    {wch: 20}, // Nominal Gaji
+                ];
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+                XLSX.writeFile(wb, `Laporan_${new Date().getTime()}.xlsx`);
+            };
 
             const renderPrintExecutiveReport = () => {
                 if (!printData) return null;
@@ -6779,7 +7191,7 @@
                                 <button onClick={() => {
                                     setPrintData({ type: 'expert_assignment' });
                                 }} className="px-4 py-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-semibold flex items-center gap-2 text-sm shrink-0 border border-slate-300 dark:border-slate-700">
-                                    <Icon name="printer" size={18} /> Ekspor PDF
+                                    <Icon name="printer" size={18} /> Ekspor Laporan
                                 </button>
                                 <button onClick={() => setModalConfig({ isOpen: true, type: 'assignment', mode: 'add', data: null })} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all font-semibold flex items-center gap-2 text-sm shrink-0">
                                     <Icon name="plus" size={18} /> Tambah Penugasan
@@ -7151,7 +7563,7 @@
                                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                                     <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
                                         <div className="flex items-center justify-between mb-5">
-                                            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Opsi Ekspor PDF</h3>
+                                            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Opsi Ekspor Laporan</h3>
                                             <button onClick={() => setShowPrintModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><Icon name="x" size={20} /></button>
                                         </div>
                                         <div className="space-y-4">
@@ -7177,9 +7589,15 @@
                                             <button onClick={() => setShowPrintModal(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Batal</button>
                                             <button onClick={() => {
                                                 setShowPrintModal(false);
+                                                handleExportExcel(printOptions);
+                                            }} className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center gap-2 shadow-md">
+                                                <Icon name="file-text" size={16} /> Ekspor Excel
+                                            </button>
+                                            <button onClick={() => {
+                                                setShowPrintModal(false);
                                                 setPrintData({ type: 'custom', options: printOptions });
                                             }} className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-md">
-                                                <Icon name="printer" size={16} /> Cetak Sekarang
+                                                <Icon name="printer" size={16} /> Cetak PDF
                                             </button>
                                         </div>
                                     </div>
@@ -7248,7 +7666,7 @@
                                         </div>
                                         <div className={`sm:hidden w-2.5 h-2.5 rounded-full shrink-0 ${isLive ? 'bg-emerald-500' : 'bg-amber-500'}`} title={isLive ? 'Connected' : 'Offline'} />
                                         <button onClick={() => setShowPrintModal(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700">
-                                            <Icon name="printer" size={14} /> Ekspor PDF
+                                            <Icon name="printer" size={14} /> Ekspor Laporan
                                         </button>
                                         <button onClick={fetchFromGoogleSheets} disabled={loading || !GOOGLE_SCRIPT_URL} className={`p-2 rounded-full transition-all shrink-0 ${loading ? 'animate-spin text-blue-500' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 dark:text-slate-500 dark:hover:text-blue-400'}`} title="Refresh Database">
                                             <Icon name="refresh-ccw" size={20} />
