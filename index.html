@@ -2247,9 +2247,13 @@
 
                 const filteredAndSortedProjects = computedProjects
                     .filter(p => {
-                        const matchesSearch = p.name.toLowerCase().includes(searchProjectTab.toLowerCase()) ||
-                            p.client.toLowerCase().includes(searchProjectTab.toLowerCase()) ||
-                            p.id.toLowerCase().includes(searchProjectTab.toLowerCase());
+                        const searchLower = searchProjectTab.toLowerCase();
+                        const matchesSearch = p.name.toLowerCase().includes(searchLower) ||
+                            p.client.toLowerCase().includes(searchLower) ||
+                            p.id.toLowerCase().includes(searchLower) ||
+                            (p.teamLeader && p.teamLeader.toLowerCase().includes(searchLower)) ||
+                            (p.team && p.team.some(member => member.toLowerCase().includes(searchLower))) ||
+                            (p.surveyorTeam && p.surveyorTeam.some(member => member.toLowerCase().includes(searchLower)));
 
                         let matchesType = true;
                         if (filterProjectType !== 'Semua Tipe') {
