@@ -3990,7 +3990,9 @@ import * as XLSX from 'xlsx-js-style';
                                         const manMonthVal = parseFloat(manMonth);
                                         if (!isNaN(manMonthVal)) {
                                             const date = new Date(value);
-                                            date.setDate(date.getDate() + Math.round(manMonthVal * 30));
+                                            date.setDate(date.getDate() + Math.round(manMonthVal * 30) - 1);
+                                            if (date.getDay() === 6) date.setDate(date.getDate() - 1);
+                                            else if (date.getDay() === 0) date.setDate(date.getDate() - 2);
                                             const yyyy = date.getFullYear();
                                             const mm = String(date.getMonth() + 1).padStart(2, '0');
                                             const dd = String(date.getDate()).padStart(2, '0');
@@ -4093,7 +4095,9 @@ import * as XLSX from 'xlsx-js-style';
                                 const manMonthVal = parseFloat(newDetail.manMonth);
                                 if (!isNaN(manMonthVal)) {
                                     const date = new Date(prev.spmk);
-                                    date.setDate(date.getDate() + Math.round(manMonthVal * 30));
+                                    date.setDate(date.getDate() + Math.round(manMonthVal * 30) - 1);
+                                    if (date.getDay() === 6) date.setDate(date.getDate() - 1);
+                                    else if (date.getDay() === 0) date.setDate(date.getDate() - 2);
                                     const yyyy = date.getFullYear();
                                     const mm = String(date.getMonth() + 1).padStart(2, '0');
                                     const dd = String(date.getDate()).padStart(2, '0');
