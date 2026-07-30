@@ -605,21 +605,7 @@ import * as XLSX from 'xlsx-js-style';
             // Alert Modal States
             const [alertModal, setAlertModal] = useState({ isOpen: false, title: 'Perhatian', message: '' });
             React.useEffect(() => {
-                if (printData) {
-                    const handleAfterPrint = () => {
-                        setPrintData(null);
-                    };
-                    window.addEventListener('afterprint', handleAfterPrint);
-                    
-                    const printTimeout = setTimeout(() => {
-                        window.print();
-                    }, 500);
-
-                    return () => {
-                        clearTimeout(printTimeout);
-                        window.removeEventListener('afterprint', handleAfterPrint);
-                    };
-                }
+                // Print mode is now interactive. User must click "Simpan PDF / Cetak" manually.
             }, [printData]);
 
             // Firebase Configuration
@@ -5960,43 +5946,58 @@ import * as XLSX from 'xlsx-js-style';
                     );
                 };
 
-                return (
-                    <div className="fixed inset-0 -z-50 opacity-0 pointer-events-none print:static print:inset-auto print:z-auto print:opacity-100 print:pointer-events-auto print:overflow-visible text-black bg-white w-full print:min-w-[1024px] h-auto min-h-screen font-sans">
-                        <style type="text/css">
-                            {`
-                            @media print {
-                                @page { margin: 0; }
-                                body { 
-                                    -webkit-print-color-adjust: exact; 
-                                    print-color-adjust: exact; 
-                                    padding: 0; 
-                                    margin: 0; 
+                  return (
+                    <div id="print-wrapper" className="fixed inset-0 z-[9999] bg-slate-200 overflow-y-auto w-full h-screen font-sans pb-20 print:static print:bg-white print:h-auto print:overflow-visible print:pb-0">
+                        {/* Control Bar for Print Preview */}
+                        <div className="sticky top-0 w-full bg-white shadow-md p-4 flex justify-between items-center z-[10000] print:hidden shrink-0 border-b border-slate-200">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600"><Icon name="printer" size={20} /></div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-slate-800 leading-tight">Pratinjau Laporan</h2>
+                                    <p className="text-xs text-slate-500 font-medium">Klik Simpan PDF jika tampilan sudah sesuai.</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => setPrintData(null)} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all shadow-sm text-sm flex items-center gap-2">Tutup Pratinjau</button>
+                                <button onClick={() => window.print()} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center gap-2 text-sm">
+                                    <Icon name="printer" size={16} /> Simpan PDF / Cetak
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Page Wrapper */}
+                        <div className="bg-white shadow-xl mt-8 mx-auto print:mt-0 print:mx-0 print:shadow-none relative h-fit" style={{ width: '100%', maxWidth: '297mm', minHeight: '210mm', backgroundColor: '#fff' }}>
+                            <style type="text/css">
+                                {`
+                                @media print {
+                                    #main-ui-wrapper { display: none !important; }
+                                    #print-wrapper { position: static !important; }
+                                    @page { margin: 0; }
+                                    body { 
+                                        -webkit-print-color-adjust: exact; 
+                                        print-color-adjust: exact; 
+                                        padding: 0; margin: 0; 
+                                        background: white !important;
+                                    }
+                                    .custom-print-footer {
+                                        position: fixed;
+                                        bottom: 8mm;
+                                        left: 10mm;
+                                        right: 10mm;
+                                        display: flex;
+                                        justify-content: space-between;
+                                        font-size: 10px;
+                                        color: #475569;
+                                        font-style: italic;
+                                        font-weight: 600;
+                                        z-index: 1000;
+                                    }
+                                    @page landscapePage { size: landscape; margin: 10mm; }
+                                    .print-landscape { page: landscapePage; page-break-before: always; }
                                 }
-                                .custom-print-footer {
-                                    position: fixed;
-                                    bottom: 8mm;
-                                    left: 10mm;
-                                    right: 10mm;
-                                    display: flex;
-                                    justify-content: space-between;
-                                    font-size: 10px;
-                                    color: #475569;
-                                    font-style: italic;
-                                    font-weight: 600;
-                                    z-index: 1000;
-                                }
-                                @page landscapePage {
-                                    size: landscape;
-                                    margin: 10mm;
-                                }
-                                .print-landscape {
-                                    page: landscapePage;
-                                    page-break-before: always;
-                                }
-                            }
-                            `}
-                        </style>
-                        <div className="custom-print-footer">
+                                `}
+                            </style>
+                            <div className="custom-print-footer hidden print:flex">
                             <span>This Document Created By {printData.type === 'expert_assignment' ? 'Tim Administrasi Teknis' : 'Tim Teknis'} Gaharu Sempana Group</span>
                         </div>
 
@@ -6359,6 +6360,7 @@ import * as XLSX from 'xlsx-js-style';
                                 <tr><td style={{ height: '20mm' }}></td></tr>
                             </tfoot>
                         </table>
+                        </div>
                     </div>
                 );
             };
@@ -7383,7 +7385,7 @@ import * as XLSX from 'xlsx-js-style';
             return (
                 <>
                     {renderPrintExecutiveReport()}
-                    <div className="flex h-screen text-slate-800 dark:text-slate-200 bg-[#f0f4f8] dark:bg-slate-950 transition-colors duration-200 relative overflow-hidden print:hidden">
+                    <div id="main-ui-wrapper" className="flex h-screen text-slate-800 dark:text-slate-200 bg-[#f0f4f8] dark:bg-slate-950 transition-colors duration-200 relative overflow-hidden print:hidden">
                         {/* Glowing Orbs for Glassmorphism */}
                         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
                             <div className="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full bg-indigo-400/40 dark:bg-indigo-900/20 blur-[120px] mix-blend-multiply dark:mix-blend-screen opacity-80 animate-blob"></div>
