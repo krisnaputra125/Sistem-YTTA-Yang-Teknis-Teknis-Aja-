@@ -3263,7 +3263,7 @@ import * as XLSX from 'xlsx-js-style';
                                             <option value="PT. Kencana Adhi Karma">PT. Kencana Adhi Karma</option>
                                             <option value="CV. Cipta Asri Disain">CV. Cipta Asri Disain</option>
                                             <option value="CV. Tataring Bali">CV. Tataring Bali</option>
-                                            <option value="Tidak Tetap">Tidak Tetap</option>
+                                            <option value="Freelance">Freelance</option>
                                         </select>
                                     </div>
                                 </form>
