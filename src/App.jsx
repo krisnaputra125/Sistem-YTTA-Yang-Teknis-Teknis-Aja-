@@ -3688,7 +3688,7 @@ import * as XLSX from 'xlsx-js-style';
                                                 </select>
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">SPMK (Tanggal)</label>
                                                 <div className="relative w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-colors">
@@ -3702,16 +3702,22 @@ import * as XLSX from 'xlsx-js-style';
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Durasi Kontrak Induk (Hari)</label>
+                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Durasi Kontrak (Hari)</label>
                                                 <input type="number" min="1" required value={formData.duration} onChange={e => setFormData({ ...formData, duration: e.target.value })} placeholder="Cth: 90" className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
                                             </div>
-                                        </div>
-                                        {endDate && (
-                                            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-xl flex items-center justify-between">
-                                                <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Estimasi Akhir Kontrak Induk:</span>
-                                                <span className="text-sm font-bold text-indigo-800 dark:text-indigo-200">{formatDateIndo(endDate)}</span>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Akhir Kontrak Induk</label>
+                                                <div className="relative w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-colors">
+                                                    <div className="absolute inset-0 p-2.5 flex items-center justify-between pointer-events-none">
+                                                        <span className={`text-sm ${endDate ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}`}>
+                                                            {endDate ? formatDateIndo(endDate) : "Pilih Tanggal"}
+                                                        </span>
+                                                        <Icon name="calendar" size={16} className="text-slate-400" />
+                                                    </div>
+                                                    <input type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full p-2.5 opacity-0 cursor-pointer outline-none" />
+                                                </div>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
 
                                     {/* SEKSI PLOTTING TENAGA AHLI */}
@@ -5123,9 +5129,9 @@ import * as XLSX from 'xlsx-js-style';
                 }
                 
                 filteredProjects.sort((a, b) => {
-                    const dateA = a.deadline ? new Date(a.deadline) : new Date('2100-01-01');
-                    const dateB = b.deadline ? new Date(b.deadline) : new Date('2100-01-01');
-                    return dateA - dateB;
+                    const dateA = a.spmk ? new Date(a.spmk).getTime() : 0;
+                    const dateB = b.spmk ? new Date(b.spmk).getTime() : 0;
+                    return dateB - dateA;
                 });
 
                 const aoa = [];
