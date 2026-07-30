@@ -6317,7 +6317,7 @@ import * as XLSX from 'xlsx-js-style';
                                                                     <tbody>
                                                                         {(asg.experts || []).length === 0 ? (
                                                                             <tr><td colSpan="4" className="border border-black p-1.5 text-center italic">Belum ada tenaga ahli.</td></tr>
-                                                                        ) : (asg.experts || []).map((expPlot, idx) => {
+                                                                        ) : [...(asg.experts || [])].sort((a, b) => getLPSEHierarchyScore(a.role) - getLPSEHierarchyScore(b.role) || (experts.find(e => e.id === a.expertId)?.name || '').localeCompare(experts.find(e => e.id === b.expertId)?.name || '')).map((expPlot, idx) => {
                                                                             const exp = experts.find(e => e.id === expPlot.expertId);
                                                                             const expertName = exp ? exp.name : 'Unknown';
                                                                             const certObj = exp ? (exp.certificates || []).find(c => c.certName === expPlot.certificateName) : null;
