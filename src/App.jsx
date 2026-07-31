@@ -544,6 +544,9 @@ import * as XLSX from 'xlsx-js-style';
             );
         }
 
+        let expertSaveTimeout = null;
+        let assignmentSaveTimeout = null;
+
         function App() {
             const [isDarkMode, setIsDarkMode] = React.useState(() => {
                 if (typeof window !== 'undefined') {
@@ -1399,8 +1402,8 @@ import * as XLSX from 'xlsx-js-style';
             };
 
             // CRUD ACTION EXPERTS
-            const handleExpertAction = async (action, payload) => {
-                setLoading(true);
+            const handleExpertAction = (action, payload) => {
+                // setLoading(true);
                 setErrorMsg("");
                 try {
                     let newData = [...experts];
@@ -1416,19 +1419,21 @@ import * as XLSX from 'xlsx-js-style';
                         newData = newData.filter(item => item.id !== payload.id);
                     }
 
-                    await firebase.database().ref('pmc_experts').set(newData);
+                    if (expertSaveTimeout) clearTimeout(expertSaveTimeout);
+                    expertSaveTimeout = setTimeout(() => {
+                        firebase.database().ref('pmc_experts').set(newData).catch(e => console.error(e));
+                    }, 800);
                     setExperts(newData);
-                    setModalConfig({ isOpen: false, type: null, mode: 'add', data: null });
+                    if (action !== 'delete') setModalConfig({ isOpen: false, type: null, mode: 'add', data: null });
                 } catch (error) {
                     console.error("Firebase Expert Write Error:", error);
                     setErrorMsg("Gagal menyimpan data tenaga ahli.");
                 }
-                setLoading(false);
+                // setLoading(false);
             };
 
             // CRUD ACTION ASSIGNMENTS
-            const handleAssignmentAction = async (action, payload) => {
-                setLoading(true);
+            const handleAssignmentAction = (action, payload) => {
                 setErrorMsg("");
                 try {
                     let newData = [...assignments];
@@ -1442,15 +1447,18 @@ import * as XLSX from 'xlsx-js-style';
                         newData = newData.filter(item => item.id !== payload.id);
                     }
 
-                    await firebase.database().ref('pmc_assignments').set(newData);
+                    if (assignmentSaveTimeout) clearTimeout(assignmentSaveTimeout);
+                    assignmentSaveTimeout = setTimeout(() => {
+                        firebase.database().ref('pmc_assignments').set(newData).catch(error => {
+                            console.error("Firebase Assignment Write Error:", error);
+                        });
+                    }, 800);
+
                     setAssignments(newData);
-                    setModalConfig({ isOpen: false, type: null, mode: 'add', data: null });
+                    if (action !== 'delete') setModalConfig({ isOpen: false, type: null, mode: 'add', data: null });
                 } catch (error) {
-                    console.error("Firebase Assignment Write Error:", error);
-                    alert("Gagal menyimpan data ke Firebase: " + error.message);
-                    setErrorMsg("Gagal menyimpan data penugasan: " + error.message);
+                    console.error("Local Assignment Update Error:", error);
                 }
-                setLoading(false);
             };
 
             // CRUD ACTION FIREBASE REALTIME
@@ -7558,9 +7566,14 @@ import * as XLSX from 'xlsx-js-style';
 
                                 <div className="flex-1 overflow-auto p-3 sm:p-5 lg:p-8 pb-24 lg:pb-8 relative">
                                     {loading && (
-                                        <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm z-40 flex flex-col items-center justify-center rounded-xl">
-                                            <div className="animate-spin text-blue-600 dark:text-blue-500 mb-4"><Icon name="refresh-ccw" size={32} /></div>
-                                            <p className="font-semibold text-slate-700 dark:text-slate-300">Sinkronisasi Database...</p>
+                                        <div className="fixed bottom-6 right-6 bg-white dark:bg-slate-800 shadow-xl shadow-blue-900/10 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 z-50 flex items-center gap-4 fade-in">
+                                            <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
+                                                <Icon name="refresh-ccw" size={20} className="animate-spin text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-sm text-slate-800 dark:text-slate-200">Sinkronisasi Database</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Menyimpan perubahan...</p>
+                                            </div>
                                         </div>
                                     )}
 
