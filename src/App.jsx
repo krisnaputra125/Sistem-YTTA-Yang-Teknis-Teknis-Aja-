@@ -567,6 +567,7 @@ import * as XLSX from 'xlsx-js-style';
             }, [isDarkMode]);
 
             const [sidebarOpen, setSidebarOpen] = useState(false);
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
             const [activeTab, setActiveTab] = useState('dashboard');
             const [activeScheduleProject, setActiveScheduleProject] = useState(null);
             const [scheduleZoom, setScheduleZoom] = useState('month');
@@ -7506,16 +7507,25 @@ import * as XLSX from 'xlsx-js-style';
                                     </div>
                                     <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold whitespace-nowrap">Sistem Database & Monitoring</p>
                                 </div>
-                                <nav className="flex-1 px-4 space-y-2 mt-4">
+                                <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto pb-4">
+                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-2 first:mt-0 px-2">Overview</div>
                                     <SidebarItem icon={<Icon name="layout-dashboard" size={20} />} label="Dashboard" isActive={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
+                                    
+                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Project Management & Control</div>
                                     <SidebarItem icon={<Icon name="briefcase" size={20} />} label="List Proyek" isActive={activeTab === 'proyek'} onClick={() => handleTabChange('proyek')} />
                                     <SidebarItem icon={<Icon name="calendar" size={20} />} label="Master Schedule" isActive={activeTab === 'master-schedule'} onClick={() => handleTabChange('master-schedule')} />
                                     <SidebarItem icon={<Icon name="users" size={20} />} label="Alokasi Tim" isActive={activeTab === 'tim'} onClick={() => handleTabChange('tim')} />
-                                    <SidebarItem icon={<Icon name="calendar-days" size={20} />} label="Ploting Jadwal" isActive={activeTab === 'gantt'} onClick={() => handleTabChange('gantt')} />
+                                    <SidebarItem icon={<Icon name="calendar-days" size={20} />} label="Plotting Jadwal" isActive={activeTab === 'gantt'} onClick={() => handleTabChange('gantt')} />
+                                    
+                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Database & Assignment Experts</div>
                                     <SidebarItem icon={<Icon name="award" size={20} />} label="Tenaga Ahli" isActive={activeTab === 'ahli'} onClick={() => handleTabChange('ahli')} />
                                     <SidebarItem icon={<Icon name="briefcase" size={20} />} label="Penugasan Tenaga Ahli" isActive={activeTab === 'penugasan'} onClick={() => handleTabChange('penugasan')} />
+                                    
+                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Assets</div>
                                     <SidebarItem icon={<Icon name="box" size={20} />} label="Logistik & Inventaris" isActive={activeTab === 'inventaris'} onClick={() => handleTabChange('inventaris')} />
-                                    <SidebarItem icon={<Icon name="bar-chart" size={20} />} label="Evaluasi & KPI (BETA)" isActive={activeTab === 'kpi'} onClick={() => handleTabChange('kpi')} />
+                                    
+                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Performance</div>
+                                    <SidebarItem icon={<Icon name="bar-chart" size={20} />} label="KPI & Evaluasi" isActive={activeTab === 'kpi'} onClick={() => handleTabChange('kpi')} />
                                 </nav>
                             </aside>
 
@@ -7808,19 +7818,53 @@ import * as XLSX from 'xlsx-js-style';
                                 </div>
                             )}
 
-                            <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-[68px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl border-t border-white/60 dark:border-slate-800 z-50 flex justify-around items-center px-1 pb-safe shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] transition-colors duration-200">
-                                <BottomNavItem icon={<Icon name="layout-dashboard" size={22} />} label="Beranda" isActive={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
-                                <BottomNavItem icon={<Icon name="briefcase" size={22} />} label="Proyek" isActive={activeTab === 'proyek'} onClick={() => handleTabChange('proyek')} />
-                                <BottomNavItem icon={<Icon name="users" size={22} />} label="Tim" isActive={activeTab === 'tim'} onClick={() => handleTabChange('tim')} />
-                                <BottomNavItem icon={<Icon name="award" size={22} />} label="Ahli" isActive={activeTab === 'ahli'} onClick={() => handleTabChange('ahli')} />
-                                <BottomNavItem icon={<Icon name="briefcase" size={22} />} label="Tugas" isActive={activeTab === 'penugasan'} onClick={() => handleTabChange('penugasan')} />
-                                <BottomNavItem icon={<Icon name="calendar" size={22} />} label="Ploting" isActive={activeTab === 'gantt'} onClick={() => handleTabChange('gantt')} />
-                                <BottomNavItem icon={<Icon name="box" size={22} />} label="Inventaris" isActive={activeTab === 'inventaris'} onClick={() => handleTabChange('inventaris')} />
-                                <BottomNavItem icon={<Icon name="bar-chart" size={22} />} label="KPI" isActive={activeTab === 'kpi'} onClick={() => handleTabChange('kpi')} />
+                            {/* Mobile Menu Overlay */}
+                            {mobileMenuOpen && (
+                                <div className="lg:hidden fixed inset-0 z-[100] flex flex-col justify-end">
+                                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setMobileMenuOpen(false)}></div>
+                                    <div className="relative bg-white dark:bg-slate-900 rounded-t-[32px] p-6 pb-10 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.2)] animate-in slide-in-from-bottom-full duration-300 border-t border-slate-200/50 dark:border-slate-700/50">
+                                        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                                        <div className="flex justify-between items-center mb-6 mt-2">
+                                            <div>
+                                                <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Menu Lainnya</h3>
+                                                <p className="text-xs font-semibold text-slate-500 mt-0.5">Akses cepat ke fitur tambahan</p>
+                                            </div>
+                                            <button onClick={() => setMobileMenuOpen(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors">
+                                                <Icon name="x" size={20} />
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                                            <MobileMenuItem icon={<Icon name="calendar" size={24} />} label="Master Schedule" isActive={activeTab === 'master-schedule'} onClick={() => { handleTabChange('master-schedule'); setMobileMenuOpen(false); }} />
+                                            <MobileMenuItem icon={<Icon name="award" size={24} />} label="Tenaga Ahli" isActive={activeTab === 'ahli'} onClick={() => { handleTabChange('ahli'); setMobileMenuOpen(false); }} />
+                                            <MobileMenuItem icon={<Icon name="briefcase" size={24} />} label="Tugas Ahli" isActive={activeTab === 'penugasan'} onClick={() => { handleTabChange('penugasan'); setMobileMenuOpen(false); }} />
+                                            <MobileMenuItem icon={<Icon name="calendar-days" size={24} />} label="Ploting" isActive={activeTab === 'gantt'} onClick={() => { handleTabChange('gantt'); setMobileMenuOpen(false); }} />
+                                            <MobileMenuItem icon={<Icon name="box" size={24} />} label="Inventaris" isActive={activeTab === 'inventaris'} onClick={() => { handleTabChange('inventaris'); setMobileMenuOpen(false); }} />
+                                            <MobileMenuItem icon={<Icon name="bar-chart" size={24} />} label="KPI" isActive={activeTab === 'kpi'} onClick={() => { handleTabChange('kpi'); setMobileMenuOpen(false); }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <nav className="lg:hidden fixed bottom-4 left-4 right-4 h-[72px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 rounded-3xl z-50 flex justify-around items-center px-2 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)] dark:shadow-slate-900/50 transition-all duration-300">
+                                <BottomNavItem icon={<Icon name="layout-dashboard" size={22} />} label="Beranda" isActive={activeTab === 'dashboard'} onClick={() => { handleTabChange('dashboard'); setMobileMenuOpen(false); }} />
+                                <BottomNavItem icon={<Icon name="briefcase" size={22} />} label="Proyek" isActive={activeTab === 'proyek'} onClick={() => { handleTabChange('proyek'); setMobileMenuOpen(false); }} />
+                                <BottomNavItem icon={<Icon name="users" size={22} />} label="Tim" isActive={activeTab === 'tim'} onClick={() => { handleTabChange('tim'); setMobileMenuOpen(false); }} />
+                                <BottomNavItem icon={<Icon name="menu" size={22} />} label="Lainnya" isActive={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
                             </nav>
                         </div>
                     </div>
                 </>
+            );
+        }
+
+        function MobileMenuItem({ icon, label, isActive, onClick }) {
+            return (
+                <button onClick={onClick} className={`flex flex-col items-center justify-center w-full p-3 gap-2 transition-all rounded-2xl border ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 shadow-sm text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700/50 hover:border-indigo-100 dark:hover:border-indigo-800/50 hover:shadow-md text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]'}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 ${isActive ? 'bg-indigo-600 text-white scale-110 shadow-md shadow-indigo-600/20' : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400'}`}>
+                        {icon}
+                    </div>
+                    <span className="text-[11px] font-bold text-center leading-tight">{label}</span>
+                </button>
             );
         }
 
@@ -7834,9 +7878,10 @@ import * as XLSX from 'xlsx-js-style';
 
         function BottomNavItem({ icon, label, isActive, onClick }) {
             return (
-                <button onClick={onClick} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-500 dark:hover:text-slate-300'}`}>
-                    <div className={`transition-transform duration-200 ${isActive ? 'scale-110' : 'scale-100'}`}>{icon}</div>
-                    <span className="text-[10px] font-bold">{label}</span>
+                <button onClick={onClick} className="relative flex flex-col items-center justify-center w-full h-full gap-1 transition-all group pt-1 pb-1">
+                    <div className={`absolute top-0 w-8 h-1 rounded-b-full transition-all duration-300 ${isActive ? 'bg-indigo-600 dark:bg-indigo-400 opacity-100' : 'bg-transparent opacity-0'}`}></div>
+                    <div className={`transition-all duration-300 p-1.5 rounded-xl ${isActive ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 scale-110' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 scale-100'}`}>{icon}</div>
+                    <span className={`text-[10px] font-bold transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>{label}</span>
                 </button>
             );
         }
