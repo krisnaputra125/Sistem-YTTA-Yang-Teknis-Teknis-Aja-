@@ -13,6 +13,6 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
   },
-  base: './', // For Electron to work with local file:// protocol
+  base: '/Team-Management-System/', // For GitHub Pages deployment
   assetsInclude: ['**/*.PNG'],
 });
