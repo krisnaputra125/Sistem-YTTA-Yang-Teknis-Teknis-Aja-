@@ -5,8 +5,6 @@ import 'firebase/compat/database';
 import * as XLSX from 'xlsx-js-style';
 
 
-        
-
         // --- SISTEM ICON INTERNAL ---
         const Icon = ({ name, size = 20, className = "" }) => {
             const paths = {
@@ -35,9 +33,6 @@ import * as XLSX from 'xlsx-js-style';
                 "clock": '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
                 "folder-open": '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
                 "plus": '<path d="M5 12h14"/><path d="M12 5v14"/>',
-                "edit": '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
-                "trash": '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
-                "x": '<path d="M18 6 6 18"/><path d="M6 6l12 12"/>',
                 "save": '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
                 "check": '<polyline points="20 6 9 17 4 12"/>',
                 "target": '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
@@ -55,6 +50,7 @@ import * as XLSX from 'xlsx-js-style';
                 "printer": '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>',
                 "shopping-cart": '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
                 "play": '<polygon points="5 3 19 12 5 21 5 3"/>',
+                "pie-chart": '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
                 "pause": '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
                 "settings": '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
             };
@@ -1892,27 +1888,38 @@ import * as XLSX from 'xlsx-js-style';
 
             // --- KOMPONEN TAB: DASHBOARD ---
             const renderDashboard = () => {
-                // Menambahkan logika pengurutan (sorting) yang sama persis seperti pada tab Proyek
-                const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done": 4 };
+const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done": 4 };
                 const sortedProjectsForDashboard = [...computedProjects].sort((a, b) =>
                     statusPriority[a.computedStatus] - statusPriority[b.computedStatus]
                 );
-
-                // Menghitung Distribusi KPI
-                const kpiDistribution = { sangatBaik: 0, baik: 0, cukup: 0, kurang: 0 };
+                // Menghitung Distribusi Sub-Tim
+                const subTeamCounts = {};
                 resources.forEach(r => {
-                    let kpi;
-                    if (r.level === 'Team Leader' || r.level?.startsWith('Kordinator Divisi')) {
-                        kpi = calculateLeaderKPI(r, computedProjects);
-                    } else {
-                        kpi = calculateEmployeeKPI(r, computedProjects);
-                    }
-                    if (kpi.score >= 90) kpiDistribution.sangatBaik++;
-                    else if (kpi.score >= 75) kpiDistribution.baik++;
-else if (kpi.score >= 60) kpiDistribution.cukup++;
-                    else kpiDistribution.kurang++;
+                    const cat = getCategoryFromRole(r.role);
+                    subTeamCounts[cat] = (subTeamCounts[cat] || 0) + 1;
                 });
-                const totalEvaluated = resources.length || 1; // avoid division by zero
+                
+                // Urutkan dan ambil top 4, sisanya masuk 'Lainnya'
+                const sortedSubTeams = Object.entries(subTeamCounts).sort((a, b) => b[1] - a[1]);
+                const topSubTeams = sortedSubTeams.slice(0, 4);
+                const otherSubTeamsCount = sortedSubTeams.slice(4).reduce((sum, [_, count]) => sum + count, 0);
+                
+                if (otherSubTeamsCount > 0) {
+                    topSubTeams.push(['Lainnya', otherSubTeamsCount]);
+                }
+
+                const totalSubTeamMembers = resources.length || 1;
+                const badgeColors = ['bg-indigo-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-slate-400'];
+                const hexColors = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#94a3b8'];
+                
+                let currentAngle = 0;
+                const conicStops = topSubTeams.map(([_name, count], i) => {
+                    const angle = (count / totalSubTeamMembers) * 100;
+                    const start = currentAngle;
+                    const end = currentAngle + angle;
+                    currentAngle = end;
+                    return `${hexColors[i]} ${start}% ${end}%`;
+                }).join(', ');
 
                 return (
                     <div className="space-y-8 fade-in">
@@ -1938,7 +1945,7 @@ else if (kpi.score >= 60) kpiDistribution.cukup++;
                             </div>
 
                             {/* BENTO CELL 2: Proyek Aktif & Selesai */}
-                            <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 p-5 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 flex gap-4 divide-x divide-slate-100 dark:divide-slate-700 transition-colors">
+                            <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] flex gap-4 divide-x divide-slate-100 dark:divide-slate-700 transition-colors">
                                 <div className="flex-1 flex flex-col justify-center">
                                     <div className="flex items-center gap-2 mb-3">
                                         <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
@@ -1960,52 +1967,46 @@ else if (kpi.score >= 60) kpiDistribution.cukup++;
                                     <p className="text-xs text-slate-500 mt-1">Status Done</p>
                                 </div>
                             </div>
-
-                            {/* BENTO CELL 3: KPI Chart */}
+                            {/* BENTO CELL 3: Distribusi Sub-Tim Pie Chart */}
                             <div 
-                                onClick={() => setActiveTab('kpi')}
-                                className="col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-2 bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 p-6 flex flex-col justify-between cursor-pointer hover:scale-[1.02] transition-transform duration-300"
+                                onClick={() => setActiveTab('tim')}
+                                className="col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] p-6 flex flex-col justify-between cursor-pointer hover:scale-[1.02] transition-transform duration-300 relative overflow-hidden"
                             >
-                                <div className="flex justify-between items-center mb-6">
+                                <div className="flex justify-between items-center mb-4 relative z-10">
                                     <div>
-                                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Evaluasi KPI</h3>
-                                        <p className="text-xs text-slate-500 mt-1">{resources.length} Personil Dinilai</p>
+                                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Distribusi Sub-Tim</h3>
+                                        <p className="text-xs text-slate-500 mt-1">{resources.length} Personil Aktif</p>
                                     </div>
-                                    <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400"><Icon name="bar-chart" size={20} /></div>
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400"><Icon name="pie-chart" size={20} /></div>
                                 </div>
-                                <div className="space-y-4 flex-1 flex flex-col justify-center">
-                                    <div className="flex items-center gap-3 group">
-                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-12">S.Baik</span>
-                                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                                            <div className="h-full bg-emerald-500 rounded-full group-hover:bg-emerald-400 transition-colors" style={{width: `${(kpiDistribution.sangatBaik / totalEvaluated) * 100}%`}}></div>
+                                <div className="flex flex-col items-center flex-1 justify-center relative z-10 gap-4 mt-2">
+                                    {resources.length > 0 ? (
+                                        <div className="flex items-center gap-6 w-full justify-center">
+                                            <div 
+                                                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full shrink-0 shadow-inner relative flex items-center justify-center"
+                                                style={{ background: `conic-gradient(${conicStops})` }}
+                                            >
+                                                {/* Hole for donut chart effect */}
+                                                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white dark:bg-slate-800 rounded-full flex flex-col items-center justify-center shadow-sm">
+                                                    <span className="text-[10px] font-bold text-slate-400">Total</span>
+                                                    <span className="text-sm font-black text-slate-700 dark:text-slate-200">{resources.length}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-2 max-w-[120px]">
+                                                {topSubTeams.map(([name, count], i) => (
+                                                    <div key={name} className="flex items-center gap-2">
+                                                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${badgeColors[i]}`}></div>
+                                                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate" title={name}>{name}</span>
+                                                        <span className="text-[10px] text-slate-500 ml-auto">{count}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 w-6 text-right">{kpiDistribution.sangatBaik}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 group">
-                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-12">Baik</span>
-                                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                                            <div className="h-full bg-blue-500 rounded-full group-hover:bg-blue-400 transition-colors" style={{width: `${(kpiDistribution.baik / totalEvaluated) * 100}%`}}></div>
-                                        </div>
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 w-6 text-right">{kpiDistribution.baik}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 group">
-                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-12">Cukup</span>
-                                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                                            <div className="h-full bg-amber-500 rounded-full group-hover:bg-amber-400 transition-colors" style={{width: `${(kpiDistribution.cukup / totalEvaluated) * 100}%`}}></div>
-                                        </div>
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 w-6 text-right">{kpiDistribution.cukup}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 group">
-                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-12">Kurang</span>
-                                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                                            <div className="h-full bg-red-500 rounded-full group-hover:bg-red-400 transition-colors" style={{width: `${(kpiDistribution.kurang / totalEvaluated) * 100}%`}}></div>
-                                        </div>
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 w-6 text-right">{kpiDistribution.kurang}</span>
-                                    </div>
+                                    ) : (
+                                        <p className="text-xs text-slate-400 italic">Belum ada personil</p>
+                                    )}
                                 </div>
                             </div>
-
-                            {/* BENTO CELL 4: Risiko/Terlambat */}
                             <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-amber-50 dark:bg-amber-900/20 rounded-3xl border border-amber-100 dark:border-amber-800/50 p-5 shadow-sm flex items-center justify-between">
                                 <div>
                                     <p className="text-amber-800 dark:text-amber-400 font-semibold mb-1 text-sm">Perlu Pantauan</p>
