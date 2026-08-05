@@ -105,12 +105,18 @@
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #f0f4f8;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
             overscroll-behavior-y: none;
+        }
+
+        .dark body {
+            background-color: #0f172a;
+            color: #cbd5e1;
         }
 
         input,
@@ -118,11 +124,12 @@
         select {
             user-select: auto;
             -webkit-user-select: auto;
+            font-family: inherit;
         }
 
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 4px;
+            height: 4px;
         }
 
         ::-webkit-scrollbar-track {
@@ -134,12 +141,20 @@
             border-radius: 4px;
         }
 
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
 
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
         .fade-in {
-            animation: fadeIn 0.2s ease-out;
+            animation: fadeIn 0.2s ease-out forwards;
         }
 
         @keyframes fadeIn {
@@ -147,7 +162,6 @@
                 opacity: 0;
                 transform: scale(0.95);
             }
-
             to {
                 opacity: 1;
                 transform: scale(1);

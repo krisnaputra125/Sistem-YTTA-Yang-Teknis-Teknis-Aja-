@@ -1831,7 +1831,7 @@ import * as XLSX from 'xlsx-js-style';
                                             <th className="p-4 font-semibold whitespace-nowrap">Rincian Masalah</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm [&>tr]:transition-colors [&>tr:hover]:bg-slate-50/50 dark:[&>tr:hover]:bg-slate-800/30">
                                         {renderTableRows(kpiDataLeaders, true)}
                                     </tbody>
                                 </table>
@@ -1855,7 +1855,7 @@ import * as XLSX from 'xlsx-js-style';
                                             <th className="p-4 font-semibold whitespace-nowrap">Rincian Masalah</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm [&>tr]:transition-colors [&>tr:hover]:bg-slate-50/50 dark:[&>tr:hover]:bg-slate-800/30">
                                         {renderTableRows(kpiDataKordinators, true)}
                                     </tbody>
                                 </table>
@@ -1879,7 +1879,7 @@ import * as XLSX from 'xlsx-js-style';
                                             <th className="p-4 font-semibold whitespace-nowrap">Rincian Masalah</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm [&>tr]:transition-colors [&>tr:hover]:bg-slate-50/50 dark:[&>tr:hover]:bg-slate-800/30">
                                         {renderTableRows(kpiDataStaffs, false)}
                                     </tbody>
                                 </table>
@@ -1898,15 +1898,151 @@ import * as XLSX from 'xlsx-js-style';
                     statusPriority[a.computedStatus] - statusPriority[b.computedStatus]
                 );
 
+                // Menghitung Distribusi KPI
+                const kpiDistribution = { sangatBaik: 0, baik: 0, cukup: 0, kurang: 0 };
+                resources.forEach(r => {
+                    let kpi;
+                    if (r.level === 'Team Leader' || r.level?.startsWith('Kordinator Divisi')) {
+                        kpi = calculateLeaderKPI(r, computedProjects);
+                    } else {
+                        kpi = calculateEmployeeKPI(r, computedProjects);
+                    }
+                    if (kpi.score >= 90) kpiDistribution.sangatBaik++;
+                    else if (kpi.score >= 75) kpiDistribution.baik++;
+else if (kpi.score >= 60) kpiDistribution.cukup++;
+                    else kpiDistribution.kurang++;
+                });
+                const totalEvaluated = resources.length || 1; // avoid division by zero
+
                 return (
                     <div className="space-y-8 fade-in">
                         <ErrorBanner />
-                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
-                            <MetricCard title="Total Proyek" value={computedProjects.length} trend="Keseluruhan" trendUp={true} icon={<div className="text-blue-600"><Icon name="briefcase" size={24} /></div>} color="bg-blue-50" onClick={() => setShowProjectTypeModal(true)} />
-                            <MetricCard title="Proyek Aktif" value={computedProjects.length - completedProjectsCount} trend="Sedang berjalan" trendUp={true} icon={<div className="text-indigo-600"><Icon name="target" size={24} /></div>} color="bg-indigo-50" />
-                            <MetricCard title="Risiko/Terlambat" value={problematicProjectsCount} trend="Perlu pantauan" trendUp={false} icon={<div className="text-amber-600"><Icon name="alert-triangle" size={24} /></div>} color="bg-amber-50" />
-                            <MetricCard title="Proyek Selesai" value={completedProjectsCount} trend="Status: Done" trendUp={true} icon={<div className="text-emerald-600"><Icon name="check-circle-2" size={24} /></div>} color="bg-emerald-50" />
-                            <MetricCard title="Total Personil" value={resources.length} trend="Tersedia" trendUp={true} icon={<div className="text-teal-600"><Icon name="users" size={24} /></div>} color="bg-teal-50" />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 lg:gap-6">
+                            {/* BENTO CELL 1: Total Proyek (Hero) */}
+                            <div 
+                                onClick={() => setShowProjectTypeModal(true)}
+                                className="col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-2 bg-gradient-to-br from-indigo-600 to-blue-700 dark:from-indigo-900 dark:to-blue-900 rounded-3xl p-6 lg:p-8 shadow-xl shadow-indigo-200/50 dark:shadow-none text-white relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300 flex flex-col justify-between group"
+                            >
+                                <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:scale-110 transition-transform duration-500">
+                                    <Icon name="briefcase" size={120} />
+                                </div>
+                                <div className="relative z-10">
+                                    <p className="text-indigo-100 font-medium mb-1 lg:mb-2 text-sm lg:text-base">Total Keseluruhan</p>
+                                    <h3 className="text-5xl lg:text-7xl font-black">{computedProjects.length}</h3>
+                                    <p className="text-lg lg:text-2xl font-bold mt-2">Proyek Terdaftar</p>
+                                </div>
+                                <div className="relative z-10 mt-8 inline-flex items-center gap-2 text-sm font-medium bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 rounded-full backdrop-blur-md w-max">
+                                    <Icon name="folder-open" size={16} /> Lihat Detail Tipe
+                                </div>
+                            </div>
+
+                            {/* BENTO CELL 2: Proyek Aktif & Selesai */}
+                            <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 p-5 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 flex gap-4 divide-x divide-slate-100 dark:divide-slate-700 transition-colors">
+                                <div className="flex-1 flex flex-col justify-center">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                            <Icon name="target" size={16} />
+                                        </div>
+                                        <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Aktif</span>
+                                    </div>
+                                    <p className="text-3xl font-bold text-slate-800 dark:text-slate-100">{computedProjects.length - completedProjectsCount}</p>
+                                    <p className="text-xs text-slate-500 mt-1">Sedang berjalan</p>
+                                </div>
+                                <div className="flex-1 flex flex-col justify-center pl-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                                            <Icon name="check-circle-2" size={16} />
+                                        </div>
+                                        <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Selesai</span>
+                                    </div>
+                                    <p className="text-3xl font-bold text-slate-800 dark:text-slate-100">{completedProjectsCount}</p>
+                                    <p className="text-xs text-slate-500 mt-1">Status Done</p>
+                                </div>
+                            </div>
+
+                            {/* BENTO CELL 3: KPI Chart */}
+                            <div 
+                                onClick={() => setActiveTab('kpi')}
+                                className="col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-2 bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 p-6 flex flex-col justify-between cursor-pointer hover:scale-[1.02] transition-transform duration-300"
+                            >
+                                <div className="flex justify-between items-center mb-6">
+                                    <div>
+                                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Evaluasi KPI</h3>
+                                        <p className="text-xs text-slate-500 mt-1">{resources.length} Personil Dinilai</p>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400"><Icon name="bar-chart" size={20} /></div>
+                                </div>
+                                <div className="space-y-4 flex-1 flex flex-col justify-center">
+                                    <div className="flex items-center gap-3 group">
+                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-12">S.Baik</span>
+                                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                                            <div className="h-full bg-emerald-500 rounded-full group-hover:bg-emerald-400 transition-colors" style={{width: `${(kpiDistribution.sangatBaik / totalEvaluated) * 100}%`}}></div>
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 w-6 text-right">{kpiDistribution.sangatBaik}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 group">
+                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-12">Baik</span>
+                                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                                            <div className="h-full bg-blue-500 rounded-full group-hover:bg-blue-400 transition-colors" style={{width: `${(kpiDistribution.baik / totalEvaluated) * 100}%`}}></div>
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 w-6 text-right">{kpiDistribution.baik}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 group">
+                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-12">Cukup</span>
+                                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                                            <div className="h-full bg-amber-500 rounded-full group-hover:bg-amber-400 transition-colors" style={{width: `${(kpiDistribution.cukup / totalEvaluated) * 100}%`}}></div>
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 w-6 text-right">{kpiDistribution.cukup}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 group">
+                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-12">Kurang</span>
+                                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                                            <div className="h-full bg-red-500 rounded-full group-hover:bg-red-400 transition-colors" style={{width: `${(kpiDistribution.kurang / totalEvaluated) * 100}%`}}></div>
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 w-6 text-right">{kpiDistribution.kurang}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* BENTO CELL 4: Risiko/Terlambat */}
+                            <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-amber-50 dark:bg-amber-900/20 rounded-3xl border border-amber-100 dark:border-amber-800/50 p-5 shadow-sm flex items-center justify-between">
+                                <div>
+                                    <p className="text-amber-800 dark:text-amber-400 font-semibold mb-1 text-sm">Perlu Pantauan</p>
+                                    <h3 className="text-amber-900 dark:text-amber-100 text-3xl font-bold">{problematicProjectsCount} <span className="text-lg font-medium">Beresiko</span></h3>
+                                </div>
+                                <div className="w-14 h-14 rounded-2xl bg-amber-200/50 dark:bg-amber-800/50 flex items-center justify-center text-amber-700 dark:text-amber-300">
+                                    <Icon name="alert-triangle" size={28} />
+                                </div>
+                            </div>
+
+                            {/* BENTO CELL 5: Tenaga Ahli & Penugasan */}
+                            <div className="col-span-1 md:col-span-2 lg:col-span-2 flex gap-4">
+                                <div onClick={() => setActiveTab('ahli')} className="flex-1 bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 p-4 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 cursor-pointer hover:scale-[1.02] transition-transform flex flex-col justify-center items-center text-center">
+                                    <div className="text-blue-600 dark:text-blue-400 mb-2"><Icon name="award" size={28} /></div>
+                                    <h4 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{experts.length}</h4>
+                                    <p className="text-xs font-medium text-slate-500 mt-1">Tenaga Ahli</p>
+                                </div>
+                                <div onClick={() => setActiveTab('penugasan')} className="flex-1 bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 p-4 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 cursor-pointer hover:scale-[1.02] transition-transform flex flex-col justify-center items-center text-center">
+                                    <div className="text-indigo-600 dark:text-indigo-400 mb-2"><Icon name="file-text" size={28} /></div>
+                                    <h4 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{assignments.length}</h4>
+                                    <p className="text-xs font-medium text-slate-500 mt-1">Penugasan</p>
+                                </div>
+                            </div>
+
+                            {/* BENTO CELL 6: Logistik & Inventaris */}
+                            <div onClick={() => setActiveTab('inventaris')} className="col-span-1 md:col-span-2 lg:col-span-2 bg-slate-800 dark:bg-slate-950 rounded-3xl p-6 shadow-xl shadow-slate-300/50 dark:shadow-none text-white cursor-pointer hover:scale-[1.02] transition-transform flex items-center justify-between overflow-hidden relative group">
+                                <div className="absolute right-0 bottom-0 opacity-10 translate-x-2 translate-y-2 group-hover:rotate-12 transition-transform duration-500">
+                                    <Icon name="box" size={100} />
+                                </div>
+                                <div className="relative z-10">
+                                    <h4 className="text-4xl font-bold mb-1">{inventory.length}</h4>
+                                    <p className="text-sm font-medium text-slate-300">Item Logistik</p>
+                                </div>
+                                <div className="w-10 h-10 rounded-full border border-slate-600 flex items-center justify-center relative z-10 group-hover:bg-slate-700 transition-colors">
+                                    <Icon name="chevron-right" size={18} />
+                                </div>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
@@ -1930,7 +2066,7 @@ import * as XLSX from 'xlsx-js-style';
                                                     <th className="p-4 font-semibold">Status Makro</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm [&>tr]:transition-colors [&>tr:hover]:bg-slate-50/50 dark:[&>tr:hover]:bg-slate-800/30">
                                                 {/* Menggunakan sortedProjectsForDashboard untuk di-*slice* dan dirender */}
                                                 {sortedProjectsForDashboard.slice(0, 5).map((project) => (
                                                     <tr key={project.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
@@ -2068,7 +2204,7 @@ import * as XLSX from 'xlsx-js-style';
                 return (
                     <div className="space-y-6 fade-in">
                         <ErrorBanner />
-                        <div className="bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 overflow-hidden flex flex-col">
+                        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
                             <div className="p-6 border-b border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Daftar List Proyek</h3>
@@ -2123,7 +2259,7 @@ import * as XLSX from 'xlsx-js-style';
                                             <th className="p-4 font-semibold text-right">Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm [&>tr]:transition-colors [&>tr:hover]:bg-slate-50/50 dark:[&>tr:hover]:bg-slate-800/30">
                                         {filteredAndSortedProjects.length === 0 ? (
                                             <tr>
                                                 <td colSpan="4" className="p-8 text-center text-slate-400">
@@ -2495,7 +2631,7 @@ import * as XLSX from 'xlsx-js-style';
                             </button>
                         </div>
 
-                        <div className="bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 overflow-hidden flex flex-col">
+                        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
                             {viewingEmployee.level === 'Team Leader' && (
                                 <div className="mb-6 border-b border-slate-200 dark:border-slate-700/50">
                                     <div className="p-6 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/50 flex items-center gap-2">
@@ -2568,7 +2704,7 @@ import * as XLSX from 'xlsx-js-style';
                                             <th className="p-4 font-semibold text-center">Status Individu</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm [&>tr]:transition-colors [&>tr:hover]:bg-slate-50/50 dark:[&>tr:hover]:bg-slate-800/30">
                                         {activeAssignedProjects.length === 0 ? (
                                             <tr>
                                                 <td colSpan="5" className="p-8 text-center text-slate-400">
@@ -2960,7 +3096,7 @@ import * as XLSX from 'xlsx-js-style';
                 return (
                     <div className="space-y-6 fade-in">
                         <ErrorBanner />
-                        <div className="bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 overflow-hidden flex flex-col">
+                        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
                             <div className="p-6 border-b border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 dark:bg-slate-800/40">
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Alokasi & Beban Kerja Tim</h3>
@@ -2994,7 +3130,7 @@ import * as XLSX from 'xlsx-js-style';
                                             <th className="p-4 font-semibold whitespace-nowrap text-right">Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm [&>tr]:transition-colors [&>tr:hover]:bg-slate-50/50 dark:[&>tr:hover]:bg-slate-800/30">
                                         {filteredResourcesTab.length === 0 ? (
                                             <tr>
                                                 <td colSpan="4" className="p-8 text-center text-slate-400">
@@ -6529,9 +6665,9 @@ import * as XLSX from 'xlsx-js-style';
                 // Warna ditentukan secara dinamis berdasarkan status fase (Selesai, Beresiko, Terlambat, On Progress)
 
                 return (
-                    <div className="flex flex-col h-full fade-in bg-white dark:bg-slate-950 absolute inset-0 z-20 overflow-hidden">
+                    <div className="flex flex-col h-[calc(100vh-12rem)] min-h-[500px] fade-in bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden">
                         {/* Header Area */}
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shrink-0">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-white/40 dark:bg-slate-800/40 shrink-0">
                             <div className="flex items-center gap-3">
                                 <button onClick={() => { setActiveTab('proyek'); setActiveScheduleProject(null); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500">
                                     <Icon name="arrow-left" size={20} />
@@ -6581,7 +6717,7 @@ import * as XLSX from 'xlsx-js-style';
                         </div>
 
                         {/* Gantt Area */}
-                        <div className="flex-1 overflow-auto flex bg-white dark:bg-slate-950">
+                        <div className="flex-1 overflow-auto flex bg-white/40 dark:bg-slate-900/40">
 
                             {/* Left Column: Items Table */}
                             <div className="w-72 sm:w-80 border-r border-slate-200 dark:border-slate-800 shrink-0 flex flex-col bg-white dark:bg-slate-950 z-10 sticky left-0 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] dark:shadow-none">
@@ -6783,14 +6919,19 @@ import * as XLSX from 'xlsx-js-style';
             };
 
             const renderMasterSchedule = () => {
-                let displayedProjects = projects.filter(p => p.spmk && p.deadline && p.type?.toLowerCase().includes('perencana') && Number(p.progress || 0) < 100 && p.status !== 'Done');
+                let displayedProjects = projects.filter(p => p.spmk && p.deadline && p.type?.toLowerCase().includes('perencanaan') && Number(p.progress || 0) < 100 && p.status !== 'Done');
 
                 if (displayedProjects.length === 0) {
                     return (
-                        <div className="flex flex-col h-full bg-white dark:bg-slate-950 items-center justify-center p-8 text-center absolute inset-0 z-20">
-                            <Icon name="folder-open" size={64} className="text-slate-200 dark:text-slate-800 mb-4" />
-                            <h3 className="text-xl font-bold text-slate-500 dark:text-slate-400">Master Schedule Kosong</h3>
-                            <p className="text-sm text-slate-400 mt-2">Tidak ada data proyek dengan tanggal SPMK dan Deadline.</p>
+                        <div className="relative flex flex-col h-[calc(100vh-12rem)] min-h-[400px] bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] items-center justify-center p-8 text-center">
+                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-50/50 via-transparent to-transparent"></div>
+                            <div className="relative z-10 flex flex-col items-center">
+                                <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-6">
+                                    <Icon name="folder-open" size={40} className="text-indigo-500" />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Master Schedule Kosong</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">Tidak ada data proyek dengan tanggal SPMK dan Deadline yang aktif saat ini.</p>
+                            </div>
                         </div>
                     );
                 }
@@ -6862,11 +7003,11 @@ import * as XLSX from 'xlsx-js-style';
                 };
 
                 return (
-                    <div className="flex flex-col h-full fade-in bg-white dark:bg-slate-950 absolute inset-0 z-20 overflow-hidden">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shrink-0">
+                    <div className="flex flex-col h-[calc(100vh-12rem)] min-h-[500px] fade-in bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-white/40 dark:bg-slate-800/40 shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2 text-sm">
-                                    <span className="text-slate-800 dark:text-slate-200 font-bold text-lg">Master Schedule (Portofolio Proyek)</span>
+                                    <span className="text-slate-800 dark:text-slate-100 font-bold text-lg">Master Schedule (Portofolio Proyek)</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -7494,8 +7635,8 @@ import * as XLSX from 'xlsx-js-style';
                                     </div>
                                 </div>
                             )}
-                            <aside className="hidden lg:flex lg:relative z-auto w-64 bg-white/40 dark:bg-slate-950/60 backdrop-blur-3xl border-r border-white/60 dark:border-slate-800/50 text-slate-600 dark:text-slate-300 flex-col shrink-0 h-full top-0 left-0 transition-colors duration-200 shadow-[4px_0_24px_-10px_rgba(0,0,0,0.1)] dark:shadow-2xl">
-                                <div className="p-4 lg:p-6 pb-2 lg:pb-4 border-b border-white/20 dark:border-slate-800/30">
+                            <aside className="hidden lg:flex lg:relative z-auto w-[260px] my-4 ml-4 rounded-[2.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/60 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 flex-col shrink-0 transition-colors duration-300 shadow-2xl shadow-slate-200/50 dark:shadow-slate-950/50 overflow-hidden">
+                                <div className="p-6 pb-4 border-b border-white/20 dark:border-slate-700/30">
                                     <div className="flex items-center gap-3 w-full mb-3">
                                         <div className="w-10 h-10 shrink-0 flex items-center justify-center">
                                             <img src={logoImg} alt="Logo SIDAMON" className="w-full h-full object-contain drop-shadow-sm" />
@@ -7530,7 +7671,7 @@ import * as XLSX from 'xlsx-js-style';
                             </aside>
 
                             <main className="flex-1 flex flex-col overflow-hidden bg-transparent relative min-w-0 transition-colors duration-200">
-                                <header className="h-14 sm:h-16 lg:h-20 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-b border-white/60 dark:border-slate-700/50 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-10 shrink-0 gap-2 shadow-sm dark:shadow-slate-950/20 transition-colors duration-200">
+                                <header className="h-16 lg:h-20 mx-4 lg:mx-6 mt-4 lg:mt-6 rounded-[2rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/60 dark:border-slate-700/50 flex items-center justify-between px-6 lg:px-8 z-10 shrink-0 gap-2 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 transition-colors duration-300">
                                     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                         <div className="min-w-0">
                                             <h2 className="text-sm sm:text-base lg:text-xl font-bold text-slate-800 dark:text-slate-100 truncate transition-colors duration-200">
@@ -7867,15 +8008,15 @@ import * as XLSX from 'xlsx-js-style';
 
         function SidebarItem({ icon, label, isActive, onClick }) {
             return (
-                <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-semibold ${isActive ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/20' : 'text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'}`}>
-                    {icon} <span className="font-medium text-sm">{label}</span>
+                <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 font-semibold ${isActive ? 'bg-slate-800 dark:bg-white text-white dark:text-slate-900 shadow-lg shadow-slate-900/20 dark:shadow-white/20 scale-[1.02]' : 'text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}>
+                    {icon} <span className="font-medium text-sm tracking-wide">{label}</span>
                 </button>
             );
         }
 
         function BottomNavItem({ icon, label, isActive, onClick }) {
             return (
-                <button onClick={onClick} className={`relative flex items-center justify-center transition-all duration-500 ease-out h-[48px] overflow-hidden ${isActive ? 'bg-indigo-600 text-white rounded-full px-5 gap-2 shadow-lg shadow-indigo-600/30 w-auto' : 'w-12 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-transparent rounded-full'}`}>
+                <button onClick={onClick} className={`relative flex items-center justify-center transition-all duration-500 ease-out h-[48px] overflow-hidden ${isActive ? 'bg-slate-800 dark:bg-white text-white dark:text-slate-900 rounded-full px-5 gap-2 shadow-lg shadow-slate-900/20 dark:shadow-white/20 w-auto' : 'w-12 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-transparent rounded-full'}`}>
                     <div className={`transition-transform duration-500 ${isActive ? 'scale-100' : 'scale-95'}`}>{icon}</div>
                     {isActive && <span className="text-[12px] font-bold whitespace-nowrap animate-in fade-in zoom-in duration-300 tracking-wide">{label}</span>}
                 </button>
@@ -7893,17 +8034,17 @@ import * as XLSX from 'xlsx-js-style';
             const darkColor = darkColorMap[color] || '';
 
             return (
-                <div onClick={onClick} className={`bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl p-4 sm:p-5 lg:p-6 rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 hover:shadow-2xl hover:shadow-blue-900/10 dark:hover:shadow-blue-900/20 transition-all hover:-translate-y-1 flex flex-col justify-between ${onClick ? 'cursor-pointer' : ''}`}>
+                <div onClick={onClick} className={`bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl p-4 sm:p-5 lg:p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between ${onClick ? 'cursor-pointer' : ''}`}>
                     <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
-                        <div className={`p-3 rounded-2xl ${color} ${darkColor}`}>{icon}</div>
+                        <div className={`p-3.5 rounded-2xl ${color} ${darkColor} shadow-inner`}>{icon}</div>
                         {trendUp !== null && (
-                            <div className={`flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${trendUp ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'}`}>
+                            <div className={`flex items-center gap-1 text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${trendUp ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400'}`}>
                                 <Icon name={trendUp ? 'trending-up' : 'trending-down'} size={12} /> {trend}
                             </div>
                         )}
                     </div>
                     <div>
-                        <h4 className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{title}</h4>
+                        <h4 className="text-slate-500 dark:text-slate-400 text-sm font-semibold mb-1 tracking-wide">{title}</h4>
                         <p className="text-2xl lg:text-3xl font-black text-slate-800 dark:text-white tracking-tight">{value}</p>
                     </div>
                 </div>
@@ -7911,15 +8052,15 @@ import * as XLSX from 'xlsx-js-style';
         }
 
         function StatusBadge({ status }) {
-            let style = 'bg-slate-50/80 text-slate-700 border-slate-200 dark:bg-slate-800/80 dark:border-slate-600 dark:text-slate-300';
-            if (status === 'Done') style = 'bg-emerald-50/80 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800/50 dark:text-emerald-400';
-            else if (status === 'On Progress') style = 'bg-blue-50/80 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800/50 dark:text-blue-400';
-            else if (status === 'Terlambat') style = 'bg-red-50/80 text-red-700 border-red-200 dark:bg-red-900/30 dark:border-red-800/50 dark:text-red-400';
-            else if (status === 'Beresiko') style = 'bg-amber-50/80 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:border-amber-800/50 dark:text-amber-400';
-            else if (status === 'Not Started') style = 'bg-slate-100/80 text-slate-600 border-slate-300 dark:bg-slate-700/50 dark:border-slate-600 dark:text-slate-400';
+            let style = 'bg-slate-500/10 text-slate-700 dark:text-slate-300';
+            if (status === 'Done') style = 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400';
+            else if (status === 'On Progress') style = 'bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400';
+            else if (status === 'Terlambat') style = 'bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400';
+            else if (status === 'Beresiko') style = 'bg-amber-500/10 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400';
+            else if (status === 'Not Started') style = 'bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400';
 
             return (
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border backdrop-blur-sm shadow-sm ${style} flex items-center gap-1.5 w-max`}>
+                <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide ${style} flex items-center gap-1.5 w-max`}>
                     {status === 'Done' && <Icon name="check-circle-2" size={12} />}
                     {status === 'On Progress' && <Icon name="clock" size={12} />}
                     {status === 'Terlambat' && <Icon name="alert-triangle" size={12} />}
