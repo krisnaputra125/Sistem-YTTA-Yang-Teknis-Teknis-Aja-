@@ -3163,7 +3163,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                 <p className="text-[10px] font-bold text-amber-600 mt-1 flex items-center gap-1"><Icon name="star" size={10} className="fill-amber-500" /> Team Leader</p>
                                                             )}
                                                         </td>
-                                                        <td className="p-4 text-center"><span className="inline-block px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full text-xs font-semibold whitespace-nowrap">{res.projects} Proyek Aktif</span></td>
+                                                        <td className="p-4 text-center"><span className="inline-block px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full text-xs font-semibold whitespace-nowrap">{`${res.projects} Proyek Aktif`}</span></td>
                                                         <td className="p-4 w-64">
                                                             <div className="flex justify-between items-end mb-1">
                                                                 <span className={`text-xs font-bold ${isOverloaded ? 'text-red-600' : 'text-blue-600'}`}>{res.workload}% Kapasitas Terpakai</span>
@@ -6289,7 +6289,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                                     )}
                                                                                 </div>
                                                                                 <span className="text-xs border border-black px-2 py-1 font-bold">
-                                                                                    {activeProjectsForRes.length} Proyek Aktif
+                                                                                    {`${activeProjectsForRes.length} Proyek Aktif`}
                                                                                 </span>
                                                                             </div>
 
@@ -7287,7 +7287,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                     <div>
                                                                         <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
                                                                             {expertName}
-                                                                            {expPlot.role && <span className="ml-2 font-normal text-slate-500">({expPlot.role})</span>}
+                                                                            {expPlot.role && <span className="font-normal text-slate-500">{" "}({expPlot.role})</span>}
                                                                         </p>
                                                                         {expPlot.certificateName && <p className="text-[10px] text-slate-500">SKA: {certDisplay}</p>}
                                                                     </div>
