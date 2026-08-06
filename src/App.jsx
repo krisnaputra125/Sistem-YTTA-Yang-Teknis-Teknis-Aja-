@@ -55,7 +55,8 @@ import * as XLSX from 'xlsx-js-style';
                 "play": '<polygon points="5 3 19 12 5 21 5 3"/>',
                 "pie-chart": '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
                 "pause": '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
-                "settings": '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+                "settings": '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+                "link": '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'
             };
             return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: paths[name] || '' }} />;
         };
@@ -1034,6 +1035,7 @@ import * as XLSX from 'xlsx-js-style';
                 });
             };
 
+
             const fetchFromGoogleSheets = () => {
                 // Dipanggil oleh tombol refresh manual (Hanya memicu loading animasi sebentar)
                 setLoading(true);
@@ -1432,6 +1434,112 @@ import * as XLSX from 'xlsx-js-style';
                 // setLoading(false);
             };
 
+
+            // =========================================================================
+            // SINKRONISASI OTOMATIS: PENUGASAN → LIST PROYEK (PENGAWASAN)
+            // Fungsi ini otomatis membuat/memperbarui/menghapus proyek di List Proyek
+            // saat user menyimpan data di menu Penugasan Tenaga Ahli.
+            // Field `sourceAssignmentId` dipakai sebagai penghubung antar data.
+            // =========================================================================
+            const syncAssignmentToProject = async (assignment, action) => {
+                if (!firebaseDbRef) return;
+                try {
+                    const snapshot = await firebaseDbRef.once('value');
+                    const currentData = snapshot.val() || { projects: [], resources: [] };
+                    let allProjects = (currentData.projects || []).filter(Boolean);
+
+                    if (action === 'delete') {
+                        // Hapus proyek yang terhubung
+                        const linkedProject = allProjects.find(p => p.sourceAssignmentId === assignment.id);
+                        if (linkedProject) {
+                            allProjects = allProjects.filter(p => p.sourceAssignmentId !== assignment.id);
+                            const cleanProjects = allProjects.map(proj => {
+                                const newP = { ...proj };
+                                if (newP.pengawasanDetails) {
+                                    const cleanP = {};
+                                    for (const k in newP.pengawasanDetails) cleanP[encodeKey(k)] = newP.pengawasanDetails[k];
+                                    newP.pengawasanDetails = cleanP;
+                                }
+                                return newP;
+                            });
+                            await firebaseDbRef.update({ projects: cleanProjects });
+                        }
+                        return;
+                    }
+
+                    // Buat atau perbarui proyek dari data assignment
+                    const expertNames = [...new Set((assignment.experts || []).map(exp => {
+                        const expertObj = experts.find(e => e.id === exp.expertId);
+                        return expertObj ? (expertObj.linkedResourceName || expertObj.name) : null;
+                    }).filter(Boolean))];
+
+                    // Bangun pengawasanDetails baru dari data experts di assignment
+                    // Pertahankan statusTurun yang sudah ada sebelumnya
+                    const existingProject = allProjects.find(p => p.sourceAssignmentId === assignment.id);
+                    const existingPengawasanDetails = existingProject ? (() => {
+                        // Decode existing details
+                        const raw = existingProject.pengawasanDetails || {};
+                        const decoded = {};
+                        for (const k in raw) decoded[decodeKey(k)] = raw[k];
+                        return decoded;
+                    })() : {};
+
+                    const newPengawasanDetails = {};
+                    (assignment.experts || []).forEach(exp => {
+                        const expertObj = experts.find(e => e.id === exp.expertId);
+                        if (!expertObj) return;
+                        const name = expertObj.linkedResourceName || expertObj.name;
+                        const existingDetail = existingPengawasanDetails[name] || {};
+                        // Pertahankan statusTurun yang sudah di-set user, default "Tidak Turun"
+                        newPengawasanDetails[encodeKey(name)] = {
+                            role: exp.role || 'Inspector',
+                            manMonth: exp.manMonth || '',
+                            statusTurun: existingDetail.statusTurun || 'Tidak Turun',
+                            deadline: existingDetail.deadline || '',
+                        };
+                    });
+
+                    // Serialisasi team data ke JSON string (sesuai format sistem)
+                    const teamDataObj = {
+                        members: expertNames,
+                        details: {},
+                        leader: '',
+                        individualStatus: existingProject ? (existingProject.individualStatus || {}) : {},
+                        pengawasanDetails: newPengawasanDetails
+                    };
+
+                    const projectPayload = {
+                        name: assignment.jobName || 'Tanpa Nama',
+                        client: assignment.clientName || assignment.lpseName || '',
+                        type: assignment.projectType || 'Pengawasan',
+                        status: 'On Progress',
+                        spmk: assignment.startDate || '',
+                        deadline: assignment.endDate || '',
+                        sourceAssignmentId: assignment.id,
+                        description: existingProject ? (existingProject.description || '') : '',
+                        descriptionUpdatedAt: existingProject ? (existingProject.descriptionUpdatedAt || '') : '',
+                        notStarted: existingProject ? (existingProject.notStarted || false) : false,
+                        isPending: existingProject ? (existingProject.isPending || false) : false,
+                        team: JSON.stringify(teamDataObj).replace(/;/g, ','),
+                    };
+
+                    let updatedProjects;
+                    if (existingProject) {
+                        // EDIT: perbarui proyek yang sudah ada
+                        projectPayload.id = existingProject.id;
+                        updatedProjects = allProjects.map(p => p.sourceAssignmentId === assignment.id ? projectPayload : p);
+                    } else {
+                        // ADD: buat proyek baru
+                        projectPayload.id = 'sync-' + assignment.id;
+                        updatedProjects = [...allProjects, projectPayload];
+                    }
+
+                    await firebaseDbRef.update({ projects: updatedProjects });
+                } catch (err) {
+                    console.error("Sync Assignment to Project Error:", err);
+                }
+            };
+
             // CRUD ACTION ASSIGNMENTS
             const handleAssignmentAction = (action, payload) => {
                 setErrorMsg("");
@@ -1456,6 +1564,12 @@ import * as XLSX from 'xlsx-js-style';
 
                     setAssignments(newData);
                     if (action !== 'delete') setModalConfig({ isOpen: false, type: null, mode: 'add', data: null });
+
+                    // Sinkronisasi otomatis ke List Proyek (hanya untuk tipe Pengawasan)
+                    const projectType = (payload.projectType || 'Pengawasan').toLowerCase();
+                    if (projectType.includes('pengawas') || projectType.includes('manajemen konstruksi')) {
+                        syncAssignmentToProject(payload, action);
+                    }
                 } catch (error) {
                     console.error("Local Assignment Update Error:", error);
                 }
@@ -1518,6 +1632,34 @@ import * as XLSX from 'xlsx-js-style';
                         projects: cleanProjects,
                         resources: newResources
                     });
+
+                    // Auto create expert if adding a new resource
+                    if (action === 'add' && type !== 'project') {
+                        try {
+                            const expRef = firebase.database().ref('pmc_experts');
+                            const expSnap = await expRef.once('value');
+                            const expList = (expSnap.val() || []).filter(Boolean);
+                            
+                            // Check if expert with exact name already exists
+                            if (!expList.some(e => e.name === payload.name)) {
+                                expList.push({
+                                    id: 'exp-' + Date.now().toString(),
+                                    name: payload.name,
+                                    linkedResourceName: payload.name,
+                                    phone: '',
+                                    status: 'Tersedia',
+                                    jenjang: '',
+                                    bidangIlmu: '',
+                                    perusahaan: '',
+                                    certificates: [],
+                                    tenders: []
+                                });
+                                await expRef.set(expList);
+                            }
+                        } catch (expError) {
+                            console.error("Failed to auto-create expert from resource:", expError);
+                        }
+                    }
 
                     closeModal();
                     // Tidak perlu memanggil fetch ulang, karena on('value') akan otomatis merender state seketika!
@@ -2352,6 +2494,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                 {p.isPending && (
                                                                     <span className="px-2 py-0.5 bg-orange-100 text-orange-700 border border-orange-200 rounded text-[10px] font-bold tracking-wider">PENDING</span>
                                                                 )}
+                                                                {p.sourceAssignmentId && (
+                                                                    <span title="Proyek ini dikelola dari menu Penugasan Tenaga Ahli" className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/50 rounded text-[10px] font-bold tracking-wider">
+                                                                        <Icon name="link" size={10} /> Sync
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <p className="text-xs text-slate-500 mb-2">{p.client}</p>
                                                             {p.isPending && (
@@ -2456,11 +2603,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                                                                 {detail.manMonth ? `${detail.manMonth} Bulan` : '-'}
                                                                                                             </span>
                                                                                                         </div>
-                                                                                                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 mt-0.5">
-                                                                                                            <Icon name="calendar-clock" size={10} />
-                                                                                                            {detail.deadline ? `Selesai: ${formatDateIndo(detail.deadline)}` : 'Selesai: Belum diatur'}
-                                                                                                            {isIndividuallyDone && <span className="ml-1 text-emerald-500 font-bold">(Done)</span>}
-                                                                                                        </span>
+                                                                                                        
                                                                                                     </div>
                                                                                                 )
                                                                                             })}
@@ -2515,7 +2658,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                     }
                                                                 }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg border border-indigo-200 dark:border-indigo-800/50"><Icon name="printer" size={14} /> Cetak PDF</button>
                                                                 <button onClick={() => openModal('project', 'edit', p)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg border border-blue-200 dark:border-blue-800/50"><Icon name="edit" size={14} /> Edit Data</button>
-                                                                <button onClick={() => handleDelete('project', p.id)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg border border-red-200 dark:border-red-800/50"><Icon name="trash" size={14} /> Hapus</button>
+                                                                {p.sourceAssignmentId ? (
+                                                                    <button onClick={() => setAlertModal({ isOpen: true, title: 'Proyek Tersinkronisasi', message: 'Proyek ini dikelola secara otomatis dari menu Penugasan Tenaga Ahli.\n\nUntuk menghapus proyek ini, silakan hapus data penugasan terkait dari menu Penugasan Tenaga Ahli.' })} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-lg border border-slate-300 dark:border-slate-600 cursor-not-allowed"><Icon name="trash" size={14} /> Hapus</button>
+                                                                ) : (
+                                                                    <button onClick={() => handleDelete('project', p.id)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg border border-red-200 dark:border-red-800/50"><Icon name="trash" size={14} /> Hapus</button>
+                                                                )}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -2743,10 +2890,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                 <div className="flex flex-col gap-1">
                                                                     <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Peran: {mRole} | Status: {pengawasanDetail.statusTurun || 'Tidak Turun'}</span>
                                                                     <span className="text-[11px] text-slate-600 dark:text-slate-400">SPMK: {p.spmk ? formatDateIndo(p.spmk) : '-'} | {pengawasanDetail.manMonth || '-'} Bulan</span>
-                                                                    <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                                                                        <Icon name="calendar-clock" size={12} />
-                                                                        <span>Deadline: {mDead ? formatDateIndo(mDead) : 'Belum diatur'}</span>
-                                                                    </div>
+                                                                    
                                                                 </div>
                                                             </td>
                                                         ) : (
@@ -2842,10 +2986,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                     <div className="flex flex-col gap-1">
                                                                         <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Peran: {mRole} | Status: {pengawasanDetail.statusTurun || 'Tidak Turun'}</span>
                                                                         <span className="text-[11px] text-slate-600 dark:text-slate-400">SPMK: {p.spmk ? formatDateIndo(p.spmk) : '-'} | {pengawasanDetail.manMonth || '-'} Bulan</span>
-                                                                        <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                                                                            <Icon name="calendar-clock" size={12} />
-                                                                            <span>Deadline: {mDead ? formatDateIndo(mDead) : 'Belum diatur'}</span>
-                                                                        </div>
+                                                                        
                                                                     </div>
                                                                 </td>
                                                             ) : (
@@ -3375,7 +3516,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                 const [formData, setFormData] = useState(() => {
                     if (isEdit && modalConfig.data) return { ...modalConfig.data };
-                    return { id: '', name: '', phone: '', status: 'Tersedia', jenjang: '', bidangIlmu: '', perusahaan: '' };
+                    return { id: '', name: '', phone: '', status: 'Tersedia', jenjang: '', bidangIlmu: '', perusahaan: '', linkedResourceName: '' };
                 });
 
                 const handleSubmit = (e) => {
@@ -3414,6 +3555,16 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             <option value="CV. Tataring Bali">CV. Tataring Bali</option>
                                             <option value="Freelance">Freelance</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5"><Icon name="link" size={14} className="text-indigo-500"/> Hubungkan dgn Personil Internal (Opsional)</label>
+                                        <input type="text" list="internal-resources-list" placeholder="-- Ketik untuk mencari personil atau biarkan kosong --" value={formData.linkedResourceName || ''} onChange={e => setFormData({ ...formData, linkedResourceName: e.target.value })} className="w-full p-3 rounded-xl border border-indigo-200 dark:border-indigo-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-indigo-50/30 dark:bg-indigo-900/10 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
+                                        <datalist id="internal-resources-list">
+                                            {resources.map(r => (
+                                                <option key={r.id || r.name} value={r.name}>{r.name} ({r.role})</option>
+                                            ))}
+                                        </datalist>
+                                        <p className="text-[10px] text-slate-500 mt-1">Pilih ini jika nama Tenaga Ahli di kontrak berbeda dengan nama di menu Alokasi Tim agar tetap terbaca & tersinkron pada beban kerja.</p>
                                     </div>
                                 </form>
                             </div>
@@ -3803,6 +3954,13 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                 <input type="text" required value={formData.jobName} onChange={e => setFormData({ ...formData, jobName: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                             </div>
                                             <div>
+                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Klien / Owner Proyek</label>
+                                                <input type="text" value={formData.clientName || ''} onChange={e => setFormData({ ...formData, clientName: e.target.value })} placeholder={formData.lpseName || 'Cth: Dinas PUPR Provinsi Bali'} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
+                                                <p className="text-[10px] text-slate-400 mt-1">Jika kosong, akan menggunakan nama LPSE. Tampil di List Proyek.</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="sm:col-span-2">
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">LPSE / Instansi</label>
                                                 <div className="flex gap-2 items-center">
                                                     <input type="text" list="assignment-lpse-options" required value={formData.lpseName} onChange={e => setFormData({ ...formData, lpseName: e.target.value })} placeholder="Cth: LPSE Provinsi Bali" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
@@ -3815,6 +3973,13 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                 </div>
                                             </div>
                                         </div>
+                                        {/* Banner info sinkronisasi otomatis */}
+                                        {(formData.projectType === 'Pengawasan' || formData.projectType === 'Manajemen Konstruksi') && (
+                                            <div className="flex items-start gap-2.5 px-3 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-xl text-[11px] text-indigo-700 dark:text-indigo-300">
+                                                <Icon name="link" size={14} className="mt-0.5 shrink-0" />
+                                                <span><strong>Sinkronisasi Otomatis Aktif:</strong> Menyimpan data ini akan otomatis membuat/memperbarui entri proyek di menu <strong>List Proyek</strong>. Status Turun/Tidak Turun tetap bisa diubah dari List Proyek.</span>
+                                            </div>
+                                        )}
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tipe Proyek</label>
@@ -4426,6 +4591,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 );
 
                 const isPengawasanForm = formData.type === 'Pengawasan' || formData.type === 'Manajemen Konstruksi';
+                const isSyncedProject = modalConfig.mode === 'edit' && Boolean(formData.sourceAssignmentId);
 
                 return (
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center sm:p-4 fade-in">
@@ -4440,24 +4606,32 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                             <div className="p-6 overflow-y-auto flex-1 min-h-0">
                                 <form id="crudForm" onSubmit={handleSubmit} className="space-y-5">
+                                    {isProject && isSyncedProject && (
+                                        <div className="flex items-start gap-2.5 px-3 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-xl text-[11px] text-indigo-700 dark:text-indigo-300">
+                                            <Icon name="link" size={14} className="mt-0.5 shrink-0" />
+                                            <span><strong>Proyek Tersinkronisasi:</strong> Data utama (Nama, Klien, Tipe, Tim) dikelola otomatis melalui menu <strong>Penugasan Tenaga Ahli</strong>. Anda hanya dapat mengubah status <strong>Turun/Tidak Turun</strong> personil di sini.</span>
+                                        </div>
+                                    )}
                                     {isProject ? (
                                         <>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="col-span-2 md:col-span-1">
                                                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nama Proyek</label>
-                                                    <input required name="name" value={formData.name} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" placeholder="Cth: Perencanaan RSUD" />
+                                                    <input required name="name" value={formData.name} onChange={handleChange} disabled={isSyncedProject} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed" placeholder="Cth: Perencanaan RSUD" />
                                                 </div>
                                                 <div className="col-span-2 md:col-span-1">
                                                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Klien / Owner</label>
-                                                    <input required name="client" value={formData.client} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" placeholder="Cth: Dinas PUPR" />
+                                                    <input required name="client" value={formData.client} onChange={handleChange} disabled={isSyncedProject} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed" placeholder="Cth: Dinas PUPR" />
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
                                                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tipe Proyek</label>
-                                                    <select name="type" value={formData.type} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-200">
-                                                        <option value="Perencanaan">Perencanaan</option><option value="Pengawasan">Pengawasan</option><option value="Manajemen Konstruksi">Manajemen Konstruksi</option>
+                                                    <select name="type" value={formData.type} onChange={handleChange} disabled={isSyncedProject} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed">
+                                                        <option value="Perencanaan">Perencanaan</option>
+                                                        {(modalConfig.mode === 'edit' && formData.type === 'Pengawasan') && <option value="Pengawasan">Pengawasan</option>}
+                                                        <option value="Manajemen Konstruksi">Manajemen Konstruksi</option>
                                                     </select>
                                                 </div>
                                                 {isPerencanaanForm && (
@@ -4496,10 +4670,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                 <span>{formData.spmk ? formatDateIndo(formData.spmk) : 'Pilih tanggal...'}</span>
                                                                 <Icon name="calendar-clock" size={16} className="text-slate-400" />
                                                             </div>
-                                                            <input type="date" name="spmk" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                            <input type="date" name="spmk" className={`absolute inset-0 w-full h-full opacity-0 ${isSyncedProject ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                                                                 value={formData.spmk || ''}
                                                                 onChange={handleChange}
-                                                                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                                                disabled={isSyncedProject}
+                                                                onClick={(e) => !isSyncedProject && e.target.showPicker && e.target.showPicker()}
                                                             />
                                                         </div>
                                                     </div>
@@ -4511,10 +4686,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                             <span>{formData.deadline ? formatDateIndo(formData.deadline) : 'Pilih tanggal...'}</span>
                                                             <Icon name="calendar-clock" size={16} className="text-slate-400" />
                                                         </div>
-                                                        <input type="date" name="deadline" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        <input type="date" name="deadline" className={`absolute inset-0 w-full h-full opacity-0 ${isSyncedProject ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                                                             value={formData.deadline || ''}
                                                             onChange={handleChange}
-                                                            onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                                            disabled={isSyncedProject}
+                                                            onClick={(e) => !isSyncedProject && e.target.showPicker && e.target.showPicker()}
                                                         />
                                                     </div>
                                                 </div>
@@ -4535,110 +4711,114 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                                             {/* BAGIAN PENUGASAN TIM */}
                                             <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50">
-                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                                                    <label className="block text-sm font-bold text-slate-800 dark:text-slate-100">Penugasan Personil</label>
-                                                    {!isPengawasanForm && (
-                                                        <button type="button" onClick={handleAutoPlotting} className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-md">
-                                                            <Icon name="zap" size={14} className="text-amber-300 fill-amber-300" /> Auto-Assign AI
-                                                        </button>
-                                                    )}
-                                                </div>
-
-                                                {!isPengawasanForm && (
-                                                    <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200 dark:border-amber-800/50 shadow-sm">
-                                                        <label className="block text-xs font-bold text-amber-800 mb-1 flex items-center gap-1.5"><Icon name="star" size={14} className="text-amber-500" /> Pilih Team Leader Proyek</label>
-                                                        <select name="teamLeader" value={formData.teamLeader || ""} onChange={handleChange} className="w-full p-2.5 border border-amber-200 dark:border-amber-700/50 rounded-xl text-sm outline-none focus:border-amber-500 bg-white dark:bg-slate-800 shadow-sm font-semibold text-slate-700 dark:text-slate-200">
-                                                            <option value="">-- Tidak Ada Team Leader --</option>
-                                                            {resources.filter(r => r.level === 'Team Leader').map(r => (
-                                                                <option key={r.id} value={r.name}>{r.name} ({r.role})</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                )}
-
-                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">{isPengawasanForm ? "Daftar Personil Tim Pengawasan" : "Anggota Sub-Tim"}</label>
-
-                                                <div className="relative mb-3">
-                                                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
-                                                        <Icon name="search" size={14} />
-                                                    </div>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Cari nama personil untuk ditugaskan..."
-                                                        className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 transition-all shadow-sm dark:text-slate-200"
-                                                        value={searchTeam}
-                                                        onChange={(e) => setSearchTeam(e.target.value)}
-                                                    />
-                                                </div>
-
-                                                <div className="border border-slate-200 dark:border-slate-700/50 rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3 max-h-48 overflow-y-auto">
-                                                    {resources.length === 0 ? (
-                                                        <p className="text-xs text-slate-400 italic">Belum ada data tim. Tambahkan di menu Alokasi Tim.</p>
-                                                    ) : filteredResources.length === 0 ? (
-                                                        <p className="text-xs text-slate-400 italic">Pencarian tidak ditemukan.</p>
-                                                    ) : isPengawasanForm ? (
-                                                        <TeamCheckboxGroup title="Pilih Anggota Tim (Bebas Lintas Jabatan)" roleFilter={r => true} isOptional={false} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                    ) : (
-                                                        <>
-                                                            <TeamCheckboxGroup title="Tim Arsitek" roleFilter={r => r.role.toLowerCase().includes('arsitek')} isOptional={false} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                            <TeamCheckboxGroup title="Tim Quantity Surveyor (QS)" roleFilter={r => r.role.toLowerCase() === 'qs' || r.role.toLowerCase().includes('quantity')} isOptional={false} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                            <TeamCheckboxGroup title="Tim Struktur" roleFilter={r => r.role.toLowerCase().includes('struktur')} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                            <TeamCheckboxGroup title="Tim MEP" roleFilter={r => r.role.toLowerCase().includes('mep')} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                            <TeamCheckboxGroup title="Tim Tata Ruang" roleFilter={r => r.role.toLowerCase().includes('tata ruang') || r.role.toLowerCase().includes('planologi')} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                            <TeamCheckboxGroup title="Lainnya" roleFilter={r => !r.role.toLowerCase().includes('arsitek') && !(r.role.toLowerCase() === 'qs' || r.role.toLowerCase().includes('quantity')) && !r.role.toLowerCase().includes('struktur') && !r.role.toLowerCase().includes('mep') && !(r.role.toLowerCase().includes('tata ruang') || r.role.toLowerCase().includes('planologi'))} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                        </>
-                                                    )}
-                                                </div>
-
-                                                {!isPengawasanForm && resources.length > 0 && (
-                                                    <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
-                                                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Penugasan Ekstra (Opsional)</label>
-                                                        <TeamVisionaryMultiSelect title="Tim Surveyor (Sub Tim Khusus Lintas Jabatan)" filteredResources={resources} formData={formData} setFormData={setFormData} teamField="surveyorTeam" />
-                                                    </div>
-                                                )}
-
-                                                {isPengawasanForm && (
-                                                    <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
-                                                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tambah Personil Freelance Manual</label>
-                                                        <p className="text-[10px] text-slate-500 mb-2">Ketik nama personil freelance lalu tekan Enter. Personil ini akan otomatis masuk ke Rincian Penugasan di bawah namun tidak dihitung dalam KPI.</p>
-                                                        <div className="flex gap-2 mb-3">
-                                                            <input
-                                                                type="text"
-                                                                value={freelanceInput}
-                                                                onChange={(e) => setFreelanceInput(e.target.value)}
-                                                                onKeyDown={handleFreelanceKeyDown}
-                                                                className="flex-1 p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-blue-500 bg-white dark:bg-slate-800 transition-colors dark:text-slate-200 shadow-sm"
-                                                                placeholder="Ketik nama freelance..."
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                onClick={handleAddFreelance}
-                                                                className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                                                            >
-                                                                Tambah
-                                                            </button>
+                                                {!isSyncedProject && (
+                                                    <>
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                                                            <label className="block text-sm font-bold text-slate-800 dark:text-slate-100">Penugasan Personil</label>
+                                                            {!isPengawasanForm && (
+                                                                <button type="button" onClick={handleAutoPlotting} className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-md">
+                                                                    <Icon name="zap" size={14} className="text-amber-300 fill-amber-300" /> Auto-Assign AI
+                                                                </button>
+                                                            )}
                                                         </div>
-                                                        {formData.team && formData.team.filter(name => !resources.some(r => r.name === name)).length > 0 && (
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {formData.team.filter(name => !resources.some(r => r.name === name)).map(name => (
-                                                                    <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-md text-xs font-semibold text-amber-700 dark:text-amber-400">
-                                                                        <span>{name}</span>
-                                                                        <button type="button" onClick={() => handleEditFreelance(name)} className="text-amber-500 hover:text-amber-700 transition-colors ml-1" title="Edit Nama">
-                                                                            <Icon name="edit" size={12} />
-                                                                        </button>
-                                                                        <button type="button" onClick={() => {
-                                                                            setFormData(prev => ({
-                                                                                ...prev,
-                                                                                team: prev.team.filter(t => t !== name)
-                                                                            }))
-                                                                        }} className="text-amber-500 hover:text-amber-700 transition-colors" title="Hapus">
-                                                                            <Icon name="x" size={12} />
-                                                                        </button>
-                                                                    </div>
-                                                                ))}
+
+                                                        {!isPengawasanForm && (
+                                                            <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200 dark:border-amber-800/50 shadow-sm">
+                                                                <label className="block text-xs font-bold text-amber-800 mb-1 flex items-center gap-1.5"><Icon name="star" size={14} className="text-amber-500" /> Pilih Team Leader Proyek</label>
+                                                                <select name="teamLeader" value={formData.teamLeader || ""} onChange={handleChange} className="w-full p-2.5 border border-amber-200 dark:border-amber-700/50 rounded-xl text-sm outline-none focus:border-amber-500 bg-white dark:bg-slate-800 shadow-sm font-semibold text-slate-700 dark:text-slate-200">
+                                                                    <option value="">-- Tidak Ada Team Leader --</option>
+                                                                    {resources.filter(r => r.level === 'Team Leader').map(r => (
+                                                                        <option key={r.id} value={r.name}>{r.name} ({r.role})</option>
+                                                                    ))}
+                                                                </select>
                                                             </div>
                                                         )}
-                                                    </div>
+
+                                                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">{isPengawasanForm ? "Daftar Personil Tim Pengawasan" : "Anggota Sub-Tim"}</label>
+
+                                                        <div className="relative mb-3">
+                                                            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                                                                <Icon name="search" size={14} />
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Cari nama personil untuk ditugaskan..."
+                                                                className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 transition-all shadow-sm dark:text-slate-200"
+                                                                value={searchTeam}
+                                                                onChange={(e) => setSearchTeam(e.target.value)}
+                                                            />
+                                                        </div>
+
+                                                        <div className="border border-slate-200 dark:border-slate-700/50 rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3 max-h-48 overflow-y-auto">
+                                                            {resources.length === 0 ? (
+                                                                <p className="text-xs text-slate-400 italic">Belum ada data tim. Tambahkan di menu Alokasi Tim.</p>
+                                                            ) : filteredResources.length === 0 ? (
+                                                                <p className="text-xs text-slate-400 italic">Pencarian tidak ditemukan.</p>
+                                                            ) : isPengawasanForm ? (
+                                                                <TeamCheckboxGroup title="Pilih Anggota Tim (Bebas Lintas Jabatan)" roleFilter={r => true} isOptional={false} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
+                                                            ) : (
+                                                                <>
+                                                                    <TeamCheckboxGroup title="Tim Arsitek" roleFilter={r => r.role.toLowerCase().includes('arsitek')} isOptional={false} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
+                                                                    <TeamCheckboxGroup title="Tim Quantity Surveyor (QS)" roleFilter={r => r.role.toLowerCase() === 'qs' || r.role.toLowerCase().includes('quantity')} isOptional={false} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
+                                                                    <TeamCheckboxGroup title="Tim Struktur" roleFilter={r => r.role.toLowerCase().includes('struktur')} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
+                                                                    <TeamCheckboxGroup title="Tim MEP" roleFilter={r => r.role.toLowerCase().includes('mep')} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
+                                                                    <TeamCheckboxGroup title="Tim Tata Ruang" roleFilter={r => r.role.toLowerCase().includes('tata ruang') || r.role.toLowerCase().includes('planologi')} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
+                                                                    <TeamCheckboxGroup title="Lainnya" roleFilter={r => !r.role.toLowerCase().includes('arsitek') && !(r.role.toLowerCase() === 'qs' || r.role.toLowerCase().includes('quantity')) && !r.role.toLowerCase().includes('struktur') && !r.role.toLowerCase().includes('mep') && !(r.role.toLowerCase().includes('tata ruang') || r.role.toLowerCase().includes('planologi'))} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        {!isPengawasanForm && resources.length > 0 && (
+                                                            <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
+                                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Penugasan Ekstra (Opsional)</label>
+                                                                <TeamVisionaryMultiSelect title="Tim Surveyor (Sub Tim Khusus Lintas Jabatan)" filteredResources={resources} formData={formData} setFormData={setFormData} teamField="surveyorTeam" />
+                                                            </div>
+                                                        )}
+
+                                                        {isPengawasanForm && (
+                                                            <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
+                                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tambah Personil Freelance Manual</label>
+                                                                <p className="text-[10px] text-slate-500 mb-2">Ketik nama personil freelance lalu tekan Enter. Personil ini akan otomatis masuk ke Rincian Penugasan di bawah namun tidak dihitung dalam KPI.</p>
+                                                                <div className="flex gap-2 mb-3">
+                                                                    <input
+                                                                        type="text"
+                                                                        value={freelanceInput}
+                                                                        onChange={(e) => setFreelanceInput(e.target.value)}
+                                                                        onKeyDown={handleFreelanceKeyDown}
+                                                                        className="flex-1 p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-blue-500 bg-white dark:bg-slate-800 transition-colors dark:text-slate-200 shadow-sm"
+                                                                        placeholder="Ketik nama freelance..."
+                                                                    />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={handleAddFreelance}
+                                                                        className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                                                                    >
+                                                                        Tambah
+                                                                    </button>
+                                                                </div>
+                                                                {formData.team && formData.team.filter(name => !resources.some(r => r.name === name)).length > 0 && (
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {formData.team.filter(name => !resources.some(r => r.name === name)).map(name => (
+                                                                            <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-md text-xs font-semibold text-amber-700 dark:text-amber-400">
+                                                                                <span>{name}</span>
+                                                                                <button type="button" onClick={() => handleEditFreelance(name)} className="text-amber-500 hover:text-amber-700 transition-colors ml-1" title="Edit Nama">
+                                                                                    <Icon name="edit" size={12} />
+                                                                                </button>
+                                                                                <button type="button" onClick={() => {
+                                                                                    setFormData(prev => ({
+                                                                                        ...prev,
+                                                                                        team: prev.team.filter(t => t !== name)
+                                                                                    }))
+                                                                                }} className="text-amber-500 hover:text-amber-700 transition-colors" title="Hapus">
+                                                                                    <Icon name="x" size={12} />
+                                                                                </button>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
 
                                                 {isPengawasanForm && (formData.team || []).length > 0 && (
@@ -4649,15 +4829,24 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                 const detail = formData.pengawasanDetails?.[member] || { role: 'Inspector', deadline: '', manMonth: '', spmk: '', statusTurun: 'Tidak Turun' };
                                                                 return (
                                                                     <div key={member} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex flex-col gap-3 shadow-sm">
-                                                                        <div className="border-b border-slate-100 dark:border-slate-700 pb-2">
+                                                                        <div className="border-b border-slate-100 dark:border-slate-700 pb-2 flex justify-between items-center">
                                                                             <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">{member}</h4>
+                                                                            <button type="button" onClick={() => {
+                                                                                setFormData(prev => ({
+                                                                                    ...prev,
+                                                                                    team: (prev.team || []).filter(t => t !== member)
+                                                                                }))
+                                                                            }} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold transition-colors bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/50">
+                                                                                <Icon name="trash-2" size={12} /> Hapus
+                                                                            </button>
                                                                         </div>
-                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[4fr_3fr_3fr_4fr] gap-3">
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[4fr_3fr_3fr] gap-3">
                                                                             <div className="flex flex-col justify-end">
                                                                                 <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Peran / Jabatan</label>
-                                                                                <select className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                                                                                <select className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
                                                                                     value={detail.role || 'Inspector'}
                                                                                     onChange={(e) => handlePengawasanDetailChange(member, 'role', e.target.value)}
+                                                                                    disabled={isSyncedProject}
                                                                                 >
                                                                                     <option value="Team Leader">Team Leader</option>
                                                                                     <option value="Tenaga Ahli">Tenaga Ahli</option>
@@ -4681,26 +4870,14 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                             </div>
                                                                             <div className="flex flex-col justify-end">
                                                                                 <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase whitespace-nowrap">Lama (Man/Month)</label>
-                                                                                <input type="number" step="0.1" className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                                                                                <input type="number" step="0.1" className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
                                                                                     value={detail.manMonth || ''}
                                                                                     onChange={(e) => handlePengawasanDetailChange(member, 'manMonth', e.target.value)}
                                                                                     placeholder="Cth: 1.5"
+                                                                                    disabled={isSyncedProject}
                                                                                 />
                                                                             </div>
-                                                                            <div className="flex flex-col justify-end">
-                                                                                <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase whitespace-nowrap">Selesai Penugasan</label>
-                                                                                <div className="relative w-full">
-                                                                                    <div className="flex items-center justify-between w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-900/50 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-800 transition-colors min-h-[34px] text-slate-700 dark:text-slate-200 overflow-hidden">
-                                                                                        <span className="whitespace-nowrap">{detail.deadline ? formatDateIndo(detail.deadline) : 'Otomatis / Pilih...'}</span>
-                                                                                        <Icon name="calendar-clock" size={14} className="text-slate-400 shrink-0 ml-1" />
-                                                                                    </div>
-                                                                                    <input type="date" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                                                        value={detail.deadline || ''}
-                                                                                        onChange={(e) => handlePengawasanDetailChange(member, 'deadline', e.target.value)}
-                                                                                        onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
+                                                                            
                                                                         </div>
                                                                     </div>
                                                                 )
