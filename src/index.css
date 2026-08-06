@@ -2,194 +2,169 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Premium Base Settings */
+body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #f8fafc;
+    background-image: radial-gradient(circle at top right, rgba(99, 102, 241, 0.03), transparent 400px), 
+                      radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.03), transparent 400px);
+    background-attachment: fixed;
+    color: #334155;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    overscroll-behavior-y: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+.dark body {
+    background-color: #020617; /* Very deep slate */
+    background-image: radial-gradient(circle at top right, rgba(99, 102, 241, 0.05), transparent 500px), 
+                      radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.05), transparent 500px);
+    color: #e2e8f0;
+}
+
+input, textarea, select {
+    user-select: auto;
+    -webkit-user-select: auto;
+    font-family: inherit;
+}
+
+/* Custom Elegant Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+    border: 0;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+    border: 0;
+}
+
+/* Custom Glassmorphism Utilities */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.dark .glass-panel {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+}
+.dark .glass-card {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(51, 65, 85, 0.5);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Enterprise Table Overrides */
+.enterprise-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.enterprise-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+    background-color: rgba(248, 250, 252, 0.9);
+}
+.dark .enterprise-table th {
+    background-color: rgba(15, 23, 42, 0.9);
+}
+.enterprise-table td {
+    transition: background-color 0.15s ease-in-out;
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.slide-up {
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+/* Button Clean Check (Legacy support if still used) */
 .btn-clean-check {
-            width: 36px;
-            height: 36px;
-            border-radius: 18px;
-            background: transparent;
-            border: 2px solid #e2e8f0;
-            color: #cbd5e1;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin: 0 auto;
-        }
+    width: 36px; height: 36px; border-radius: 18px;
+    background: transparent; border: 2px solid #e2e8f0;
+    color: #cbd5e1; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0 auto;
+}
+.btn-clean-check:hover {
+    border-color: #10b981; color: #10b981;
+    background: #f0fdf4; transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+.dark .btn-clean-check { border-color: #334155; color: #475569; }
+.dark .btn-clean-check:hover {
+    border-color: #10b981; color: #10b981;
+    background: rgba(16, 185, 129, 0.1); transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+.btn-clean-check.success {
+    background: #10b981; border-color: #10b981; color: white;
+    transform: scale(1.1); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.btn-clean-check.success:hover {
+    transform: scale(1.1) translateY(-2px); background: #ef4444; border-color: #ef4444;
+}
+.dark .btn-clean-check.success { background: #059669; border-color: #059669; }
+.dark .btn-clean-check.success:hover { background: #dc2626; border-color: #dc2626; }
 
-        .btn-clean-check:hover {
-            border-color: #10b981;
-            color: #10b981;
-            background: #f0fdf4;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
-        }
-
-        .dark .btn-clean-check {
-            border-color: #334155;
-            color: #475569;
-        }
-
-        .dark .btn-clean-check:hover {
-            border-color: #10b981;
-            color: #10b981;
-            background: rgba(16, 185, 129, 0.1);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-        }
-
-        .btn-clean-check:active {
-            transform: scale(0.95);
-        }
-
-        .btn-clean-check.success {
-            background: #10b981;
-            border-color: #10b981;
-            color: white;
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .btn-clean-check.success:hover {
-            transform: scale(1.1) translateY(-2px);
-            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
-            background: #ef4444;
-            border-color: #ef4444;
-        }
-
-        .dark .btn-clean-check.success {
-            background: #059669;
-            border-color: #059669;
-        }
-
-        .dark .btn-clean-check.success:hover {
-            background: #dc2626;
-            border-color: #dc2626;
-            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
-        }
-
-        /* Flip Effect */
-        .flip-wrapper {
-            position: relative;
-            width: 20px;
-            height: 20px;
-            perspective: 1000px;
-        }
-
-        .flip-inner {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            transform-style: preserve-3d;
-        }
-
-        .btn-clean-check.success:hover .flip-inner {
-            transform: rotateY(180deg);
-        }
-
-        .flip-front,
-        .flip-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .flip-back {
-            transform: rotateY(180deg);
-        }
-
-        body {
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-            background-color: #f8fafc;
-            color: #334155;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            overscroll-behavior-y: none;
-        }
-
-        .dark body {
-            background-color: #0f172a;
-            color: #cbd5e1;
-        }
-
-        input,
-        textarea,
-        select {
-            user-select: auto;
-            -webkit-user-select: auto;
-            font-family: inherit;
-        }
-
-        ::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-
-        .dark ::-webkit-scrollbar-thumb {
-            background: #334155;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-
-        .dark ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.2s ease-out forwards;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes shimmer {
-            0% {
-                background-position: -1000px 0;
-            }
-
-            100% {
-                background-position: 1000px 0;
-            }
-        }
-
-        .scale-in-center {
-            animation: scale-in-center 0.3s cubic-bezier(0.175, 0.885, 0.320, 1.275) both;
-        }
-
-        @keyframes scale-in-center {
-            0% {
-                transform: scale(0.9);
-                opacity: 0;
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
+.flip-wrapper { position: relative; width: 20px; height: 20px; perspective: 1000px; }
+.flip-inner { position: absolute; width: 100%; height: 100%; transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); transform-style: preserve-3d; }
+.btn-clean-check.success:hover .flip-inner { transform: rotateY(180deg); }
+.flip-front, .flip-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; }
+.flip-back { transform: rotateY(180deg); }

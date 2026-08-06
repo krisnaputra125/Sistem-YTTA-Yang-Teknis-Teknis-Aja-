@@ -1713,7 +1713,7 @@ import * as XLSX from 'xlsx-js-style';
                         return <tr><td colSpan="5" className="p-8 text-center text-slate-400">Belum ada data personil.</td></tr>;
                     }
                     return data.map((kpi, idx) => (
-                        <tr key={kpi.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                        <tr key={kpi.id} className="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors">
                             <td className="p-4 flex items-center gap-3">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white shrink-0 ${idx === 0 ? 'bg-amber-400 shadow-lg shadow-amber-400/30' : idx === 1 ? 'bg-slate-300' : idx === 2 ? 'bg-amber-600' : 'bg-slate-800'}`}>
                                     {idx + 1}
@@ -1776,7 +1776,7 @@ import * as XLSX from 'xlsx-js-style';
                             </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl p-6 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-white/60 dark:border-slate-700/50">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 glass-card p-6 rounded-2xl">
                             <div>
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Evaluasi & KPI Personil (BETA)</h3>
                                 <p className="text-sm text-slate-500 mt-1">Mengukur kinerja berdasarkan ketepatan waktu, manajemen beban, dan rating.</p>
@@ -1786,7 +1786,7 @@ import * as XLSX from 'xlsx-js-style';
                                     <Icon name="check-circle-2" size={18} />
                                     <span className="font-bold text-sm">{healthyCount} Sehat</span>
                                 </div>
-                                <div className="px-4 py-2 bg-amber-50 text-amber-700 rounded-lg border border-amber-100 flex items-center gap-2 shrink-0">
+                                <div className="px-4 py-2 bg-amber-50 text-amber-700 rounded-lg border border-slate-200 flex items-center gap-2 shrink-0">
                                     <Icon name="alert-triangle" size={18} />
                                     <span className="font-bold text-sm">{needsAttention.length} Perlu Pantauan</span>
                                 </div>
@@ -1820,7 +1820,7 @@ import * as XLSX from 'xlsx-js-style';
                                 <h3 className="font-bold text-amber-900 dark:text-amber-400">Leaderboard: Team Leader</h3>
                             </div>
                             <div className="p-0 overflow-x-auto min-h-[150px]">
-                                <table className="w-full text-left border-collapse min-w-[700px]">
+                                <table className="enterprise-table text-left min-w-[700px]">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                                             <th className="p-4 font-semibold whitespace-nowrap">Peringkat & Personil</th>
@@ -1844,7 +1844,7 @@ import * as XLSX from 'xlsx-js-style';
                                 <h3 className="font-bold text-blue-900 dark:text-blue-400">Leaderboard: Kordinator Divisi</h3>
                             </div>
                             <div className="p-0 overflow-x-auto min-h-[150px]">
-                                <table className="w-full text-left border-collapse min-w-[700px]">
+                                <table className="enterprise-table text-left min-w-[700px]">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                                             <th className="p-4 font-semibold whitespace-nowrap">Peringkat & Personil</th>
@@ -1862,13 +1862,13 @@ import * as XLSX from 'xlsx-js-style';
                         </div>
 
                         {/* TABEL STAFF */}
-                        <div className="bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-2xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 overflow-hidden flex flex-col mt-6">
+                        <div className="glass-card rounded-2xl overflow-hidden flex flex-col mt-6">
                             <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700/50 flex items-center gap-2">
                                 <Icon name="users" size={20} className="text-slate-600 dark:text-slate-400" />
                                 <h3 className="font-bold text-slate-800 dark:text-slate-100">Leaderboard: Staff & Anggota Tim</h3>
                             </div>
                             <div className="p-0 overflow-x-auto min-h-[300px]">
-                                <table className="w-full text-left border-collapse min-w-[700px]">
+                                <table className="enterprise-table text-left min-w-[700px]">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                                             <th className="p-4 font-semibold whitespace-nowrap">Peringkat & Personil</th>
@@ -1973,7 +1973,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             {/* BENTO CELL 3: Distribusi Sub-Tim Pie Chart */}
                             <div 
                                 onClick={() => setActiveTab('tim')}
-                                className="col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] p-6 flex flex-col justify-between cursor-pointer hover:scale-[1.02] transition-transform duration-300 relative overflow-hidden"
+                                className="col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-2 glass-card rounded-[2rem] p-6 flex flex-col justify-between cursor-pointer hover:scale-[1.02] transition-transform duration-300 relative overflow-hidden"
                             >
                                 <div className="flex justify-between items-center mb-4 relative z-10">
                                     <div>
@@ -2010,7 +2010,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     )}
                                 </div>
                             </div>
-                            <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-amber-50 dark:bg-amber-900/20 rounded-3xl border border-amber-100 dark:border-amber-800/50 p-5 shadow-sm flex items-center justify-between">
+                            <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-amber-50 dark:bg-amber-900/20 rounded-3xl border border-slate-200 dark:border-amber-800/50 p-5 shadow-sm flex items-center justify-between">
                                 <div>
                                     <p className="text-amber-800 dark:text-amber-400 font-semibold mb-1 text-sm">Perlu Pantauan</p>
                                     <h3 className="text-amber-900 dark:text-amber-100 text-3xl font-bold">{problematicProjectsCount} <span className="text-lg font-medium">Beresiko</span></h3>
@@ -2050,7 +2050,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-                            <div className="lg:col-span-2 bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 overflow-hidden flex flex-col">
+                            <div className="lg:col-span-2 glass-card rounded-3xl overflow-hidden flex flex-col">
                                 <div className="p-6 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center">
                                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Status Proyek Berjalan</h3>
                                     <button onClick={() => setActiveTab('proyek')} className="text-sm font-medium text-blue-600 hover:text-blue-800">Lihat Semua</button>
@@ -2062,7 +2062,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             <p className="text-sm">Belum ada data proyek di Google Sheets.</p>
                                         </div>
                                     ) : (
-                                        <table className="w-full text-left border-collapse">
+                                        <table className="enterprise-table text-left">
                                             <thead>
                                                 <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                                                     <th className="p-4 font-semibold">Nama Proyek</th>
@@ -2096,7 +2096,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 </div>
                             </div>
 
-                            <div className="bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 p-6 flex flex-col">
+                            <div className="glass-card rounded-3xl p-6 flex flex-col">
                                 <div className="flex justify-between items-center mb-2">
                                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Beban Kerja Tim</h3>
                                     <button onClick={() => setActiveTab('tim')} className="text-sm font-medium text-blue-600 hover:text-blue-800">Lihat Full</button>
@@ -2208,7 +2208,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 return (
                     <div className="space-y-6 fade-in">
                         <ErrorBanner />
-                        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
+                        <div className="glass-card rounded-[2rem] overflow-hidden flex flex-col">
                             <div className="p-6 border-b border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Daftar List Proyek</h3>
@@ -2254,7 +2254,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 </div>
                             </div>
                             <div className="p-0 overflow-x-auto min-h-[400px]">
-                                <table className="w-full text-left border-collapse">
+                                <table className="enterprise-table text-left">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                                             <th className="p-4 font-semibold min-w-[200px]">Nama Proyek & Klien</th>
@@ -2342,7 +2342,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                 };
 
                                                 return (
-                                                    <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group align-top">
+                                                    <tr key={p.id} className="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors group align-top">
                                                         <td className="p-4 pt-5">
                                                             <div className="flex items-center gap-2 mb-0.5">
                                                                 <p className="font-bold text-slate-800 dark:text-slate-200 text-base">{p.name}</p>
@@ -2635,7 +2635,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             </button>
                         </div>
 
-                        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
+                        <div className="glass-card rounded-[2rem] overflow-hidden flex flex-col">
                             {viewingEmployee.level === 'Team Leader' && (
                                 <div className="mb-6 border-b border-slate-200 dark:border-slate-700/50">
                                     <div className="p-6 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/50 flex items-center gap-2">
@@ -2646,9 +2646,9 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         </div>
                                     </div>
                                     <div className="p-0 overflow-x-auto min-h-[150px]">
-                                        <table className="w-full text-left border-collapse">
+                                        <table className="enterprise-table text-left">
                                             <thead>
-                                                <tr className="bg-amber-50/50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-300 text-xs uppercase tracking-wider border-b border-amber-100 dark:border-amber-800/50">
+                                                <tr className="bg-amber-50/50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-300 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-amber-800/50">
                                                     <th className="p-4 font-semibold">Nama Proyek & Klien</th>
                                                     <th className="p-4 font-semibold text-center">Tenggat Waktu Kontrak</th>
                                                     <th className="p-4 font-semibold">Total Progress</th>
@@ -2698,7 +2698,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 <p className="text-sm text-slate-500">Menampilkan target progres dan deadline spesifik untuk Sub-Tim <strong>{empCategory}</strong> pada masing-masing proyek.</p>
                             </div>
                             <div className="p-0 overflow-x-auto min-h-[300px]">
-                                <table className="w-full text-left border-collapse">
+                                <table className="enterprise-table text-left">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                                             <th className="p-4 font-semibold">Nama Proyek</th>
@@ -2730,7 +2730,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                 const mStatus = isIndividuallyDone || mProg === 100 ? 'Done' : getMicroStatus(mProg, mDead);
 
                                                 return (
-                                                    <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                                    <tr key={p.id} className="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors">
                                                         <td className="p-4">
                                                             <p className="font-semibold text-slate-800 dark:text-slate-200">{p.name}</p>
                                                             <p className="text-xs text-slate-500">{p.client}</p>
@@ -2801,7 +2801,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         <p className="text-sm text-slate-500">Menampilkan proyek di mana tugas Sub-Tim <strong>{empCategory}</strong> telah mencapai 100% atau ditandai selesai secara individu. Proyek ini tidak lagi membebani kapasitas kerja personil.</p>
                                     </div>
                                     <div className="p-0 overflow-x-auto min-h-[150px]">
-                                        <table className="w-full text-left border-collapse opacity-80">
+                                        <table className="enterprise-table text-left opacity-80">
                                             <thead>
                                                 <tr className="bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 text-xs uppercase tracking-wider">
                                                     <th className="p-4 font-semibold">Nama Proyek</th>
@@ -2981,7 +2981,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 return (
                     <div className="space-y-6 fade-in">
                         <ErrorBanner />
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl">
                             <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Ploting & Jadwal Personil Perencanaan</h3>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Visualisasi sisa waktu beban kerja setiap personil dihitung dari <strong className="text-slate-700 dark:text-slate-300">Hari Ini</strong> hingga target <em className="text-slate-700 dark:text-slate-300">Deadline</em> terjauh dari semua proyek aktif mereka. Sangat berguna untuk memutuskan ploting personil ke proyek baru.</p>
@@ -3100,7 +3100,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 return (
                     <div className="space-y-6 fade-in">
                         <ErrorBanner />
-                        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col">
+                        <div className="glass-card rounded-[2rem] overflow-hidden flex flex-col">
                             <div className="p-6 border-b border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 dark:bg-slate-800/40">
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Alokasi & Beban Kerja Tim</h3>
@@ -3125,7 +3125,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 </div>
                             </div>
                             <div className="p-0 overflow-x-auto min-h-[400px]">
-                                <table className="w-full text-left border-collapse">
+                                <table className="enterprise-table text-left">
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                                             <th className="p-4 font-semibold whitespace-nowrap">Nama & Tim</th>
@@ -3146,7 +3146,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             filteredResourcesTab.map((res) => {
                                                 const isOverloaded = res.workload > 100;
                                                 return (
-                                                    <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                                                    <tr key={res.id} className="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors group">
                                                         <td className="p-4">
                                                             <p className="font-semibold text-slate-800 dark:text-slate-200">{res.name}</p>
                                                             {res.level && res.level.startsWith('Kordinator Divisi') ? (
@@ -3385,7 +3385,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                 return (
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
+                        <div className="glass-card rounded-3xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
                             <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{isEdit ? 'Edit Data Tenaga Ahli' : 'Tambah Tenaga Ahli'}</h3>
                                 <button onClick={() => setModalConfig({ isOpen: false, type: null })} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -3394,19 +3394,19 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 <form id="expertForm" onSubmit={handleSubmit} className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap</label>
-                                        <input type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                        <input type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">No. HP / WhatsApp</label>
-                                        <input type="text" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                        <input type="text" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Jenjang & Bidang Ilmu</label>
-                                        <input type="text" placeholder="Cth: SMA, S1 Teknik Sipil Thn 1997" value={formData.bidangIlmu || ''} onChange={e => setFormData({ ...formData, bidangIlmu: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                        <input type="text" placeholder="Cth: SMA, S1 Teknik Sipil Thn 1997" value={formData.bidangIlmu || ''} onChange={e => setFormData({ ...formData, bidangIlmu: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Perusahaan / Instansi</label>
-                                        <select value={formData.perusahaan || ''} onChange={e => setFormData({ ...formData, perusahaan: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                                        <select value={formData.perusahaan || ''} onChange={e => setFormData({ ...formData, perusahaan: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
                                             <option value="">-- Pilih Perusahaan --</option>
                                             <option value="PT. Gaharu Sempana">PT. Gaharu Sempana</option>
                                             <option value="PT. Kencana Adhi Karma">PT. Kencana Adhi Karma</option>
@@ -3453,7 +3453,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                 return (
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
+                        <div className="glass-card rounded-3xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
                             <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{isEdit ? 'Edit Sertifikat' : 'Tambah Sertifikat'}</h3>
                                 <button onClick={() => setModalConfig({ isOpen: false, type: null })} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -3467,14 +3467,14 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                 <Icon name="settings" size={12} /> Kelola Daftar
                                             </button>
                                         </div>
-                                        <input type="text" required list="cert-options" value={formData.certName} onChange={e => setFormData({ ...formData, certName: e.target.value })} placeholder="Cth: SKA Ahli Teknik Bangunan Gedung" className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                        <input type="text" required list="cert-options" value={formData.certName} onChange={e => setFormData({ ...formData, certName: e.target.value })} placeholder="Cth: SKA Ahli Teknik Bangunan Gedung" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                         <datalist id="cert-options">
                                             {certList.map((cert, idx) => <option key={idx} value={cert} />)}
                                         </datalist>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tingkat / Kualifikasi</label>
-                                        <select value={formData.certLevel} onChange={e => setFormData({ ...formData, certLevel: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                                        <select value={formData.certLevel} onChange={e => setFormData({ ...formData, certLevel: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
                                             <option value="Ahli Muda">Ahli Muda</option>
                                             <option value="Ahli Madya">Ahli Madya</option>
                                             <option value="Ahli Utama">Ahli Utama</option>
@@ -3484,11 +3484,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tgl Terbit</label>
-                                            <input type="date" required value={formData.issuedDate} onChange={e => setFormData({ ...formData, issuedDate: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                            <input type="date" required value={formData.issuedDate} onChange={e => setFormData({ ...formData, issuedDate: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tgl Berakhir</label>
-                                            <input type="date" required value={formData.expiredDate} onChange={e => setFormData({ ...formData, expiredDate: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                            <input type="date" required value={formData.expiredDate} onChange={e => setFormData({ ...formData, expiredDate: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                         </div>
                                     </div>
                                 </form>
@@ -3544,7 +3544,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                 return (
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
+                        <div className="glass-card rounded-3xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
                             <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{isEdit ? 'Edit Riwayat Tender' : 'Plotting Tender LPSE'}</h3>
                                 <button onClick={() => setModalConfig({ isOpen: false, type: null })} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -3554,7 +3554,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nama / Instansi LPSE</label>
                                         <div className="flex gap-2 items-center">
-                                            <input type="text" list="lpse-options" required value={formData.lpseName} onChange={e => setFormData({ ...formData, lpseName: e.target.value })} placeholder="Cth: LPSE Kementerian PUPR" className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                            <input type="text" list="lpse-options" required value={formData.lpseName} onChange={e => setFormData({ ...formData, lpseName: e.target.value })} placeholder="Cth: LPSE Kementerian PUPR" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                             <datalist id="lpse-options">
                                                 {lpseList.map((lpse, idx) => <option key={idx} value={lpse} />)}
                                             </datalist>
@@ -3565,11 +3565,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Posisi / Jabatan yang Ditawarkan</label>
-                                        <input type="text" required value={formData.position} onChange={e => setFormData({ ...formData, position: e.target.value })} placeholder="Cth: Team Leader / Ahli Struktur" className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                        <input type="text" required value={formData.position} onChange={e => setFormData({ ...formData, position: e.target.value })} placeholder="Cth: Team Leader / Ahli Struktur" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Status Tender</label>
-                                        <select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                                        <select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
                                             <option value="Menunggu Pengumuman">Menunggu Pengumuman</option>
                                             <option value="Aktif">Aktif (Sedang Proses)</option>
                                             <option value="Menang">Menang</option>
@@ -3596,7 +3596,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 
                 return (
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800 p-6">
+                        <div className="glass-card rounded-3xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800 p-6">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Import Data Excel</h3>
                                 <button onClick={() => setModalConfig({ isOpen: false, type: null })} className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -3757,7 +3757,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 const handleAddExpertRow = () => {
                     setFormData(prev => ({
                         ...prev,
-                        experts: [...(prev.experts || []), { expertId: '', role: '', certificateName: '', manMonth: '' }]
+                        experts: [...(prev.experts || []), { expertId: '', role: '', certificateName: '', additionalCertificates: [], manMonth: '' }]
                     }));
                 };
 
@@ -3777,6 +3777,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                         // Reset certificate when expert changes
                         if (field === 'expertId') {
                             newExperts[index].certificateName = '';
+                            newExperts[index].additionalCertificates = [];
                         }
 
                         return { ...prev, experts: newExperts };
@@ -3785,7 +3786,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                 return (
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
+                        <div className="glass-card rounded-3xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
                             <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{isEdit ? 'Edit Penugasan' : 'Tambah Penugasan'}</h3>
                                 <button onClick={() => setModalConfig({ isOpen: false, type: null })} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -3799,12 +3800,12 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Pekerjaan</label>
-                                                <input type="text" required value={formData.jobName} onChange={e => setFormData({ ...formData, jobName: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                                <input type="text" required value={formData.jobName} onChange={e => setFormData({ ...formData, jobName: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">LPSE / Instansi</label>
                                                 <div className="flex gap-2 items-center">
-                                                    <input type="text" list="assignment-lpse-options" required value={formData.lpseName} onChange={e => setFormData({ ...formData, lpseName: e.target.value })} placeholder="Cth: LPSE Provinsi Bali" className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                                    <input type="text" list="assignment-lpse-options" required value={formData.lpseName} onChange={e => setFormData({ ...formData, lpseName: e.target.value })} placeholder="Cth: LPSE Provinsi Bali" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                                     <datalist id="assignment-lpse-options">
                                                         {lpseList.map((lpse, idx) => <option key={idx} value={lpse} />)}
                                                     </datalist>
@@ -3817,21 +3818,21 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tipe Proyek</label>
-                                                <select required value={formData.projectType || 'Pengawasan'} onChange={e => setFormData({ ...formData, projectType: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                                                <select required value={formData.projectType || 'Pengawasan'} onChange={e => setFormData({ ...formData, projectType: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
                                                     <option value="Pengawasan">Pengawasan</option>
                                                     <option value="Perencanaan">Perencanaan</option>
                                                 </select>
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Jenis Kontrak</label>
-                                                <select required value={formData.contractType} onChange={e => setFormData({ ...formData, contractType: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                                                <select required value={formData.contractType} onChange={e => setFormData({ ...formData, contractType: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
                                                     <option value="Waktu Penugasan">Waktu Penugasan</option>
                                                     <option value="Lumsum">Lumsum</option>
                                                 </select>
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Jenis Tender</label>
-                                                <select required value={formData.tenderType} onChange={e => setFormData({ ...formData, tenderType: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                                                <select required value={formData.tenderType} onChange={e => setFormData({ ...formData, tenderType: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
                                                     <option value="Tender">Tender</option>
                                                     <option value="PL">Penunjukan Langsung (PL)</option>
                                                 </select>
@@ -3852,7 +3853,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Durasi Kontrak (Hari)</label>
-                                                <input type="number" min="1" required value={formData.duration} onChange={e => setFormData({ ...formData, duration: e.target.value })} placeholder="Cth: 90" className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                                <input type="number" min="1" required value={formData.duration} onChange={e => setFormData({ ...formData, duration: e.target.value })} placeholder="Cth: 90" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Akhir Kontrak Induk</label>
@@ -3903,7 +3904,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                         setFormData(prev => {
                                                                             const newExperts = [...prev.experts];
                                                                             if (matched) {
-                                                                                newExperts[idx] = { ...newExperts[idx], expertId: matched.id, expertSearchTemp: undefined, certificateName: '' };
+                                                                                newExperts[idx] = { ...newExperts[idx], expertId: matched.id, expertSearchTemp: undefined, certificateName: '', additionalCertificates: [] };
                                                                             } else {
                                                                                 newExperts[idx] = { ...newExperts[idx], expertId: '', expertSearchTemp: val };
                                                                             }
@@ -3911,7 +3912,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                         });
                                                                     }}
                                                                     placeholder="Cari atau ketik nama..."
-                                                                    className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                                                                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all"
                                                                 />
                                                                 <datalist id={`expert-list-${idx}`}>
                                                                     {experts.map(e => <option key={e.id} value={e.name} />)}
@@ -3919,7 +3920,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                             </div>
                                                             <div className="flex-1">
                                                                 <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Peran</label>
-                                                                <select required value={expPlot.role || ''} onChange={e => handleExpertRowChange(idx, 'role', e.target.value)} className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                                                                <select required value={expPlot.role || ''} onChange={e => handleExpertRowChange(idx, 'role', e.target.value)} className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
                                                                     <option value="">-- Pilih Peran --</option>
                                                                     {((formData.projectType || 'Pengawasan') === 'Perencanaan'
                                                                         ? ['Team Leader', 'Tenaga Ahli', 'K3', 'Quantity Surveyor / Cost Estimator', 'Drafter / Operator CAD', 'Surveyor', 'Administrasi']
@@ -3929,23 +3930,62 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                     ))}
                                                                 </select>
                                                             </div>
-                                                            <div className="flex-1">
-                                                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Sertifikat Terpakai</label>
-                                                                <select value={expPlot.certificateName} onChange={e => handleExpertRowChange(idx, 'certificateName', e.target.value)} className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                                                                    <option value="">-- Tidak Pakai / Kosong --</option>
-                                                                    {availableCerts.map((c, i) => {
-                                                                        const isExpired = c.expiredDate && new Date(c.expiredDate) < new Date();
-                                                                        return (
-                                                                            <option key={i} value={c.certName} disabled={isExpired} className={isExpired ? "text-slate-400" : ""}>
-                                                                                {c.certName} ({c.certLevel}) {isExpired ? '(EXPIRED)' : ''}
-                                                                            </option>
-                                                                        );
-                                                                    })}
-                                                                </select>
+                                                            <div className="flex-1 flex flex-col gap-2">
+                                                                <div>
+                                                                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Sertifikat Utama</label>
+                                                                    <select value={expPlot.certificateName || ''} onChange={e => handleExpertRowChange(idx, 'certificateName', e.target.value)} className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
+                                                                        <option value="">-- Tidak Pakai / Kosong --</option>
+                                                                        {availableCerts.map((c, i) => {
+                                                                            const isExpired = c.expiredDate && new Date(c.expiredDate) < new Date();
+                                                                            return (
+                                                                                <option key={`cert1-${i}`} value={c.certName} disabled={isExpired} className={isExpired ? "text-slate-400" : ""}>
+                                                                                    {c.certName} ({c.certLevel}) {isExpired ? '(EXPIRED)' : ''}
+                                                                                </option>
+                                                                            );
+                                                                        })}
+                                                                    </select>
+                                                                </div>
+                                                                {(expPlot.additionalCertificates || []).map((addCert, cIdx) => (
+                                                                    <div key={`add-cert-${cIdx}`} className="flex gap-2">
+                                                                        <div className="flex-1">
+                                                                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Sertifikat Tambahan {cIdx + 1}</label>
+                                                                            <select value={addCert || ''} onChange={e => {
+                                                                                const newAdditional = [...(expPlot.additionalCertificates || [])];
+                                                                                newAdditional[cIdx] = e.target.value;
+                                                                                handleExpertRowChange(idx, 'additionalCertificates', newAdditional);
+                                                                            }} className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
+                                                                                <option value="">-- Pilih Sertifikat --</option>
+                                                                                {availableCerts.map((c, i) => {
+                                                                                    const isExpired = c.expiredDate && new Date(c.expiredDate) < new Date();
+                                                                                    return (
+                                                                                        <option key={`addcert-${cIdx}-${i}`} value={c.certName} disabled={isExpired} className={isExpired ? "text-slate-400" : ""}>
+                                                                                            {c.certName} ({c.certLevel}) {isExpired ? '(EXPIRED)' : ''}
+                                                                                        </option>
+                                                                                    );
+                                                                                })}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div className="pt-5">
+                                                                            <button type="button" onClick={() => {
+                                                                                const newAdditional = [...(expPlot.additionalCertificates || [])];
+                                                                                newAdditional.splice(cIdx, 1);
+                                                                                handleExpertRowChange(idx, 'additionalCertificates', newAdditional);
+                                                                            }} className="p-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg" title="Hapus Sertifikat">
+                                                                                <Icon name="trash" size={16} />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                                <button type="button" onClick={() => {
+                                                                    const newAdditional = [...(expPlot.additionalCertificates || []), ''];
+                                                                    handleExpertRowChange(idx, 'additionalCertificates', newAdditional);
+                                                                }} className="text-xs text-indigo-600 dark:text-indigo-400 font-bold self-start flex items-center gap-1 hover:underline">
+                                                                    <Icon name="plus" size={12} /> Tambah Sertifikat Tambahan
+                                                                </button>
                                                             </div>
                                                             <div className="w-full md:w-24">
                                                                 <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Man Month</label>
-                                                                <input type="text" required value={expPlot.manMonth} onChange={e => handleExpertRowChange(idx, 'manMonth', e.target.value)} placeholder="Cth: 1.5" className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 outline-none text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+                                                                <input type="text" required value={expPlot.manMonth} onChange={e => handleExpertRowChange(idx, 'manMonth', e.target.value)} placeholder="Cth: 1.5" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
                                                             </div>
 
                                                             <button type="button" onClick={() => handleRemoveExpertRow(idx)} className="absolute -top-2 -right-2 p-1.5 bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-400 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity" title="Hapus Baris">
@@ -4865,7 +4905,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             </div>
                                         ) : modalConfig.mode === 'extend' ? (
                                             <div className="grid grid-cols-1 gap-4">
-                                                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 rounded-xl mb-2">
+                                                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-slate-200 dark:border-amber-800/50 rounded-xl mb-2">
                                                     <p className="text-xs text-amber-800 dark:text-amber-300">
                                                         Perpanjang masa pinjam untuk alat <strong className="font-bold">{formData.name}</strong> yang sedang dipinjam oleh <strong className="font-bold">{formData.borrower}</strong>.
                                                     </p>
@@ -5210,7 +5250,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         <li><strong className="text-emerald-500">Bonus Selesai:</strong> <strong className="font-bold">+15 Poin</strong> untuk setiap tugas yang selesai 100% tepat waktu atau lebih cepat.</li>
                                     </ul>
                                 </div>
-                                <div className="bg-amber-50/50 dark:bg-amber-900/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+                                <div className="bg-amber-50/50 dark:bg-amber-900/10 p-4 rounded-2xl border border-slate-200 dark:border-amber-900/30">
                                     <h4 className="font-bold text-amber-900 dark:text-amber-400 mb-2 flex items-center gap-2"><Icon name="star" size={16} className="text-amber-500" /> Perhitungan Sebagai Team Leader</h4>
                                     <ul className="list-disc pl-5 text-sm text-slate-600 dark:text-slate-400 space-y-1.5">
                                         <li><strong>Kondisi 1: Saat memimpin proyek (Makro):</strong>
@@ -5780,7 +5820,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 const renderProjectPrintCard = (p) => {
                     const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
                     return (
-                        <div key={p.id} className="border-2 border-black p-4" style={{ pageBreakInside: 'avoid' }}>
+                        <div key={p.id} className="border-2 border-slate-300 dark:border-slate-700 p-4" style={{ pageBreakInside: 'avoid' }}>
                             <div className="flex justify-between items-start border-b border-gray-300 pb-2 mb-3">
                                 <div>
                                     <h3 className="text-base font-bold uppercase">{p.name}</h3>
@@ -5793,7 +5833,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     {!isPengawasan && <p className="text-xs font-bold mt-1 text-gray-800">Team Leader: {p.teamLeader || 'Belum Ditentukan'}</p>}
                                 </div>
                                 <div className="text-right shrink-0 ml-4">
-                                    <p className="text-xs font-bold border border-black px-2 py-1 inline-block uppercase whitespace-nowrap">Status Makro: {p.computedStatus}</p>
+                                    <p className="text-xs font-bold border border-slate-300 dark:border-slate-700 px-2 py-1 inline-block uppercase whitespace-nowrap">Status Makro: {p.computedStatus}</p>
 
                                     {(isPengawasan || p.type?.toLowerCase().includes('perencana')) && <p className="text-xs mt-1 whitespace-nowrap font-semibold text-gray-800">Tanggal SPMK: {p.spmk ? formatDateIndo(p.spmk) : '-'}</p>}
                                     <p className="text-xs mt-1 whitespace-nowrap">Tenggat Kontrak: {p.deadline ? formatDateIndo(p.deadline) : '-'}</p>
@@ -5803,14 +5843,14 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             <div>
                                 <h4 className="text-[11px] font-bold uppercase mb-2">Rincian Penugasan & Target Sub-Tim</h4>
                                 {isPengawasan ? (
-                                    <table className="w-full text-xs border-collapse border border-black mb-1">
+                                    <table className="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 mb-1">
                                         <thead>
                                             <tr className="bg-gray-100">
-                                                <th className="border border-black p-1.5 text-left w-[30%]">Nama Personil</th>
-                                                <th className="border border-black p-1.5 text-left w-[20%]">Peran</th>
-                                                <th className="border border-black p-1.5 text-left w-[15%]">Man Month</th>
-                                                <th className="border border-black p-1.5 text-left w-[20%]">Deadline Spesifik</th>
-                                                <th className="border border-black p-1.5 text-left w-[15%]">Status Lapangan</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[30%]">Nama Personil</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Peran</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[15%]">Man Month</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Deadline Spesifik</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[15%]">Status Lapangan</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -5822,28 +5862,28 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                 const details = p.pengawasanDetails?.[member] || {};
                                                 return (
                                                     <tr key={member}>
-                                                        <td className="border border-black p-1.5 font-bold">{member}</td>
-                                                        <td className="border border-black p-1.5">{details.role || 'Inspector'}</td>
-                                                        <td className="border border-black p-1.5 text-center">{details.manMonth || '-'}</td>
-                                                        <td className="border border-black p-1.5">{details.deadline ? formatDateIndo(details.deadline) : '-'}</td>
-                                                        <td className="border border-black p-1.5">{details.statusTurun || 'Tidak Turun'}</td>
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5 font-bold">{member}</td>
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5">{details.role || 'Inspector'}</td>
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5 text-center">{details.manMonth || '-'}</td>
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5">{details.deadline ? formatDateIndo(details.deadline) : '-'}</td>
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5">{details.statusTurun || 'Tidak Turun'}</td>
                                                     </tr>
                                                 )
                                             })}
                                             {(!p.team || p.team.length === 0) && (
-                                                <tr><td colSpan="5" className="border border-black p-1.5 text-center italic">Belum ada personil diplot.</td></tr>
+                                                <tr><td colSpan="5" className="border border-slate-300 dark:border-slate-700 p-1.5 text-center italic">Belum ada personil diplot.</td></tr>
                                             )}
                                         </tbody>
                                     </table>
                                 ) : (
-                                    <table className="w-full text-xs border-collapse border border-black mb-1">
+                                    <table className="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 mb-1">
                                         <thead>
                                             <tr className="bg-gray-100">
-                                                <th className="border border-black p-1.5 text-left w-[20%]">Kategori Sub Tim</th>
-                                                <th className="border border-black p-1.5 text-left w-[15%]">Target Progress</th>
-                                                <th className="border border-black p-1.5 text-left w-[20%]">Tenggat Waktu Tim</th>
-                                                <th className="border border-black p-1.5 text-left w-[20%]">Status Target</th>
-                                                <th className="border border-black p-1.5 text-left w-[25%]">Personil Terploting</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Kategori Sub Tim</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[15%]">Target Progress</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Tenggat Waktu Tim</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Status Target</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[25%]">Personil Terploting</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -5880,18 +5920,18 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                                                 return (
                                                     <tr key={cat}>
-                                                        <td className="border border-black p-1.5 font-bold">{cat}</td>
-                                                        <td className="border border-black p-1.5">
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5 font-bold">{cat}</td>
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5">
                                                             {progressVal}% Tercapai
                                                         </td>
-                                                        <td className="border border-black p-1.5">{details.deadline ? formatDateIndo(details.deadline) : '-'}</td>
-                                                        <td className="border border-black p-1.5 font-semibold">{statusTarget}</td>
-                                                        <td className="border border-black p-1.5">{catMembers.join(', ')}</td>
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5">{details.deadline ? formatDateIndo(details.deadline) : '-'}</td>
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5 font-semibold">{statusTarget}</td>
+                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5">{catMembers.join(', ')}</td>
                                                     </tr>
                                                 )
                                             })}
                                             {(!p.team || p.team.length === 0) && (
-                                                <tr><td colSpan="5" className="border border-black p-1.5 text-center italic">Belum ada personil diplot.</td></tr>
+                                                <tr><td colSpan="5" className="border border-slate-300 dark:border-slate-700 p-1.5 text-center italic">Belum ada personil diplot.</td></tr>
                                             )}
                                         </tbody>
                                     </table>
@@ -5991,15 +6031,15 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                     return (
                         <div className="print-landscape mt-10">
                             <h2 className="text-lg font-bold uppercase border-b border-gray-400 pb-2 mb-4">Laporan Time Schedule: {p.name}</h2>
-                            <table className="w-full text-[10px] border-collapse border border-black table-fixed bg-white relative">
+                            <table className="w-full text-[10px] border-collapse border border-slate-300 dark:border-slate-700 table-fixed bg-white relative">
                                 <thead>
                                     {scheduleZoom === 'week' ? (
                                         <>
                                             <tr className="bg-gray-200">
-                                                <th rowSpan={2} className="border border-black p-1 w-[150px] text-left">Tasks / Kegiatan</th>
-                                                <th rowSpan={2} className="border border-black p-1 w-[70px] text-center">Durasi</th>
-                                                <th rowSpan={2} className="border border-black p-1 w-[105px] text-center">Status Target</th>
-                                                <th rowSpan={2} className="border border-black p-1 w-[40px] text-center">Prog.</th>
+                                                <th rowSpan={2} className="border border-slate-300 dark:border-slate-700 p-1 w-[150px] text-left">Tasks / Kegiatan</th>
+                                                <th rowSpan={2} className="border border-slate-300 dark:border-slate-700 p-1 w-[70px] text-center">Durasi</th>
+                                                <th rowSpan={2} className="border border-slate-300 dark:border-slate-700 p-1 w-[105px] text-center">Status Target</th>
+                                                <th rowSpan={2} className="border border-slate-300 dark:border-slate-700 p-1 w-[40px] text-center">Prog.</th>
                                                 {(() => {
                                                     const monthGroups = [];
                                                     timeUnits.forEach(u => {
@@ -6008,7 +6048,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                         else monthGroups.push({ monthLabel: u.monthLabel, span: 1 });
                                                     });
                                                     return monthGroups.map((g, i) => (
-                                                        <th key={`m-${i}`} colSpan={g.span} className="border border-black p-1 text-center font-bold bg-gray-300">
+                                                        <th key={`m-${i}`} colSpan={g.span} className="border border-slate-300 dark:border-slate-700 p-1 text-center font-bold bg-gray-300">
                                                             {g.monthLabel}
                                                         </th>
                                                     ));
@@ -6016,7 +6056,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             </tr>
                                             <tr className="bg-gray-200">
                                                 {timeUnits.map((u, i) => (
-                                                    <th key={`w-${i}`} className="border border-black p-1 text-center font-bold text-[8px]">
+                                                    <th key={`w-${i}`} className="border border-slate-300 dark:border-slate-700 p-1 text-center font-bold text-[8px]">
                                                         {u.label}
                                                     </th>
                                                 ))}
@@ -6024,12 +6064,12 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         </>
                                     ) : (
                                         <tr className="bg-gray-200">
-                                            <th className="border border-black p-1 w-[150px] text-left">Tasks / Kegiatan</th>
-                                            <th className="border border-black p-1 w-[70px] text-center">Durasi</th>
-                                            <th className="border border-black p-1 w-[105px] text-center">Status Target</th>
-                                            <th className="border border-black p-1 w-[40px] text-center">Prog.</th>
+                                            <th className="border border-slate-300 dark:border-slate-700 p-1 w-[150px] text-left">Tasks / Kegiatan</th>
+                                            <th className="border border-slate-300 dark:border-slate-700 p-1 w-[70px] text-center">Durasi</th>
+                                            <th className="border border-slate-300 dark:border-slate-700 p-1 w-[105px] text-center">Status Target</th>
+                                            <th className="border border-slate-300 dark:border-slate-700 p-1 w-[40px] text-center">Prog.</th>
                                             {timeUnits.map((u, i) => (
-                                                <th key={i} className="border border-black p-1 text-center font-bold">
+                                                <th key={i} className="border border-slate-300 dark:border-slate-700 p-1 text-center font-bold">
                                                     {u.label}
                                                 </th>
                                             ))}
@@ -6066,13 +6106,13 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                                         return (
                                             <tr key={phase.id} className={phase.isSubTask ? "bg-white" : "bg-gray-50 font-semibold"}>
-                                                <td className={`border border-black p-1.5 truncate ${phase.isSubTask ? 'pl-4 text-gray-700' : ''}`}>
+                                                <td className={`border border-slate-300 dark:border-slate-700 p-1.5 truncate ${phase.isSubTask ? 'pl-4 text-gray-700' : ''}`}>
                                                     {phase.isSubTask ? `└ ${phase.name}` : phase.name}
                                                 </td>
-                                                <td className="border border-black p-1 text-center font-bold whitespace-nowrap">{manMonthStr}</td>
-                                                <td className="border border-black p-1 text-center font-bold uppercase">{getMicroStatus(phase.progress, phase.endDate)}</td>
-                                                <td className="border border-black p-1 text-center">{phase.progress}%</td>
-                                                <td colSpan={timeUnits.length} className="border border-black relative p-0 h-6">
+                                                <td className="border border-slate-300 dark:border-slate-700 p-1 text-center font-bold whitespace-nowrap">{manMonthStr}</td>
+                                                <td className="border border-slate-300 dark:border-slate-700 p-1 text-center font-bold uppercase">{getMicroStatus(phase.progress, phase.endDate)}</td>
+                                                <td className="border border-slate-300 dark:border-slate-700 p-1 text-center">{phase.progress}%</td>
+                                                <td colSpan={timeUnits.length} className="border border-slate-300 dark:border-slate-700 relative p-0 h-6">
                                                     <div className="absolute inset-0 flex z-0">
                                                         {timeUnits.map((m, i) => (
                                                             <div key={i} className="flex-1 border-l border-gray-300 border-dashed first:border-l-0"></div>
@@ -6080,7 +6120,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                     </div>
                                                     {hasBar && (
                                                         <div
-                                                            className="absolute top-[4px] bottom-[4px] bg-black border border-black z-10 flex items-center justify-between px-1 text-[7px] text-white overflow-hidden whitespace-nowrap"
+                                                            className="absolute top-[4px] bottom-[4px] bg-black border border-slate-300 dark:border-slate-700 z-10 flex items-center justify-between px-1 text-[7px] text-white overflow-hidden whitespace-nowrap"
                                                             style={{ left: `${leftPerc}%`, width: `${widthPerc}%`, printColorAdjust: 'exact' }}
                                                         >
                                                             <span>{formatDateIndo(new Date(phase.startDate).toISOString().split('T')[0])}</span>
@@ -6163,7 +6203,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             <tbody>
                                 <tr><td className="px-10 pb-4">
 
-                                    <div className="border-b-4 border-black pb-4 mb-6 flex items-center justify-between">
+                                    <div className="border-b-4 border-slate-300 dark:border-slate-700 pb-4 mb-6 flex items-center justify-between">
                                         <div className="flex items-center gap-6">
                                             <img src={logoImg} alt="Gaharu Sempana Group Logo" className="h-20 object-contain" />
                                             <div>
@@ -6174,7 +6214,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         </div>
                                         <div className="text-right flex flex-col justify-between h-20">
                                             <div className="flex justify-end">
-                                                <p className="text-xs border-2 border-black px-2 py-1 uppercase font-black whitespace-nowrap">Dokumen Internal</p>
+                                                <p className="text-xs border-2 border-slate-300 dark:border-slate-700 px-2 py-1 uppercase font-black whitespace-nowrap">Dokumen Internal</p>
                                             </div>
                                             <div className="mt-auto text-right">
                                                 <p className="text-sm font-semibold whitespace-nowrap">Dicetak pada: {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -6207,7 +6247,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                                                         return categoriesToRender.map((catData, index) => (
                                                             <div key={catData.kategoriTipe} className="mb-6" style={{ pageBreakBefore: index === 0 ? 'auto' : 'always' }}>
-                                                                <h3 className="text-md font-bold mb-3 uppercase bg-gray-200 border-t border-b border-black py-1 px-2">Sub Bab: {catData.kategoriTipe}</h3>
+                                                                <h3 className="text-md font-bold mb-3 uppercase bg-gray-200 border-t border-b border-slate-300 dark:border-slate-700 py-1 px-2">Sub Bab: {catData.kategoriTipe}</h3>
                                                                 <div className="space-y-6">
                                                                     {catData.proyeksInKategori.map(p => (
                                                                         <div key={p.id}>
@@ -6260,10 +6300,10 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                                                         return subTeamKeys.map((subTeam, index) => (
                                                             <div key={subTeam} className="mb-6" style={{ pageBreakBefore: index === 0 ? 'auto' : 'always' }}>
-                                                                <h3 className="text-md font-bold mb-3 uppercase bg-gray-200 border-t border-b border-black py-1 px-2">Sub Bab: Tim {subTeam}</h3>
+                                                                <h3 className="text-md font-bold mb-3 uppercase bg-gray-200 border-t border-b border-slate-300 dark:border-slate-700 py-1 px-2">Sub Bab: Tim {subTeam}</h3>
                                                                 <div className="space-y-6">
                                                                     {[...resourcesBySubTeam[subTeam]].sort((a, b) => getLPSEHierarchyScore(a.res.role) - getLPSEHierarchyScore(b.res.role) || a.res.name.localeCompare(b.res.name)).map(({ res, activeProjectsForRes }) => (
-                                                                        <div key={res.id} className="border-2 border-black p-4" style={{ pageBreakInside: 'avoid' }}>
+                                                                        <div key={res.id} className="border-2 border-slate-300 dark:border-slate-700 p-4" style={{ pageBreakInside: 'avoid' }}>
                                                                             <div className="flex justify-between items-center mb-2">
                                                                                 <div>
                                                                                     <h3 className="font-bold uppercase text-base">{res.name}</h3>
@@ -6288,24 +6328,24 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                                         </p>
                                                                                     )}
                                                                                 </div>
-                                                                                <span className="text-xs border border-black px-2 py-1 font-bold">
+                                                                                <span className="text-xs border border-slate-300 dark:border-slate-700 px-2 py-1 font-bold">
                                                                                     {`${activeProjectsForRes.length} Proyek Aktif`}
                                                                                 </span>
                                                                             </div>
 
-                                                                            <table className="w-full text-xs border-collapse border border-black mt-3">
+                                                                            <table className="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 mt-3">
                                                                                 <thead>
                                                                                     <tr className="bg-gray-100">
-                                                                                        <th className="border border-black p-1.5 text-left w-[35%]">Nama Proyek</th>
-                                                                                        <th className="border border-black p-1.5 text-left w-[20%]">Peran/Tim Lapangan</th>
-                                                                                        <th className="border border-black p-1.5 text-left w-[15%]">Man Month</th>
-                                                                                        <th className="border border-black p-1.5 text-left w-[20%]">Deadline Spesifik Tugas</th>
-                                                                                        <th className="border border-black p-1.5 text-left w-[10%]">Status Lapangan</th>
+                                                                                        <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[35%]">Nama Proyek</th>
+                                                                                        <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Peran/Tim Lapangan</th>
+                                                                                        <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[15%]">Man Month</th>
+                                                                                        <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Deadline Spesifik Tugas</th>
+                                                                                        <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[10%]">Status Lapangan</th>
                                                                                     </tr>
                                                                                 </thead>
                                                                                 <tbody>
                                                                                     {activeProjectsForRes.length === 0 ? (
-                                                                                        <tr><td colSpan="5" className="border border-black p-1.5 text-center italic">Sedang tidak memegang proyek aktif (Available).</td></tr>
+                                                                                        <tr><td colSpan="5" className="border border-slate-300 dark:border-slate-700 p-1.5 text-center italic">Sedang tidak memegang proyek aktif (Available).</td></tr>
                                                                                     ) : (() => {
                                                                                         const groupedProjects = {};
                                                                                         activeProjectsForRes.forEach(p => {
@@ -6322,7 +6362,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                                         return typeKeys.map(pType => (
                                                                                             <React.Fragment key={pType}>
                                                                                                 <tr>
-                                                                                                    <td colSpan="5" className="border border-black p-1.5 text-center font-bold bg-gray-200 text-[10px] uppercase">
+                                                                                                    <td colSpan="5" className="border border-slate-300 dark:border-slate-700 p-1.5 text-center font-bold bg-gray-200 text-[10px] uppercase">
                                                                                                         {pType}
                                                                                                     </td>
                                                                                                 </tr>
@@ -6405,11 +6445,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                                                                                                     return (
                                                                                                         <tr key={p.id}>
-                                                                                                            <td className="border border-black p-1.5">{p.name}</td>
-                                                                                                            <td className="border border-black p-1.5">{roleStr}</td>
-                                                                                                            <td className="border border-black p-1.5 text-center">{manMonthStr}</td>
-                                                                                                            <td className="border border-black p-1.5 font-semibold">{deadlineStr}</td>
-                                                                                                            <td className="border border-black p-1.5 font-semibold">{statusLapangan}</td>
+                                                                                                            <td className="border border-slate-300 dark:border-slate-700 p-1.5">{p.name}</td>
+                                                                                                            <td className="border border-slate-300 dark:border-slate-700 p-1.5">{roleStr}</td>
+                                                                                                            <td className="border border-slate-300 dark:border-slate-700 p-1.5 text-center">{manMonthStr}</td>
+                                                                                                            <td className="border border-slate-300 dark:border-slate-700 p-1.5 font-semibold">{deadlineStr}</td>
+                                                                                                            <td className="border border-slate-300 dark:border-slate-700 p-1.5 font-semibold">{statusLapangan}</td>
                                                                                                         </tr>
                                                                                                     )
                                                                                                 })}
@@ -6450,7 +6490,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                 ) : (
                                                     <div className="space-y-6">
                                                         {activeAsg.map(asg => (
-                                                            <div key={asg.id} className="border-2 border-black p-4" style={{ pageBreakInside: 'avoid' }}>
+                                                            <div key={asg.id} className="border-2 border-slate-300 dark:border-slate-700 p-4" style={{ pageBreakInside: 'avoid' }}>
                                                                 <div className="flex justify-between items-center mb-2">
                                                                     <div>
                                                                         <h3 className="font-bold uppercase text-base">{asg.jobName}</h3>
@@ -6460,29 +6500,38 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                     </div>
                                                                 </div>
 
-                                                                <table className="w-full text-xs border-collapse border border-black mt-3">
+                                                                <table className="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 mt-3">
                                                                     <thead>
                                                                         <tr className="bg-gray-100">
-                                                                            <th className="border border-black p-1.5 text-left w-[40%]">Nama</th>
-                                                                            <th className="border border-black p-1.5 text-left w-[30%]">Sertifikat (SKA)</th>
-                                                                            <th className="border border-black p-1.5 text-center w-[15%]">Peran</th>
-                                                                            <th className="border border-black p-1.5 text-center w-[15%]">Man Month</th>
+                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[40%]">Nama</th>
+                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[30%]">Sertifikat (SKA)</th>
+                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-center w-[15%]">Peran</th>
+                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-center w-[15%]">Man Month</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
                                                                         {(asg.experts || []).length === 0 ? (
-                                                                            <tr><td colSpan="4" className="border border-black p-1.5 text-center italic">Belum ada tenaga ahli.</td></tr>
+                                                                            <tr><td colSpan="4" className="border border-slate-300 dark:border-slate-700 p-1.5 text-center italic">Belum ada tenaga ahli.</td></tr>
                                                                         ) : [...(asg.experts || [])].sort((a, b) => getLPSEHierarchyScore(a.role) - getLPSEHierarchyScore(b.role) || (experts.find(e => e.id === a.expertId)?.name || '').localeCompare(experts.find(e => e.id === b.expertId)?.name || '')).map((expPlot, idx) => {
                                                                             const exp = experts.find(e => e.id === expPlot.expertId);
                                                                             const expertName = exp ? exp.name : 'Unknown';
                                                                             const certObj = exp ? (exp.certificates || []).find(c => c.certName === expPlot.certificateName) : null;
-                                                                            const certDisplay = certObj && certObj.certLevel ? `${expPlot.certificateName} (${certObj.certLevel})` : (expPlot.certificateName || '-');
+                                                                            let certDisplay = certObj && certObj.certLevel ? `${expPlot.certificateName} (${certObj.certLevel})` : (expPlot.certificateName || '-');
+                                                                            
+                                                                            (expPlot.additionalCertificates || []).forEach(addCert => {
+                                                                                if (!addCert) return;
+                                                                                const cObj = exp ? (exp.certificates || []).find(c => c.certName === addCert) : null;
+                                                                                const cDisplay = cObj && cObj.certLevel ? `${addCert} (${cObj.certLevel})` : addCert;
+                                                                                if (certDisplay === '-') certDisplay = cDisplay;
+                                                                                else certDisplay += ` & ${cDisplay}`;
+                                                                            });
+                                                                            
                                                                             return (
                                                                                 <tr key={idx}>
-                                                                                    <td className="border border-black p-1.5 font-semibold">{expertName}</td>
-                                                                                    <td className="border border-black p-1.5">{certDisplay}</td>
-                                                                                    <td className="border border-black p-1.5 text-center">{expPlot.role || '-'}</td>
-                                                                                    <td className="border border-black p-1.5 text-center font-bold">{expPlot.manMonth}</td>
+                                                                                    <td className="border border-slate-300 dark:border-slate-700 p-1.5 font-semibold">{expertName}</td>
+                                                                                    <td className="border border-slate-300 dark:border-slate-700 p-1.5">{certDisplay}</td>
+                                                                                    <td className="border border-slate-300 dark:border-slate-700 p-1.5 text-center">{expPlot.role || '-'}</td>
+                                                                                    <td className="border border-slate-300 dark:border-slate-700 p-1.5 text-center font-bold">{expPlot.manMonth}</td>
                                                                                 </tr>
                                                                             )
                                                                         })}
@@ -6497,7 +6546,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     })()}
 
                                     {/* BAGIAN TANDA TANGAN */}
-                                    <div className="mt-16 pt-8 flex justify-between px-10 text-sm text-black" style={{ pageBreakInside: 'avoid' }}>
+                                    <div className="mt-16 pt-8 flex justify-between px-10 text-sm text-slate-800 dark:text-slate-200" style={{ pageBreakInside: 'avoid' }}>
                                         <div className="text-center">
                                             <p className="mb-24">Diketahui Oleh,<br />{printData.type === 'expert_assignment' ? 'Manajer Administrasi' : 'Manajer Teknis'} Gaharu Sempana Group</p>
                                             <p className="font-bold underline decoration-black underline-offset-2">{printData.type === 'expert_assignment' ? 'Gusti Ayu Legong Aryaningsih, S.T., M.T.' : 'Ar. Ir. I Nyoman Adi Putra Wijaya, ST. IAI.'}</p>
@@ -6669,7 +6718,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 // Warna ditentukan secara dinamis berdasarkan status fase (Selesai, Beresiko, Terlambat, On Progress)
 
                 return (
-                    <div className="flex flex-col h-[calc(100vh-12rem)] min-h-[500px] fade-in bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden">
+                    <div className="flex flex-col h-[calc(100vh-12rem)] min-h-[500px] fade-in glass-card rounded-[2rem] overflow-hidden">
                         {/* Header Area */}
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-white/40 dark:bg-slate-800/40 shrink-0">
                             <div className="flex items-center gap-3">
@@ -7007,7 +7056,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 };
 
                 return (
-                    <div className="flex flex-col h-[calc(100vh-12rem)] min-h-[500px] fade-in bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden">
+                    <div className="flex flex-col h-[calc(100vh-12rem)] min-h-[500px] fade-in glass-card rounded-[2rem] overflow-hidden">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-white/40 dark:bg-slate-800/40 shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2 text-sm">
@@ -7201,7 +7250,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                     const matchExpert = (asg.experts || []).some(expPlot => {
                         const exp = experts.find(e => e.id === expPlot.expertId);
                         const expertName = exp ? exp.name.toLowerCase() : '';
-                        return expertName.includes(search) || (expPlot.certificateName || '').toLowerCase().includes(search);
+                        return expertName.includes(search) || (expPlot.certificateName || '').toLowerCase().includes(search) || (expPlot.additionalCertificates || []).some(c => (c || '').toLowerCase().includes(search));
                     });
 
                     return matchJob || matchLpse || matchExpert;
@@ -7281,7 +7330,14 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                             const exp = experts.find(e => e.id === expPlot.expertId);
                                                             const expertName = exp ? exp.name : 'Unknown';
                                                             const certObj = exp ? (exp.certificates || []).find(c => c.certName === expPlot.certificateName) : null;
-                                                            const certDisplay = certObj && certObj.certLevel ? `${expPlot.certificateName} (${certObj.certLevel})` : expPlot.certificateName;
+                                                            let certDisplay = certObj && certObj.certLevel ? `${expPlot.certificateName} (${certObj.certLevel})` : expPlot.certificateName;
+                                                            (expPlot.additionalCertificates || []).forEach(addCert => {
+                                                                if (!addCert) return;
+                                                                const cObj = exp ? (exp.certificates || []).find(c => c.certName === addCert) : null;
+                                                                const cDisplay = cObj && cObj.certLevel ? `${addCert} (${cObj.certLevel})` : addCert;
+                                                                if (!certDisplay) certDisplay = cDisplay;
+                                                                else certDisplay += ` & ${cDisplay}`;
+                                                            });
                                                             return (
                                                                 <div key={idx} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700/50">
                                                                     <div>
@@ -7289,7 +7345,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                             {expertName}
                                                                             {expPlot.role && <span className="font-normal text-slate-500">{" "}({expPlot.role})</span>}
                                                                         </p>
-                                                                        {expPlot.certificateName && <p className="text-[10px] text-slate-500">SKA: {certDisplay}</p>}
+                                                                        {(expPlot.certificateName || (expPlot.additionalCertificates || []).length > 0) && <p className="text-[10px] text-slate-500">SKA: {certDisplay}</p>}
                                                                     </div>
                                                                     <div className="text-right">
                                                                         <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-0.5 rounded-full">{expPlot.manMonth} MM</span>
@@ -7490,7 +7546,14 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                     {
                                                                         (() => {
                                                                             const certObj = exp.certificates?.find(c => c.certName === tender.plotData.certificateName);
-                                                                            const certDisplay = certObj && certObj.certLevel ? `${tender.plotData.certificateName} (${certObj.certLevel})` : (tender.plotData.certificateName || '-');
+                                                                            let certDisplay = certObj && certObj.certLevel ? `${tender.plotData.certificateName} (${certObj.certLevel})` : (tender.plotData.certificateName || '-');
+                                                                            (tender.plotData.additionalCertificates || []).forEach(addCert => {
+                                                                                if (!addCert) return;
+                                                                                const cObj = exp.certificates?.find(c => c.certName === addCert);
+                                                                                const cDisplay = cObj && cObj.certLevel ? `${addCert} (${cObj.certLevel})` : addCert;
+                                                                                if (certDisplay === '-') certDisplay = cDisplay;
+                                                                                else certDisplay += ` & ${cDisplay}`;
+                                                                            });
                                                                             return <span>SKA: {certDisplay}</span>;
                                                                         })()
                                                                     }
@@ -7545,12 +7608,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
             return (
                 <>
                     {renderPrintExecutiveReport()}
-                    <div id="main-ui-wrapper" className="flex h-screen text-slate-800 dark:text-slate-200 bg-[#f0f4f8] dark:bg-slate-950 transition-colors duration-200 relative overflow-hidden print:hidden">
-                        {/* Glowing Orbs for Glassmorphism */}
+                    <div id="main-ui-wrapper" className="flex h-screen text-slate-800 dark:text-slate-200 bg-transparent transition-colors duration-200 relative overflow-hidden print:hidden">
+                        {/* Subtle Glowing Orbs for Glassmorphism Depth */}
                         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-                            <div className="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full bg-indigo-400/40 dark:bg-indigo-900/20 blur-[120px] mix-blend-multiply dark:mix-blend-screen opacity-80 animate-blob"></div>
-                            <div className="absolute -bottom-[20%] -right-[10%] w-[60vw] h-[60vw] rounded-full bg-fuchsia-400/40 dark:bg-fuchsia-900/20 blur-[120px] mix-blend-multiply dark:mix-blend-screen opacity-80 animate-blob" style={{ animationDelay: '2s' }}></div>
-                            <div className="absolute top-[30%] left-[40%] w-[40vw] h-[40vw] rounded-full bg-sky-300/40 dark:bg-sky-900/20 blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-80 animate-blob" style={{ animationDelay: '4s' }}></div>
+                            <div className="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full bg-indigo-500/10 dark:bg-indigo-600/10 blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-60"></div>
+                            <div className="absolute top-[40%] -right-[10%] w-[50vw] h-[50vw] rounded-full bg-fuchsia-500/10 dark:bg-fuchsia-600/10 blur-[120px] mix-blend-multiply dark:mix-blend-screen opacity-60"></div>
                         </div>
 
                         <div className="relative z-10 flex w-full h-full">
@@ -7561,7 +7623,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             {renderKPIInfoModal()}
                             {showProjectTypeModal && (
                                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                                    <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-2xl max-w-sm w-full animate-in fade-in zoom-in duration-200">
+                                    <div className="glass-card p-6 rounded-3xl shadow-2xl max-w-sm w-full animate-in fade-in zoom-in duration-200">
                                         <div className="flex items-center justify-between mb-5">
                                             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                                 <Icon name="briefcase" size={20} className="text-blue-500" /> Detail Tipe Proyek
@@ -7597,7 +7659,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             )}
                             {showPrintModal && (
                                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                                    <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
+                                    <div className="glass-card p-6 rounded-3xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
                                         <div className="flex items-center justify-between mb-5">
                                             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Opsi Ekspor Laporan</h3>
                                             <button onClick={() => setShowPrintModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><Icon name="x" size={20} /></button>
@@ -7639,8 +7701,8 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     </div>
                                 </div>
                             )}
-                            <aside className="hidden lg:flex lg:relative z-auto w-[260px] my-4 ml-4 rounded-[2.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/60 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 flex-col shrink-0 transition-colors duration-300 shadow-2xl shadow-slate-200/50 dark:shadow-slate-950/50 overflow-hidden">
-                                <div className="p-6 pb-4 border-b border-white/20 dark:border-slate-700/30">
+                            <aside className="hidden lg:flex lg:relative z-auto w-[270px] my-5 ml-5 rounded-[2rem] glass-panel text-slate-700 dark:text-slate-200 flex-col shrink-0 transition-all duration-300 shadow-xl overflow-hidden">
+                                <div className="p-7 pb-5 border-b border-slate-200/50 dark:border-slate-700/30">
                                     <div className="flex items-center gap-3 w-full mb-3">
                                         <div className="w-10 h-10 shrink-0 flex items-center justify-center">
                                             <img src={logoImg} alt="Logo SIDAMON" className="w-full h-full object-contain drop-shadow-sm" />
@@ -7675,7 +7737,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             </aside>
 
                             <main className="flex-1 flex flex-col overflow-hidden bg-transparent relative min-w-0 transition-colors duration-200">
-                                <header className="h-16 lg:h-20 mx-4 lg:mx-6 mt-4 lg:mt-6 rounded-[2rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/60 dark:border-slate-700/50 flex items-center justify-between px-6 lg:px-8 z-10 shrink-0 gap-2 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 transition-colors duration-300">
+                                <header className="h-[72px] mx-5 lg:mx-8 mt-5 lg:mt-5 rounded-2xl glass-panel flex items-center justify-between px-6 lg:px-8 z-10 shrink-0 gap-3 shadow-md transition-all duration-300">
                                     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                         <div className="min-w-0">
                                             <h2 className="text-sm sm:text-base lg:text-xl font-bold text-slate-800 dark:text-slate-100 truncate transition-colors duration-200">
@@ -7868,7 +7930,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             {/* Lpse Manager Modal Inline */}
                             {showLpseManager && (
                                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[120] flex items-center justify-center fade-in p-4">
-                                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
+                                    <div className="glass-card rounded-3xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
                                         <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
                                             <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><Icon name="settings" size={20} className="text-slate-400" /> Kelola Daftar LPSE</h3>
                                             <button onClick={() => setShowLpseManager(false)} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -7909,7 +7971,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             {/* Cert Manager Modal Inline */}
                             {showCertManager && (
                                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[130] flex items-center justify-center fade-in p-4">
-                                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
+                                    <div className="glass-card rounded-3xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
                                         <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
                                             <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><Icon name="settings" size={20} className="text-slate-400" /> Kelola Daftar Sertifikat</h3>
                                             <button onClick={() => setShowCertManager(false)} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -7950,13 +8012,13 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             {/* Alert Modal */}
                             {alertModal.isOpen && (
                                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center fade-in p-4">
-                                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm p-6 transform scale-in border border-slate-200 dark:border-slate-800 text-center">
+                                    <div className="glass-card rounded-3xl shadow-2xl w-full max-w-sm p-6 transform scale-in border border-slate-200 dark:border-slate-800 text-center">
                                         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
                                             <Icon name="alert-triangle" size={32} />
                                         </div>
                                         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">{alertModal.title}</h3>
                                         <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 whitespace-pre-line">{alertModal.message}</p>
-                                        <button onClick={() => setAlertModal({ isOpen: false, title: '', message: '' })} className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-colors">
+                                        <button onClick={() => setAlertModal({ isOpen: false, title: '', message: '' })} className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0">
                                             Mengerti
                                         </button>
                                     </div>
@@ -8038,7 +8100,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
             const darkColor = darkColorMap[color] || '';
 
             return (
-                <div onClick={onClick} className={`bg-white/80 dark:bg-slate-800/80 backdrop-blur-3xl p-4 sm:p-5 lg:p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between ${onClick ? 'cursor-pointer' : ''}`}>
+                <div onClick={onClick} className={`glass-card p-4 sm:p-5 lg:p-6 rounded-[2rem] hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between ${onClick ? 'cursor-pointer' : ''}`}>
                     <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
                         <div className={`p-3.5 rounded-2xl ${color} ${darkColor} shadow-inner`}>{icon}</div>
                         {trendUp !== null && (
