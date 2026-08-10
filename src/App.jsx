@@ -8412,7 +8412,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 </div>
                             </aside>
 
-                            <main className="flex-1 min-w-0 p-5 pl-0 lg:pl-5 h-screen overflow-y-auto">
+                            <main className="flex-1 min-w-0 p-4 lg:p-5 h-screen overflow-y-auto">
                                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-3xl p-6 rounded-3xl border border-white/50 dark:border-slate-700/50 shadow-xl mb-6 relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 dark:bg-indigo-400/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-indigo-500/10 dark:group-hover:bg-indigo-400/10 transition-colors duration-700"></div>
                                     <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 dark:bg-blue-400/5 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-400/10 transition-colors duration-700"></div>
@@ -8489,7 +8489,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                             {mobileMenuOpen && (
                                 <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-900/80 backdrop-blur-sm z-[80] lg:hidden animate-fade-in" onClick={() => setMobileMenuOpen(false)}>
-                                    <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/50 dark:border-slate-700/50 shadow-2xl p-4 animate-slide-up" onClick={e => e.stopPropagation()}>
+                                    <div className="absolute bottom-28 left-0 right-0 mx-auto w-[90%] max-w-[380px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/50 dark:border-slate-700/50 shadow-2xl p-4 animate-slide-up" onClick={e => e.stopPropagation()}>
                                         <div className="grid grid-cols-3 gap-2">
                                             <MobileMenuItem icon={<Icon name="layout-dashboard" size={20} />} label="Beranda" isActive={activeTab === 'dashboard'} onClick={() => { handleTabChange('dashboard'); setMobileMenuOpen(false); }} />
                                             {canAccessMenu('Proyek') && (
@@ -8509,7 +8509,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             )}
                                             {(canAccessMenu('Inventaris') || canAccessMenu('Admin Aset')) && (
                                                 <>
-                                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-4">Assets</div>
+                                                    <div className="col-span-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Assets</div>
                                                     {canAccessMenu('Inventaris') && (
                                                         <MobileMenuItem icon={<Icon name="box" size={20} />} label="Logistik & Inventaris" isActive={activeTab === 'inventaris'} onClick={() => { handleTabChange('inventaris'); setMobileMenuOpen(false); }} />
                                                     )}
