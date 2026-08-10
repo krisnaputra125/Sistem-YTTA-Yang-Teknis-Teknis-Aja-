@@ -578,6 +578,24 @@ import * as XLSX from 'xlsx-js-style';
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
             const [activeTab, setActiveTab] = useState('dashboard');
+            
+            const [showCurtain, setShowCurtain] = useState(false);
+            const [animateCurtain, setAnimateCurtain] = useState(false);
+            
+            useEffect(() => {
+                if (!currentUser) {
+                    // Reset state when logged out so it triggers again on next login
+                    setAnimateCurtain(false);
+                    setShowCurtain(false);
+                } else if (currentUser && userRole !== 'Guest' && !animateCurtain) {
+                    setShowCurtain(true);
+                    setTimeout(() => setAnimateCurtain(true), 50);
+                    setTimeout(() => {
+                        setShowCurtain(false);
+                    }, 1500); // Animation duration
+                }
+            }, [currentUser, userRole, animateCurtain]);
+
             const [usersList, setUsersList] = useState([]);
             const [loadingUsers, setLoadingUsers] = useState(false);            
             const [activeScheduleProject, setActiveScheduleProject] = useState(null);
@@ -8209,6 +8227,16 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
             return (
         <>
+            {showCurtain && (
+                <div className="fixed inset-0 z-[9999] flex pointer-events-none overflow-hidden">
+                    <div className={`w-1/2 h-full bg-slate-900 border-r border-emerald-500/30 flex items-center justify-end pr-8 transition-transform duration-1000 ease-[cubic-bezier(0.83,0,0.17,1)] ${animateCurtain ? '-translate-x-full' : 'translate-x-0'}`}>
+                        <div className="text-white text-5xl font-black">SIDA</div>
+                    </div>
+                    <div className={`w-1/2 h-full bg-slate-900 border-l border-emerald-500/30 flex items-center justify-start pl-8 transition-transform duration-1000 ease-[cubic-bezier(0.83,0,0.17,1)] ${animateCurtain ? 'translate-x-full' : 'translate-x-0'}`}>
+                        <div className="text-emerald-500 text-5xl font-black">MON.</div>
+                    </div>
+                </div>
+            )}
             {!currentUser ? <Login /> : userRole === 'Guest' ? (
                 <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
                     <div className="text-center text-white bg-slate-800 p-8 rounded-3xl shadow-xl border border-slate-700 max-w-sm">
