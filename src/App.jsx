@@ -7151,16 +7151,31 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        {usr.role === 'Guest' ? (
-                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                                                                <Icon name="clock" size={14} /> Menunggu
-                                                            </span>
-                                                        ) : (
-                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                                                <Icon name="check-circle-2" size={14} /> Aktif
-                                                            </span>
-                                                        )}
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center justify-center gap-3">
+                                                            {usr.role === 'Guest' ? (
+                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                                                    <Icon name="clock" size={14} /> Menunggu
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                                                    <Icon name="check-circle-2" size={14} /> Aktif
+                                                                </span>
+                                                            )}
+                                                            <button 
+                                                                onClick={() => {
+                                                                    if(window.confirm(`Apakah Anda yakin ingin menghapus pengguna ${usr.email}? Akses mereka akan sepenuhnya dicabut.`)) {
+                                                                        firebase.database().ref(`pmc_users/${usr.uid}`).remove()
+                                                                            .then(() => alert('Pengguna berhasil dihapus dari sistem.'))
+                                                                            .catch(err => alert('Gagal menghapus pengguna: ' + err.message));
+                                                                    }
+                                                                }}
+                                                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                                title="Hapus Pengguna"
+                                                            >
+                                                                <Icon name="trash-2" size={18} />
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))
