@@ -2214,15 +2214,15 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             </div>
 
                             {/* BENTO CELL 6: Logistik & Inventaris */}
-                            <div onClick={() => setActiveTab('inventaris')} className="col-span-1 md:col-span-2 lg:col-span-2 bg-slate-800 dark:bg-slate-950 rounded-3xl p-6 shadow-xl shadow-slate-300/50 dark:shadow-none text-white cursor-pointer hover:scale-[1.02] transition-transform flex items-center justify-between overflow-hidden relative group">
+                            <div onClick={() => setActiveTab('inventaris')} className="col-span-1 md:col-span-2 lg:col-span-2 bg-blue-900 dark:bg-blue-950 rounded-3xl p-6 shadow-xl shadow-blue-900/20 dark:shadow-none text-white cursor-pointer hover:scale-[1.02] transition-transform flex items-center justify-between overflow-hidden relative group">
                                 <div className="absolute right-0 bottom-0 opacity-10 translate-x-2 translate-y-2 group-hover:rotate-12 transition-transform duration-500">
                                     <Icon name="box" size={100} />
                                 </div>
                                 <div className="relative z-10">
                                     <h4 className="text-4xl font-bold mb-1">{inventory.length}</h4>
-                                    <p className="text-sm font-medium text-slate-300">Item Logistik</p>
+                                    <p className="text-sm font-medium text-blue-100">Item Logistik</p>
                                 </div>
-                                <div className="w-10 h-10 rounded-full border border-slate-600 flex items-center justify-center relative z-10 group-hover:bg-slate-700 transition-colors">
+                                <div className="w-10 h-10 rounded-full border border-blue-700 flex items-center justify-center relative z-10 group-hover:bg-blue-800 transition-colors">
                                     <Icon name="chevron-right" size={18} />
                                 </div>
                             </div>
