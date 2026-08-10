@@ -5581,6 +5581,23 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 );
             };
 
+            
+            const renderAlertModal = () => {
+                if (!alertModal.isOpen) return null;
+                return (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setAlertModal({ ...alertModal, isOpen: false })}></div>
+                        <div className="relative bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full scale-in-center">
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{alertModal.title}</h3>
+                            <p className="text-slate-600 dark:text-slate-300 mb-6 whitespace-pre-wrap">{alertModal.message}</p>
+                            <div className="flex justify-end">
+                                <button onClick={() => setAlertModal({ ...alertModal, isOpen: false })} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">Tutup</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
             const renderFuturisticConfirm = () => {
                 if (!confirmDialog.isOpen) return null;
 
@@ -8511,6 +8528,19 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             </nav>
                         </div>
                     </div>
+
+                            {/* --- SEMUA MODAL SISTEM --- */}
+                            <ModalForm />
+                            <ExpertModalForm />
+                            <ExpertCertModalForm />
+                            <ExpertTenderModalForm />
+                            <ImportExcelModal />
+                            <AssignmentModalForm />
+                            {renderDominoModal()}
+                            {renderKPIInfoModal()}
+                            {renderFuturisticConfirm()}
+                            {renderAlertModal()}
+
                         </>
                     )}
                 </>
