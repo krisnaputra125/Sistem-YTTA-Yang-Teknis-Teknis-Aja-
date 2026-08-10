@@ -1,15 +1,21 @@
+
+import { useAuth } from './AuthContext';
+import Login from './Login';
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import logoImg from '../LGIHT TRANSPARAN (1).PNG';
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/database';
+import firebase, { db, auth } from './firebase';
+
 import * as XLSX from 'xlsx-js-style';
 
 
         // --- SISTEM ICON INTERNAL ---
         const Icon = ({ name, size = 20, className = "" }) => {
             const paths = {
+                "package": '<line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
                 "layout-dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
                 "briefcase": '<rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+                "user": '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
                 "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
                 "calendar": '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
                 "chevron-down": '<polyline points="6 9 12 15 18 9"/>',
@@ -26,6 +32,7 @@ import * as XLSX from 'xlsx-js-style';
                 "check-circle-2": '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
                 "award": '<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
                 "shield": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+                "log-out": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
                 "edit-3": '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
                 "edit-2": '<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>',
                 "phone": '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
@@ -548,6 +555,8 @@ import * as XLSX from 'xlsx-js-style';
         let assignmentSaveTimeout = null;
 
         function App() {
+    const { currentUser, userRole, canAccessMenu, canCreateProject, canDeleteProject, canEditProjectAdmin, canEditProjectTechnical, canEditTeamAllocation } = useAuth();
+    
             const [isDarkMode, setIsDarkMode] = React.useState(() => {
                 if (typeof window !== 'undefined') {
                     return localStorage.getItem('theme') === 'dark';
@@ -569,6 +578,8 @@ import * as XLSX from 'xlsx-js-style';
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
             const [activeTab, setActiveTab] = useState('dashboard');
+            const [usersList, setUsersList] = useState([]);
+            const [loadingUsers, setLoadingUsers] = useState(false);            
             const [activeScheduleProject, setActiveScheduleProject] = useState(null);
             const [scheduleZoom, setScheduleZoom] = useState('month');
             const [scheduleFilterUser, setScheduleFilterUser] = useState('Semua');
@@ -589,8 +600,15 @@ import * as XLSX from 'xlsx-js-style';
             const [experts, setExperts] = useState([]);
             const [borrowCart, setBorrowCart] = useState([]);
             const [loading, setLoading] = useState(true);
-            const [errorMsg, setErrorMsg] = useState("");
+            const [errorMsg, setErrorMsg] = useState('');
             const [isLive, setIsLive] = useState(false);
+
+            // Admin Aset States
+            const [adminAsetFilter, setAdminAsetFilter] = useState('Semua');
+            const [adminAsetSearch, setAdminAsetSearch] = useState('');
+            const [adminAsetModal, setAdminAsetModal] = useState({ isOpen: false, mode: 'add', data: null });
+            const [adminAsetConfirm, setAdminAsetConfirm] = useState({ isOpen: false, item: null, action: null });
+            const [adminAsetFormData, setAdminAsetFormData] = useState({});
 
             const [printData, setPrintData] = useState(null);
             const [printZoomProject, setPrintZoomProject] = useState(null);
@@ -600,39 +618,50 @@ import * as XLSX from 'xlsx-js-style';
             // Pending Modal States
             const [showPendingModal, setShowPendingModal] = useState(false);
             const [pendingProjectData, setPendingProjectData] = useState(null);
-            const [pendingReasonText, setPendingReasonText] = useState("");
+            const [pendingReasonText, setPendingReasonText] = useState('');
 
             // Resume Modal States
             const [showResumeModal, setShowResumeModal] = useState(false);
             const [resumeProjectData, setResumeProjectData] = useState(null);
 
             // Alert Modal States
-            const [alertModal, setAlertModal] = useState({ isOpen: false, title: 'Perhatian', message: '' });
+
+            // Dark Mode State
+            const [darkMode, setDarkMode] = useState(() => {
+                const savedMode = localStorage.getItem('theme');
+                if (savedMode) return savedMode === 'dark';
+                return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            });
+
             React.useEffect(() => {
-                // Print mode is now interactive. User must click "Simpan PDF / Cetak" manually.
-            }, [printData]);
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                }
+            }, [darkMode]);
 
-            // Firebase Configuration
-            const firebaseConfig = {
-                apiKey: "AIzaSyDerRfccB2e-k3SSLoo5gxh10sRy9FRRwY",
-                authDomain: "project-management-control.firebaseapp.com",
-                databaseURL: "https://project-management-control-default-rtdb.asia-southeast1.firebasedatabase.app/",
-                projectId: "project-management-control",
-                storageBucket: "project-management-control.firebasestorage.app",
-                messagingSenderId: "1065130749964",
-                appId: "1:1065130749964:web:404873304275127c85fe29",
-                measurementId: "G-LLNQ6P9DQ9"
-            };
+            // Online State
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            const firebaseDbRef = typeof firebase !== 'undefined' ? firebase.database().ref('pmc_data') : null;
+            React.useEffect(() => {
+                const handleOnline = () => setIsOnline(true);
+                const handleOffline = () => setIsOnline(false);
 
-            // Fitur Sanitasi Firebase: Mengubah karakter dilarang seperti titik (.) menjadi _DOT_ sebelum disimpan, 
-            // lalu mengembalikannya menjadi titik (.) saat dibaca agar nama tetap utuh di UI
-            const encodeKey = (k) => typeof k === 'string' ? k.replace(/\./g, '__DOT__').replace(/#/g, '__HASH__').replace(/\$/g, '__DOLLAR__').replace(/\[/g, '__LBRACK__').replace(/\]/g, '__RBRACK__').replace(/\//g, '__SLASH__') : k;
-            const decodeKey = (k) => typeof k === 'string' ? k.replace(/__DOT__/g, '.').replace(/__HASH__/g, '#').replace(/__DOLLAR__/g, '$').replace(/__LBRACK__/g, '[').replace(/__RBRACK__/g, ']').replace(/__SLASH__/g, '/') : k;
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+
+                return () => {
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                };
+            }, []);
+
+
+            const [alertModal, setAlertModal] = useState({ isOpen: false, title: 'Perhatian', message: '' });
+
 
             // Old URL Web App Google Apps Script (Digunakan sekali saat migrasi otomatis)
             const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEt5puRB26FO6mGfnxVvofBJaDwLtH3O0yd-Ugsugn2D2KezKpi_ynGz7hw24kpLIpRQ/exec';
@@ -653,13 +682,6 @@ import * as XLSX from 'xlsx-js-style';
                 firebase.database().ref('pmc_cert_list').set(newList);
                 setCertList(newList);
             };
-
-            // State Developer Auth (BETA)
-            const [showDevPrompt, setShowDevPrompt] = useState(false);
-            const [devPassword, setDevPassword] = useState("");
-            const [devAuthError, setDevAuthError] = useState("");
-            const [isDeveloper, setIsDeveloper] = useState(false);
-            const [pendingTabAttempt, setPendingTabAttempt] = useState(null);
             const [showKPIInfoModal, setShowKPIInfoModal] = useState(false);
             const [showProjectTypeModal, setShowProjectTypeModal] = useState(false);
 
@@ -794,6 +816,8 @@ import * as XLSX from 'xlsx-js-style';
 
 
             // FETCH DATA FROM FIREBASE
+            const firebaseDbRef = firebase.database().ref('pmc_data');
+            
             const initFirebaseListener = () => {
                 if (!firebaseDbRef) return;
                 setLoading(true);
@@ -824,6 +848,21 @@ import * as XLSX from 'xlsx-js-style';
                     firebase.database().ref('pmc_inventory').on('value', (snap) => {
                         const invData = snap.val() || [];
                         setInventory(invData.filter(Boolean));
+                    });
+
+                    // Listener Khusus untuk Manajemen Pengguna
+                    firebase.database().ref('pmc_users').on('value', (snap) => {
+                        const usersData = snap.val();
+                        if (usersData) {
+                            // Convert object of { uid: { email, role } } into array of objects
+                            const usersArray = Object.keys(usersData).map(uid => ({
+                                uid,
+                                ...usersData[uid]
+                            }));
+                            setUsersList(usersArray);
+                        } else {
+                            setUsersList([]);
+                        }
                     });
 
                     // Listener Khusus untuk Tenaga Ahli (dipisah dari pmc_data)
@@ -1046,14 +1085,6 @@ import * as XLSX from 'xlsx-js-style';
 
             // Mengganti Tab dan me-reset view
             const handleTabChange = (tab) => {
-                if ((tab === 'kpi' || tab === 'inventaris' || tab === 'ahli' || tab === 'penugasan') && !isDeveloper) {
-                    setShowDevPrompt(true);
-                    setPendingTabAttempt(tab);
-                    setDevPassword("");
-                    setDevAuthError("");
-                    setSidebarOpen(false);
-                    return;
-                }
                 setActiveTab(tab);
                 if (tab !== 'schedule') {
                     setActiveScheduleProject(null);
@@ -1069,20 +1100,7 @@ import * as XLSX from 'xlsx-js-style';
                 setSearchInvTab("");
                 setSearchExpertTab("");
                 setSearchAssignmentTab("");
-            };
-
-            const handleDevLogin = () => {
-                if (devPassword === "Batanghari15") {
-                    setIsDeveloper(true);
-                    setShowDevPrompt(false);
-                    setActiveTab(pendingTabAttempt || 'kpi');
-                    setPendingTabAttempt(null);
-                } else {
-                    setDevAuthError("Password salah! Akses ditolak.");
-                }
-            };
-
-            const handleAnalyzeDomino = (project) => {
+            };const handleAnalyzeDomino = (project) => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
@@ -2069,6 +2087,25 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 return (
                     <div className="space-y-8 fade-in">
                         <ErrorBanner />
+
+                        {/* WELCOME CARD */}
+                        {currentUser && (
+                            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-900/80 dark:to-indigo-900/80 rounded-3xl p-6 lg:p-8 shadow-xl shadow-blue-200/50 dark:shadow-none text-white relative overflow-hidden flex items-center justify-between mb-2 scale-in-center">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 transform translate-x-4 -translate-y-4 pointer-events-none">
+                                    <Icon name="sun" size={160} />
+                                </div>
+                                <div className="relative z-10">
+                                    <h2 className="text-2xl lg:text-3xl font-black mb-2 tracking-tight">Selamat Datang, {currentUser.displayName || currentUser.email.split('@')[0]}! 👋</h2>
+                                    <p className="text-blue-100 font-medium text-sm lg:text-base">SIDAMON Gaharu Sempana Group, Anda masuk sebagai <span className="px-3 py-1 bg-white/20 rounded-full ml-1 font-bold text-[10px] lg:text-xs uppercase tracking-wider">{userRole}</span></p>
+                                </div>
+                                <div className="hidden lg:block relative z-10">
+                                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                                        <Icon name="user" size={32} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 lg:gap-6">
                             {/* BENTO CELL 1: Total Proyek (Hero) */}
@@ -3495,6 +3532,313 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 </table>
                             </div>
                         </div>
+                    </div>
+                );
+            };
+
+            
+            // --- HANDLERS UNTUK ADMIN ASET ---
+            const handleAdminAsetInventoryAction = async (action, payload) => {
+                let newData = [...inventory];
+                if (action === 'add') {
+                    newData.push(payload);
+                } else if (action === 'edit' || action === 'verify') {
+                    newData = newData.map(item => item.id === payload.id ? payload : item);
+                } else if (action === 'delete') {
+                    newData = newData.filter(item => item.id !== payload.id);
+                }
+                await firebase.database().ref('pmc_inventory').set(newData);
+                setAdminAsetModal({ isOpen: false, mode: 'add', data: null });
+                setAdminAsetConfirm({ isOpen: false, item: null, action: null });
+            };
+
+            const handleAdminAsetVerify = (item) => {
+                const updatedItem = { ...item, status: 'Dipinjam' };
+                handleAdminAsetInventoryAction('verify', updatedItem);
+            };
+
+            const handleAdminAsetReject = (item) => {
+                setAdminAsetConfirm({ isOpen: true, item: item, action: 'reject' });
+            };
+
+            const handleAdminAsetReturnVerify = (item) => {
+                setAdminAsetConfirm({ isOpen: true, item: item, action: 'accept_return' });
+            };
+
+            const handleAdminAsetReturnReject = (item) => {
+                setAdminAsetConfirm({ isOpen: true, item: item, action: 'reject_return' });
+            };
+
+            const handleAdminAsetExtendVerify = (item) => {
+                setAdminAsetConfirm({ isOpen: true, item: item, action: 'accept_extend' });
+            };
+
+            const handleAdminAsetExtendReject = (item) => {
+                setAdminAsetConfirm({ isOpen: true, item: item, action: 'reject_extend' });
+            };
+
+            const handleAdminAsetConfirmAction = () => {
+                const item = adminAsetConfirm.item;
+                if (!item) return;
+                
+                if (adminAsetConfirm.action === 'delete') {
+                    handleAdminAsetInventoryAction('delete', item);
+                } else if (adminAsetConfirm.action === 'reject') {
+                    const updatedItem = { 
+                        ...item, 
+                        status: 'Tersedia', 
+                        borrower: null, 
+                        borrowDate: null, 
+                        returnDate: null, 
+                        projectAssigned: null 
+                    };
+                    handleAdminAsetInventoryAction('verify', updatedItem);
+                } else if (adminAsetConfirm.action === 'accept_return') {
+                    const updatedItem = { 
+                        ...item, 
+                        status: 'Tersedia', 
+                        lastBorrower: item.borrower,
+                        lastBorrowDate: item.borrowDate,
+                        borrower: null, 
+                        borrowDate: null, 
+                        returnDate: null, 
+                        projectAssigned: null 
+                    };
+                    handleAdminAsetInventoryAction('verify', updatedItem);
+                } else if (adminAsetConfirm.action === 'reject_return') {
+                    const updatedItem = {
+                        ...item,
+                        status: 'Dipinjam'
+                    };
+                    handleAdminAsetInventoryAction('verify', updatedItem);
+                } else if (adminAsetConfirm.action === 'accept_extend') {
+                    const updatedItem = {
+                        ...item,
+                        status: 'Dipinjam',
+                        returnDate: item.newReturnDate
+                    };
+                    delete updatedItem.newReturnDate;
+                    handleAdminAsetInventoryAction('verify', updatedItem);
+                } else if (adminAsetConfirm.action === 'reject_extend') {
+                    const updatedItem = {
+                        ...item,
+                        status: 'Dipinjam'
+                    };
+                    delete updatedItem.newReturnDate;
+                    handleAdminAsetInventoryAction('verify', updatedItem);
+                }
+                setAdminAsetConfirm({ isOpen: false, item: null, action: null });
+            };
+
+            const handleAdminAsetSubmit = (e) => {
+                e.preventDefault();
+                let finalPayload = { ...adminAsetFormData };
+                if (adminAsetModal.mode === 'add' && !finalPayload.id) {
+                    const prefix = 'ID';
+                    if (inventory.length === 0) {
+                        finalPayload.id = `${prefix}-001`;
+                    } else {
+                        const ids = inventory.map(item => parseInt((item.id || '').split('-')[1], 10)).filter(n => !isNaN(n));
+                        const maxId = ids.length > 0 ? Math.max(...ids) : 0;
+                        finalPayload.id = `${prefix}-${String(maxId + 1).padStart(3, '0')}`;
+                    }
+                }
+                handleAdminAsetInventoryAction(adminAsetModal.mode, finalPayload);
+            };
+
+            // React.useEffect(() => {
+            //     if (adminAsetFilter !== 'Semua') {
+            //         const count = inventory.filter(i => i.status === adminAsetFilter).length;
+            //         if (count === 0 && !loading) {
+            //             setAdminAsetFilter('Semua');
+            //         }
+            //     }
+            // }, [inventory, adminAsetFilter, loading]);
+
+            // --- KOMPONEN TAB: ADMIN ASET ---
+            const renderAdminAset = () => {
+                const filteredInv = inventory.filter(item => {
+                    const matchStatus = adminAsetFilter === 'Semua' || item.status === adminAsetFilter;
+                    const matchSearch = (item.name || '').toLowerCase().includes(adminAsetSearch.toLowerCase()) || 
+                                        (item.type || '').toLowerCase().includes(adminAsetSearch.toLowerCase()) ||
+                                        ((item.borrower || '').toLowerCase().includes(adminAsetSearch.toLowerCase()));
+                    return matchStatus && matchSearch;
+                });
+
+                return (
+                    <div className="space-y-6 fade-in">
+                        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4">
+                            <div className="flex flex-wrap gap-2">
+                                {['Semua', 'Menunggu Verifikasi', 'Dipinjam', 'Menunggu Verifikasi Pengembalian', 'Menunggu Verifikasi Perpanjangan'].map(status => {
+                                    const count = status === 'Semua' ? inventory.length : inventory.filter(i => i.status === status).length;
+                                    if (status !== 'Semua' && count === 0) return null;
+                                    return (
+                                        <button 
+                                            key={status}
+                                            onClick={() => setAdminAsetFilter(status)}
+                                            className={`px-3 py-1.5 rounded-xl font-medium transition-colors text-sm ${adminAsetFilter === status ? 'bg-indigo-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}
+                                        >
+                                            {status === 'Menunggu Verifikasi Pengembalian' ? 'Menunggu Pengembalian' : status === 'Menunggu Verifikasi Perpanjangan' ? 'Menunggu Perpanjangan' : status}
+                                            {status === 'Menunggu Verifikasi' && (
+                                                <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                                    {count}
+                                                </span>
+                                            )}
+                                            {status === 'Menunggu Verifikasi Pengembalian' && (
+                                                <span className="ml-2 bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                                    {count}
+                                                </span>
+                                            )}
+                                            {status === 'Menunggu Verifikasi Perpanjangan' && (
+                                                <span className="ml-2 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                                    {count}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
+                                <div className="relative flex-1 xl:w-72">
+                                    <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                    <input
+                                        type="text"
+                                        placeholder="Cari alat..."
+                                        value={adminAsetSearch}
+                                        onChange={(e) => setAdminAsetSearch(e.target.value)}
+                                        className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setAdminAsetFormData({
+                                            id: '', name: '', type: 'Alat Ukur', condition: 'Baik', status: 'Tersedia', borrower: null, borrowDate: null, returnDate: null, lastBorrower: null, lastBorrowDate: null, projectAssigned: null
+                                        });
+                                        setAdminAsetModal({ isOpen: true, mode: 'add', data: null });
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap text-sm"
+                                >
+                                    <Icon name="plus" size={16} /> Tambah Alat
+                                </button>
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <div className="flex justify-center items-center h-64">
+                                <div className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-2 animate-pulse"><Icon name="loader" size={20} className="animate-spin" /> Memuat data aset...</div>
+                            </div>
+                        ) : (
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                                <table className="w-full text-left text-sm whitespace-nowrap">
+                                    <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+                                        <tr>
+                                            <th className="px-5 py-4 font-semibold">Nama Alat</th>
+                                            <th className="px-5 py-4 font-semibold text-center">Status</th>
+                                            <th className="px-5 py-4 font-semibold text-center">Kondisi</th>
+                                            <th className="px-5 py-4 font-semibold text-center">Informasi Proyek</th>
+                                            <th className="px-5 py-4 font-semibold">Data Peminjaman</th>
+                                            <th className="px-5 py-4 font-semibold text-right">Aksi Admin</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                        {filteredInv.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="6" className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                                                    Tidak ada data alat dengan status {adminAsetFilter}.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filteredInv.map(item => {
+                                                const overdue = item.status === 'Dipinjam' && isOverdue(item.returnDate);
+                                                return (
+                                                <tr key={item.id} className={item.status === 'Menunggu Verifikasi' ? 'bg-purple-50/50 dark:bg-purple-900/10' : item.status === 'Menunggu Verifikasi Pengembalian' ? 'bg-orange-50/50 dark:bg-orange-900/10' : item.status === 'Menunggu Verifikasi Perpanjangan' ? 'bg-amber-50/50 dark:bg-amber-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors'}>
+                                                    <td className="px-5 py-4">
+                                                        <div className="font-bold text-slate-900 dark:text-slate-100">{item.name}</div>
+                                                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.id} - {item.type}</div>
+                                                    </td>
+                                                    <td className="px-5 py-4 text-center">
+                                                        {item.status === 'Menunggu Verifikasi' ? (
+                                                            <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800">Menunggu Verifikasi</span>
+                                                        ) : item.status === 'Menunggu Verifikasi Pengembalian' ? (
+                                                            <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border border-orange-200 dark:border-orange-800">Menunggu Pengembalian</span>
+                                                        ) : item.status === 'Menunggu Verifikasi Perpanjangan' ? (
+                                                            <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800">Menunggu Perpanjangan</span>
+                                                        ) : item.status === 'Dipinjam' ? (
+                                                            overdue ? (
+                                                                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800">Masa Pinjam Habis</span>
+                                                            ) : (
+                                                                <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/50">Sedang Dipinjam</span>
+                                                            )
+                                                        ) : (
+                                                            <span className="px-3 py-1 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">{item.status}</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-4 text-center">
+                                                        <span className={`px-3 py-1 rounded-full text-[11px] font-medium ${item.condition === 'Baik' ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 border border-green-200 dark:border-green-800/50' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800/50'}`}>
+                                                            {item.condition}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-5 py-4 text-center">
+                                                        {(item.status === 'Menunggu Verifikasi' || item.status === 'Menunggu Verifikasi Pengembalian' || item.status === 'Menunggu Verifikasi Perpanjangan' || item.status === 'Dipinjam') && item.projectAssigned ? (
+                                                            <div className="text-[12px] font-medium text-slate-700 dark:text-slate-300">
+                                                                {item.projectAssigned}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-slate-400 dark:text-slate-600">-</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-4">
+                                                        {(item.status === 'Menunggu Verifikasi' || item.status === 'Menunggu Verifikasi Pengembalian' || item.status === 'Menunggu Verifikasi Perpanjangan' || item.status === 'Dipinjam') && item.borrower ? (
+                                                            <div>
+                                                                <div className="font-medium text-slate-800 dark:text-slate-200">{item.borrower}</div>
+                                                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.borrowDate ? formatDateIndo(item.borrowDate) : '-'} s/d {item.returnDate ? formatDateIndo(item.returnDate) : '?'}</div>
+                                                                {item.status === 'Menunggu Verifikasi Perpanjangan' && item.newReturnDate && (
+                                                                    <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400 mt-1">
+                                                                        Req: {formatDateIndo(item.newReturnDate)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : item.lastBorrower ? (
+                                                            <div>
+                                                                <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold tracking-wide mb-1 uppercase">Peminjam Terakhir</div>
+                                                                <div className="font-medium text-slate-700 dark:text-slate-300 text-xs">{item.lastBorrower}</div>
+                                                                {item.lastBorrowDate && <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{formatDateIndo(item.lastBorrowDate)}</div>}
+                                                            </div>
+                                                        ) : <span className="text-slate-400 dark:text-slate-600">-</span>}
+                                                    </td>
+                                                    <td className="px-5 py-4">
+                                                        <div className="flex items-center justify-end gap-1.5">
+                                                            {item.status === 'Menunggu Verifikasi' && (
+                                                                <div className="flex gap-1.5 mr-2">
+                                                                    <button onClick={() => handleAdminAsetVerify(item)} title="Verifikasi & Serahkan" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors text-xs flex items-center gap-1.5"><Icon name="check-circle-2" size={14} /> Serahkan</button>
+                                                                    <button onClick={() => handleAdminAsetReject(item)} title="Tolak Penyerahan" className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 font-medium rounded-lg transition-colors text-xs flex items-center border border-red-100 dark:border-red-800/50"><Icon name="x" size={14} /> Tolak</button>
+                                                                </div>
+                                                            )}
+                                                            {item.status === 'Menunggu Verifikasi Pengembalian' && (
+                                                                <div className="flex gap-1.5 mr-2">
+                                                                    <button onClick={() => handleAdminAsetReturnVerify(item)} title="Terima Barang Pengembalian" className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition-colors text-xs flex items-center gap-1.5"><Icon name="check-circle-2" size={14} /> Terima</button>
+                                                                    <button onClick={() => handleAdminAsetReturnReject(item)} title="Tolak Pengembalian" className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 font-medium rounded-lg transition-colors text-xs flex items-center border border-red-100 dark:border-red-800/50"><Icon name="x" size={14} /> Tolak</button>
+                                                                </div>
+                                                            )}
+                                                            {item.status === 'Menunggu Verifikasi Perpanjangan' && (
+                                                                <div className="flex gap-1.5 mr-2">
+                                                                    <button onClick={() => handleAdminAsetExtendVerify(item)} title="Setujui Perpanjangan" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors text-xs flex items-center gap-1.5"><Icon name="check-circle-2" size={14} /> Setujui</button>
+                                                                    <button onClick={() => handleAdminAsetExtendReject(item)} title="Tolak Perpanjangan" className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 font-medium rounded-lg transition-colors text-xs flex items-center border border-red-100 dark:border-red-800/50"><Icon name="x" size={14} /> Tolak</button>
+                                                                </div>
+                                                            )}
+                                                            <button onClick={() => { setAdminAsetFormData({...item}); setAdminAsetModal({ isOpen: true, mode: 'edit', data: item }); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors" title="Edit Alat"><Icon name="edit" size={16} /></button>
+                                                            <button onClick={() => setAdminAsetConfirm({ isOpen: true, item, action: 'delete' })} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Hapus Alat"><Icon name="trash-2" size={16} /></button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 );
             };
@@ -5277,45 +5621,6 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 );
             };
 
-            const renderDeveloperPromptModal = () => {
-                if (!showDevPrompt) return null;
-
-                return (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDevPrompt(false)}></div>
-                        <div className="relative bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-3xl w-full max-w-sm p-8 overflow-hidden scale-in-center">
-                            <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-20 bg-indigo-500"></div>
-                            <div className="flex flex-col items-center text-center relative z-10">
-                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-indigo-50 text-indigo-500 shadow-inner">
-                                    <Icon name="alert-triangle" size={32} />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Akses Terbatas (BETA)</h3>
-                                <p className="text-sm text-slate-500 mb-6 leading-relaxed">Menu {pendingTabAttempt === 'inventaris' ? 'Logistik & Inventaris' : pendingTabAttempt === 'ahli' ? 'Tenaga Ahli' : pendingTabAttempt === 'penugasan' ? 'Penugasan Tenaga Ahli' : 'Evaluasi & KPI'} masih dalam tahap uji coba (BETA) dan sedang dalam tahap pengembangan sementara hanya dapat diakses oleh Developer (Krisna).</p>
-
-                                <input
-                                    type="password"
-                                    placeholder="Masukkan Password Developer"
-                                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-center text-sm font-semibold mb-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all dark:text-slate-200"
-                                    value={devPassword}
-                                    onChange={(e) => {
-                                        setDevPassword(e.target.value);
-                                        setDevAuthError("");
-                                    }}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleDevLogin(); }}
-                                />
-                                {devAuthError ? <p className="text-xs text-red-500 font-medium mb-4">{devAuthError}</p> : <div className="mb-4"></div>}
-
-                                <div className="flex w-full gap-3">
-                                    <button onClick={() => setShowDevPrompt(false)} className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all border border-slate-200/60 dark:border-slate-600/50">Batal</button>
-                                    <button onClick={handleDevLogin} className="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/30">Akses</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
-
-
             const renderDominoModal = () => {
                 if (!dominoAnalysis) return null;
                 const { project, delayDays, impactedEmployees } = dominoAnalysis;
@@ -6746,6 +7051,109 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 );
             };
             // --- KOMPONEN TAB: TIME SCHEDULE (GANTT CHART) ---
+            const renderManajemenPengguna = () => {
+                const roles = [
+                    "Super Admin",
+                    "Manajer Teknis",
+                    "Manajer Administrasi",
+                    "Kordinator Divisi Teknis",
+                    "Kordinator Aset",
+                    "PIC",
+                    "Team Leader Pekerjaan",
+                    "Guest"
+                ];
+
+                const handleRoleChange = (uid, newRole) => {
+                    firebase.database().ref(`pmc_users/${uid}`).update({ role: newRole })
+                        .then(() => console.log('Role updated successfully'))
+                        .catch(error => console.error('Error updating role:', error));
+                };
+
+                return (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 fade-in">
+                        <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-700 group-hover:scale-150"></div>
+                            
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                                            <Icon name="users" size={20} />
+                                        </div>
+                                        Daftar Pengguna Sistem
+                                    </h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Atur hak akses pengguna di sini. Perubahan akan langsung tersimpan ke database.</p>
+                                </div>
+                            </div>
+
+                            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
+                                        <tr>
+                                            <th className="px-6 py-4">Informasi Pengguna</th>
+                                            <th className="px-6 py-4 w-64">Status Akses (Role)</th>
+                                            <th className="px-6 py-4 w-32 text-center">Tindakan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                        {usersList.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="3" className="px-6 py-8 text-center text-slate-500">Memuat data pengguna...</td>
+                                            </tr>
+                                        ) : (
+                                            usersList.map((usr) => (
+                                                <tr key={usr.uid} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold uppercase shadow-sm">
+                                                                {usr.email ? usr.email.charAt(0) : '?'}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-slate-800 dark:text-slate-200">{usr.email || 'Email Tidak Diketahui'}</div>
+                                                                <div className="text-xs text-slate-500 font-mono mt-0.5">UID: {usr.uid}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="relative">
+                                                            <select
+                                                                value={usr.role || 'Guest'}
+                                                                onChange={(e) => handleRoleChange(usr.uid, e.target.value)}
+                                                                className={`w-full appearance-none pl-4 pr-10 py-2.5 rounded-xl border text-sm font-semibold transition-all shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none
+                                                                    ${usr.role === 'Guest' ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400' :
+                                                                    usr.role === 'Super Admin' ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400' :
+                                                                    'bg-white border-slate-300 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200'}`}
+                                                            >
+                                                                {roles.map(r => (
+                                                                    <option key={r} value={r}>{r}</option>
+                                                                ))}
+                                                            </select>
+                                                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                                                                <Icon name="chevron-down" size={16} />
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        {usr.role === 'Guest' ? (
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                                                <Icon name="clock" size={14} /> Menunggu
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                                                <Icon name="check-circle-2" size={14} /> Aktif
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
             const renderTimeSchedule = () => {
                 if (!activeScheduleProject) return null;
                 const p = activeScheduleProject;
@@ -7783,6 +8191,19 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
             };
 
             return (
+        <>
+            {!currentUser ? <Login /> : userRole === 'Guest' ? (
+                <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+                    <div className="text-center text-white bg-slate-800 p-8 rounded-3xl shadow-xl border border-slate-700 max-w-sm">
+                        <div className="mb-4 text-emerald-500 flex justify-center">
+                            <Icon name="clock" size={48} />
+                        </div>
+                        <h1 className="text-xl font-bold mb-2">Menunggu Persetujuan</h1>
+                        <p className="text-sm text-slate-400 mb-6">Akun Anda sedang direview oleh Super Admin. Silakan hubungi Administrator untuk mendapatkan akses.</p>
+                        <button onClick={() => auth.signOut()} className="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium py-2 px-4 rounded-xl transition-colors w-full">Keluar</button>
+                    </div>
+                </div>
+            ) : (
                 <>
                     {renderPrintExecutiveReport()}
                     <div id="main-ui-wrapper" className="flex h-screen text-slate-800 dark:text-slate-200 bg-transparent transition-colors duration-200 relative overflow-hidden print:hidden">
@@ -7794,7 +8215,6 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                         <div className="relative z-10 flex w-full h-full">
                             {renderFuturisticConfirm()}
-                            {renderDeveloperPromptModal()}
                             {renderDominoModal()}
 
                             {renderKPIInfoModal()}
@@ -7895,332 +8315,185 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-2 first:mt-0 px-2">Overview</div>
                                     <SidebarItem icon={<Icon name="layout-dashboard" size={20} />} label="Dashboard" isActive={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
                                     
-                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Project Management & Control</div>
-                                    <SidebarItem icon={<Icon name="briefcase" size={20} />} label="List Proyek" isActive={activeTab === 'proyek'} onClick={() => handleTabChange('proyek')} />
-                                    <SidebarItem icon={<Icon name="calendar" size={20} />} label="Master Schedule" isActive={activeTab === 'master-schedule'} onClick={() => handleTabChange('master-schedule')} />
-                                    <SidebarItem icon={<Icon name="users" size={20} />} label="Alokasi Tim" isActive={activeTab === 'tim'} onClick={() => handleTabChange('tim')} />
-                                    <SidebarItem icon={<Icon name="calendar-days" size={20} />} label="Plotting Jadwal" isActive={activeTab === 'gantt'} onClick={() => handleTabChange('gantt')} />
+                                    {canAccessMenu('Proyek') && (
+                                        <>
+                                            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Project Management & Control</div>
+                                            <SidebarItem icon={<Icon name="briefcase" size={20} />} label="List Proyek" isActive={activeTab === 'proyek'} onClick={() => handleTabChange('proyek')} />
+                                            <SidebarItem icon={<Icon name="calendar" size={20} />} label="Master Schedule" isActive={activeTab === 'master-schedule'} onClick={() => handleTabChange('master-schedule')} />
+                                            <SidebarItem icon={<Icon name="users" size={20} />} label="Alokasi Tim" isActive={activeTab === 'tim'} onClick={() => handleTabChange('tim')} />
+                                            <SidebarItem icon={<Icon name="calendar-days" size={20} />} label="Plotting Jadwal" isActive={activeTab === 'gantt'} onClick={() => handleTabChange('gantt')} />
+                                        </>
+                                    )}
                                     
-                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Database & Assignment Experts</div>
-                                    <SidebarItem icon={<Icon name="award" size={20} />} label="Tenaga Ahli" isActive={activeTab === 'ahli'} onClick={() => handleTabChange('ahli')} />
-                                    <SidebarItem icon={<Icon name="briefcase" size={20} />} label="Penugasan Tenaga Ahli" isActive={activeTab === 'penugasan'} onClick={() => handleTabChange('penugasan')} />
+                                    {canAccessMenu('Tenaga Ahli') && (
+                                        <>
+                                            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Database & Assignment Experts</div>
+                                            <SidebarItem icon={<Icon name="award" size={20} />} label="Tenaga Ahli" isActive={activeTab === 'ahli'} onClick={() => handleTabChange('ahli')} />
+                                            <SidebarItem icon={<Icon name="briefcase" size={20} />} label="Penugasan Tenaga Ahli" isActive={activeTab === 'penugasan'} onClick={() => handleTabChange('penugasan')} />
+                                        </>
+                                    )}
                                     
-                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Assets</div>
-                                    <SidebarItem icon={<Icon name="box" size={20} />} label="Logistik & Inventaris" isActive={activeTab === 'inventaris'} onClick={() => handleTabChange('inventaris')} />
-                                    
-                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Performance</div>
-                                    <SidebarItem icon={<Icon name="bar-chart" size={20} />} label="KPI & Evaluasi" isActive={activeTab === 'kpi'} onClick={() => handleTabChange('kpi')} />
+                                    {(canAccessMenu('Inventaris') || canAccessMenu('Admin Aset')) && (
+                                        <>
+                                            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Assets</div>
+                                            {canAccessMenu('Inventaris') && (
+                                                <SidebarItem icon={<Icon name="box" size={20} />} label="Logistik & Inventaris" isActive={activeTab === 'inventaris'} onClick={() => handleTabChange('inventaris')} />
+                                            )}
+                                            {canAccessMenu('Admin Aset') && (
+                                                <SidebarItem icon={<Icon name="package" size={20} />} label="Admin Aset" isActive={activeTab === 'admin-aset'} onClick={() => handleTabChange('admin-aset')} />
+                                            )}
+                                        </>
+                                    )}
+                                    {canAccessMenu('KPI') && (
+                                        <>
+                                            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Performance</div>
+                                            <SidebarItem icon={<Icon name="bar-chart" size={20} />} label="KPI & Evaluasi" isActive={activeTab === 'kpi'} onClick={() => handleTabChange('kpi')} />
+                                        </>
+                                    )}
+                                    {canAccessMenu('Manajemen Pengguna') && (
+                                        <>
+                                            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Settings</div>
+                                            <SidebarItem icon={<Icon name="settings" size={20} />} label="Manajemen Pengguna" isActive={activeTab === 'pengguna'} onClick={() => handleTabChange('pengguna')} />
+                                        </>
+                                    )}
                                 </nav>
+
+                                <div className="p-4 border-t border-slate-200/50 dark:border-slate-700/30">
+                                    <button 
+                                        onClick={() => auth.signOut()}
+                                        className="w-full flex items-center justify-center gap-2 p-3 rounded-xl transition-all bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-red-200 dark:hover:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 group shadow-sm"
+                                    >
+                                        <Icon name="log-out" size={18} className="transition-transform group-hover:-translate-x-1" />
+                                        <span className="font-bold">Keluar Sistem</span>
+                                    </button>
+                                </div>
                             </aside>
 
-                            <main className="flex-1 flex flex-col overflow-hidden bg-transparent relative min-w-0 transition-colors duration-200">
-                                <header className="h-[72px] mx-5 lg:mx-8 mt-5 lg:mt-5 rounded-2xl glass-panel flex items-center justify-between px-6 lg:px-8 z-10 shrink-0 gap-3 shadow-md transition-all duration-300">
-                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                        <div className="min-w-0">
-                                            <h2 className="text-sm sm:text-base lg:text-xl font-bold text-slate-800 dark:text-slate-100 truncate transition-colors duration-200">
+                            <main className="flex-1 min-w-0 p-5 pl-0 lg:pl-5 h-screen overflow-y-auto">
+                                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-3xl p-6 rounded-3xl border border-white/50 dark:border-slate-700/50 shadow-xl mb-6 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 dark:bg-indigo-400/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-indigo-500/10 dark:group-hover:bg-indigo-400/10 transition-colors duration-700"></div>
+                                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 dark:bg-blue-400/5 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-400/10 transition-colors duration-700"></div>
+                                    
+                                    <div className="relative z-10 flex items-center gap-4">
+                                        <button 
+                                            className="lg:hidden p-2 -ml-2 rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                                            onClick={() => setMobileMenuOpen(true)}
+                                        >
+                                            <Icon name="menu" size={24} />
+                                        </button>
+                                        <div>
+                                            <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
                                                 {activeTab === 'dashboard' && 'Ringkasan Proyek & Personil'}
-                                                {activeTab === 'master-schedule' && 'Master Schedule Proyek'}
-                                                {activeTab === 'proyek' && 'List Proyek'}
-                                                {activeTab === 'tim' && 'Alokasi Tim'}
-                                                {activeTab === 'ahli' && 'Tenaga Ahli & Tender LPSE'}
+                                                {activeTab === 'proyek' && 'Manajemen Proyek'}
+                                                {activeTab === 'master-schedule' && 'Master Schedule (Portofolio)'}
+                                                {activeTab === 'tim' && 'Alokasi Sub-Tim'}
+                                                {activeTab === 'gantt' && 'Plotting Jadwal (Gantt)'}
+                                                {activeTab === 'ahli' && 'Database Tenaga Ahli'}
                                                 {activeTab === 'penugasan' && 'Penugasan Tenaga Ahli'}
-                                                {activeTab === 'gantt' && 'Ploting Jadwal & Timeline'}
-                                                {activeTab === 'timesheet' && 'Timesheet Harian'}
                                                 {activeTab === 'inventaris' && 'Logistik & Inventaris Alat'}
-                                                {activeTab === 'kpi' && 'Evaluasi Tim & KPI'}
-                                                {activeTab === 'schedule' && activeScheduleProject && `Time Schedule: ${activeScheduleProject.name}`}
+                                                {activeTab === 'admin-aset' && 'Manajemen Aset Gudang'}
+                                                {activeTab === 'kpi' && 'KPI & Evaluasi Kinerja'}
+                                                {activeTab === 'pengguna' && 'Manajemen Pengguna'}
                                             </h2>
-                                            <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 hidden sm:block">Aplikasi Manajemen Proyek & Personil Tim Teknis</p>
+                                            <p className="text-sm text-slate-500 font-medium mt-1 tracking-wide">
+                                                Aplikasi Manajemen Proyek & Personil Tim Teknis
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                                        <button
-                                            onClick={() => setIsDarkMode(!isDarkMode)}
-                                            className={`relative inline-flex h-8 w-[64px] shrink-0 items-center rounded-full transition-all duration-500 shadow-inner hover:scale-105 ${isDarkMode ? 'bg-white border-slate-200 dark:bg-slate-200' : 'bg-slate-800 border-slate-700'}`}
-                                            title={isDarkMode ? 'Ubah ke Light Mode' : 'Ubah ke Dark Mode'}
+                                    <div className="relative z-10 flex items-center gap-3 w-full md:w-auto">
+                                        <button 
+                                            onClick={() => setDarkMode(!darkMode)} 
+                                            className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm relative group flex-shrink-0"
+                                            title={darkMode ? "Mode Terang" : "Mode Gelap"}
                                         >
-                                            <span
-                                                className={`inline-flex h-6 w-6 transform items-center justify-center rounded-full transition-transform duration-500 ease-out z-10 ${isDarkMode ? 'translate-x-[34px] bg-slate-900 text-white shadow-md' : 'translate-x-1 bg-white text-slate-800 shadow-md'}`}
-                                            >
-                                                <Icon name={isDarkMode ? "moon" : "sun"} size={14} strokeWidth={2.5} />
-                                            </span>
+                                            <Icon name={darkMode ? "sun" : "moon"} size={20} className={darkMode ? "text-amber-400" : "text-slate-600"} />
                                         </button>
-                                        <div className={`hidden sm:flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-semibold shadow-sm ${isLive ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800' : 'bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800'}`}>
-                                            <Icon name="database" size={14} /> {isLive ? 'Live' : 'Offline'}
-                                        </div>
-                                        <div className={`sm:hidden w-2.5 h-2.5 rounded-full shrink-0 ${isLive ? 'bg-emerald-500' : 'bg-amber-500'}`} title={isLive ? 'Connected' : 'Offline'} />
-                                        <button onClick={() => setShowPrintModal(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700">
-                                            <Icon name="printer" size={14} /> Ekspor Laporan
+                                        {!isOnline && (
+                                            <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-200/50 dark:border-amber-700/50 text-sm font-bold shadow-sm whitespace-nowrap">
+                                                <Icon name="wifi-off" size={16} />
+                                                <span className="hidden sm:inline">Offline</span>
+                                            </div>
+                                        )}
+                                        <button onClick={() => setShowPrintModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-sm shadow-sm hover:shadow-md">
+                                            <Icon name="printer" size={18} />
+                                            <span>Ekspor Laporan</span>
                                         </button>
-                                        <button onClick={fetchFromGoogleSheets} disabled={loading || !GOOGLE_SCRIPT_URL} className={`p-2 rounded-full transition-all shrink-0 ${loading ? 'animate-spin text-blue-500' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 dark:text-slate-500 dark:hover:text-blue-400'}`} title="Refresh Database">
-                                            <Icon name="refresh-ccw" size={20} />
+                                        <button 
+                                            onClick={() => { if(initFirebaseListener) initFirebaseListener(); }} 
+                                            className={`p-2.5 rounded-xl border border-indigo-100 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 transition-all shadow-sm group flex-shrink-0 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            disabled={loading}
+                                            title="Sinkronisasi Manual"
+                                        >
+                                            <Icon name="refresh-ccw" size={20} className={loading ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"} />
                                         </button>
                                     </div>
                                 </header>
 
-                                <div className="flex-1 overflow-auto p-3 sm:p-5 lg:p-8 pb-24 lg:pb-8 relative">
-                                    {loading && (
-                                        <div className="fixed bottom-6 right-6 bg-white dark:bg-slate-800 shadow-xl shadow-blue-900/10 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 z-50 flex items-center gap-4 fade-in">
-                                            <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
-                                                <Icon name="refresh-ccw" size={20} className="animate-spin text-blue-600 dark:text-blue-400" />
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-sm text-slate-800 dark:text-slate-200">Sinkronisasi Database</p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Menyimpan perubahan...</p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="max-w-7xl mx-auto">
-                                        {activeTab === 'dashboard' && renderDashboard()}
-                                        {activeTab === 'master-schedule' && renderMasterSchedule()}
-                                        {activeTab === 'proyek' && renderProyek()}
-                                        {activeTab === 'tim' && renderTim()}
-                                        {activeTab === 'ahli' && renderTenagaAhli()}
-                                        {activeTab === 'penugasan' && renderPenugasan()}
-                                        {activeTab === 'gantt' && renderGantt()}
-                                        {activeTab === 'timesheet' && renderTimesheet()}
-                                        {activeTab === 'inventaris' && renderInventory()}
-                                        {activeTab === 'kpi' && renderKPI()}
-                                        {activeTab === 'schedule' && renderTimeSchedule()}
-                                    </div>
+                                <div className="relative z-10 w-full animate-fade-in pb-24 lg:pb-0">
+                                    {activeTab === 'dashboard' && renderDashboard()}
+                                    {activeTab === 'proyek' && canAccessMenu('Proyek') && renderProyek()}
+                                    {activeTab === 'master-schedule' && canAccessMenu('Proyek') && renderMasterSchedule()}
+                                    {activeTab === 'tim' && canAccessMenu('Proyek') && renderTim()}
+                                    {activeTab === 'gantt' && canAccessMenu('Proyek') && renderGantt()}
+                                    {activeTab === 'ahli' && canAccessMenu('Tenaga Ahli') && renderTenagaAhli()}
+                                    {activeTab === 'penugasan' && canAccessMenu('Tenaga Ahli') && renderPenugasan()}
+                                    {activeTab === 'inventaris' && canAccessMenu('Inventaris') && renderInventory()}
+                                    {activeTab === 'admin-aset' && canAccessMenu('Admin Aset') && renderAdminAset()}
+                                    {activeTab === 'kpi' && canAccessMenu('KPI') && renderKPI()}
+                                    {activeTab === 'pengguna' && canAccessMenu('Manajemen Pengguna') && renderManajemenPengguna()}
                                 </div>
                             </main>
 
-                            {printZoomProject && (
-                                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in">
-                                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 transform scale-in border border-slate-200 dark:border-slate-800">
-                                        <div className="text-center mb-6">
-                                            <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                <Icon name="printer" size={32} />
-                                            </div>
-                                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Pilih Format PDF</h3>
-                                            <p className="text-sm text-slate-500 mt-2">Pilih tingkat detail kalender untuk laporan cetak Time Schedule proyek <strong>{printZoomProject.name}</strong></p>
-                                        </div>
-                                        <div className="flex flex-col gap-3">
-                                            <button
-                                                onClick={() => { setScheduleZoom('month'); setPrintData({ type: 'project', id: printZoomProject.id }); setPrintZoomProject(null); }}
-                                                className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all text-left group"
-                                            >
-                                                <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 text-slate-500 group-hover:text-indigo-600 transition-colors">
-                                                    <Icon name="calendar" size={20} />
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-slate-700 dark:text-slate-200">Bulanan</div>
-                                                    <div className="text-xs text-slate-500">Tampilan ringkas per bulan</div>
-                                                </div>
-                                            </button>
-                                            <button
-                                                onClick={() => { setScheduleZoom('week'); setPrintData({ type: 'project', id: printZoomProject.id }); setPrintZoomProject(null); }}
-                                                className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all text-left group"
-                                            >
-                                                <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 text-slate-500 group-hover:text-indigo-600 transition-colors">
-                                                    <Icon name="calendar-days" size={20} />
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-slate-700 dark:text-slate-200">Mingguan</div>
-                                                    <div className="text-xs text-slate-500">Tampilan detail tiap minggu</div>
-                                                </div>
-                                            </button>
-                                        </div>
-                                        <div className="mt-6">
-                                            <button onClick={() => setPrintZoomProject(null)} className="w-full px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors">Batal</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {showPendingModal && pendingProjectData && (
-                                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6 transform scale-in border border-slate-200 dark:border-slate-800">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                                <Icon name="alert-triangle" className="text-orange-500" />
-                                                Pending Proyek
-                                            </h3>
-                                            <button onClick={() => { setShowPendingModal(false); setPendingProjectData(null); setPendingReasonText(""); }} className="text-slate-400 hover:text-slate-600 transition-colors">
-                                                <Icon name="x" size={24} />
-                                            </button>
-                                        </div>
-                                        <div className="mb-4">
-                                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                                                Anda akan mengubah status proyek <strong className="text-slate-800 dark:text-slate-200">{pendingProjectData.name}</strong> menjadi Pending. Status ini akan membebastugaskan tim sementara waktu.
-                                            </p>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                Alasan Pending <span className="text-red-500">*</span>
-                                            </label>
-                                            <textarea
-                                                value={pendingReasonText}
-                                                onChange={(e) => setPendingReasonText(e.target.value)}
-                                                className="w-full border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                                rows="3"
-                                                placeholder="Contoh: Menunggu konfirmasi revisi RAB dari klien..."
-                                            ></textarea>
-                                        </div>
-                                        <div className="flex justify-end gap-2 mt-6">
-                                            <button onClick={() => { setShowPendingModal(false); setPendingProjectData(null); setPendingReasonText(""); }} className="px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg">Batal</button>
-                                            <button onClick={handleTogglePendingSubmit} disabled={!pendingReasonText.trim()} className="px-4 py-2 text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg flex items-center gap-2">
-                                                Simpan Status
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {showResumeModal && resumeProjectData && (
-                                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6 transform scale-in border border-slate-200 dark:border-slate-800">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                                <Icon name="play" className="text-emerald-500" />
-                                                Lanjutkan Proyek
-                                            </h3>
-                                            <button onClick={() => { setShowResumeModal(false); setResumeProjectData(null); }} className="text-slate-400 hover:text-slate-600 transition-colors">
-                                                <Icon name="x" size={24} />
-                                            </button>
-                                        </div>
-                                        <div className="mb-4">
-                                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                                                Apakah Anda yakin ingin melanjutkan proyek <strong className="text-slate-800 dark:text-slate-200">{resumeProjectData.name}</strong>?
-                                            </p>
-                                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                                                Status proyek ini akan kembali aktif dan beban kerja akan mulai diperhitungkan kembali ke anggota tim yang bertugas.
-                                            </p>
-                                        </div>
-                                        <div className="flex justify-end gap-2 mt-6">
-                                            <button onClick={() => { setShowResumeModal(false); setResumeProjectData(null); }} className="px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg">Batal</button>
-                                            <button onClick={handleConfirmResumeProject} className="px-4 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg flex items-center gap-2">
-                                                Ya, Lanjutkan Proyek
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <ModalForm />
-                            <ExpertModalForm />
-                            <ImportExcelModal />
-                            <ExpertCertModalForm />
-                            <ExpertTenderModalForm />
-                            <AssignmentModalForm />
-
-                            {/* Lpse Manager Modal Inline */}
-                            {showLpseManager && (
-                                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[120] flex items-center justify-center fade-in p-4">
-                                    <div className="glass-card rounded-3xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
-                                        <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
-                                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><Icon name="settings" size={20} className="text-slate-400" /> Kelola Daftar LPSE</h3>
-                                            <button onClick={() => setShowLpseManager(false)} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
-                                        </div>
-                                        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-                                            <form onSubmit={(e) => {
-                                                e.preventDefault();
-                                                const input = e.target.elements.newlpse.value.trim();
-                                                if (!input) return;
-                                                if (lpseList.includes(input)) {
-                                                    setAlertModal({ isOpen: true, title: 'Duplikasi LPSE', message: "LPSE sudah ada di dalam daftar!" });
-                                                    return;
-                                                }
-                                                handleUpdateLpseList([...lpseList, input]);
-                                                e.target.reset();
-                                            }} className="flex gap-2 mb-4">
-                                                <input type="text" name="newlpse" placeholder="Tambah instansi LPSE baru..." className="flex-1 p-2 border border-slate-300 dark:border-slate-700 rounded-lg outline-none focus:border-indigo-500 bg-slate-50 dark:bg-slate-800 text-sm dark:text-slate-200" />
-                                                <button type="submit" className="px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1"><Icon name="plus" size={16} /> Tambah</button>
-                                            </form>
-                                            <div className="space-y-2">
-                                                {lpseList.length === 0 ? <p className="text-sm text-slate-400 italic">Daftar kosong.</p> : null}
-                                                {lpseList.map((lpse, idx) => (
-                                                    <div key={idx} className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                                        <span className="text-sm text-slate-700 dark:text-slate-300">{lpse}</span>
-                                                        <button onClick={() => {
-                                                            if (confirm(`Hapus ${lpse} dari daftar LPSE?`)) {
-                                                                handleUpdateLpseList(lpseList.filter(item => item !== lpse));
-                                                            }
-                                                        }} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Hapus"><Icon name="trash-2" size={16} /></button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Cert Manager Modal Inline */}
-                            {showCertManager && (
-                                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[130] flex items-center justify-center fade-in p-4">
-                                    <div className="glass-card rounded-3xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
-                                        <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
-                                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><Icon name="settings" size={20} className="text-slate-400" /> Kelola Daftar Sertifikat</h3>
-                                            <button onClick={() => setShowCertManager(false)} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
-                                        </div>
-                                        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-                                            <form onSubmit={(e) => {
-                                                e.preventDefault();
-                                                const input = e.target.elements.newcert.value.trim();
-                                                if (!input) return;
-                                                if (certList.includes(input)) {
-                                                    setAlertModal({ isOpen: true, title: 'Duplikasi Sertifikat', message: "Sertifikat sudah ada di dalam daftar!" });
-                                                    return;
-                                                }
-                                                handleUpdateCertList([input, ...certList]);
-                                                e.target.reset();
-                                            }} className="flex gap-2 mb-4">
-                                                <input type="text" name="newcert" placeholder="Tambah nama sertifikat baru..." className="flex-1 p-2 border border-slate-300 dark:border-slate-700 rounded-lg outline-none focus:border-indigo-500 bg-slate-50 dark:bg-slate-800 text-sm dark:text-slate-200" />
-                                                <button type="submit" className="px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1"><Icon name="plus" size={16} /> Tambah</button>
-                                            </form>
-                                            <div className="space-y-2">
-                                                {certList.length === 0 ? <p className="text-sm text-slate-400 italic">Daftar kosong.</p> : null}
-                                                {certList.map((cert, idx) => (
-                                                    <div key={idx} className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                                        <span className="text-sm text-slate-700 dark:text-slate-300">{cert}</span>
-                                                        <button onClick={() => {
-                                                            if (confirm(`Hapus ${cert} dari daftar sertifikat?`)) {
-                                                                handleUpdateCertList(certList.filter(item => item !== cert));
-                                                            }
-                                                        }} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Hapus"><Icon name="trash-2" size={16} /></button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Alert Modal */}
-                            {alertModal.isOpen && (
-                                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center fade-in p-4">
-                                    <div className="glass-card rounded-3xl shadow-2xl w-full max-w-sm p-6 transform scale-in border border-slate-200 dark:border-slate-800 text-center">
-                                        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Icon name="alert-triangle" size={32} />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">{alertModal.title}</h3>
-                                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 whitespace-pre-line">{alertModal.message}</p>
-                                        <button onClick={() => setAlertModal({ isOpen: false, title: '', message: '' })} className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0">
-                                            Mengerti
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Floating Contextual Mobile Menu Overlay */}
                             {mobileMenuOpen && (
-                                <div className="lg:hidden fixed inset-0 z-[80] flex justify-center items-end pb-28 animate-in fade-in duration-300">
-                                    <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" onClick={() => setMobileMenuOpen(false)}></div>
-                                    
-                                    <div className="relative w-[90%] max-w-[380px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/50 dark:border-slate-700/50 rounded-[32px] p-5 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-indigo-900/20 animate-in slide-in-from-bottom-10 zoom-in-95 duration-300">
-                                        <div className="flex justify-between items-center mb-4 px-1">
-                                            <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">Menu Lainnya</h3>
-                                            <button onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100/50 dark:bg-slate-800/50 text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors">
-                                                <Icon name="x" size={18} />
-                                            </button>
-                                        </div>
+                                <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-900/80 backdrop-blur-sm z-[80] lg:hidden animate-fade-in" onClick={() => setMobileMenuOpen(false)}>
+                                    <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/50 dark:border-slate-700/50 shadow-2xl p-4 animate-slide-up" onClick={e => e.stopPropagation()}>
                                         <div className="grid grid-cols-3 gap-2">
-                                            <MobileMenuItem icon={<Icon name="calendar" size={20} />} label="Master Schedule" isActive={activeTab === 'master-schedule'} onClick={() => { handleTabChange('master-schedule'); setMobileMenuOpen(false); }} />
-                                            <MobileMenuItem icon={<Icon name="award" size={20} />} label="Tenaga Ahli" isActive={activeTab === 'ahli'} onClick={() => { handleTabChange('ahli'); setMobileMenuOpen(false); }} />
-                                            <MobileMenuItem icon={<Icon name="briefcase" size={20} />} label="Tugas Ahli" isActive={activeTab === 'penugasan'} onClick={() => { handleTabChange('penugasan'); setMobileMenuOpen(false); }} />
-                                            <MobileMenuItem icon={<Icon name="calendar-days" size={20} />} label="Ploting" isActive={activeTab === 'gantt'} onClick={() => { handleTabChange('gantt'); setMobileMenuOpen(false); }} />
-                                            <MobileMenuItem icon={<Icon name="box" size={20} />} label="Inventaris" isActive={activeTab === 'inventaris'} onClick={() => { handleTabChange('inventaris'); setMobileMenuOpen(false); }} />
-                                            <MobileMenuItem icon={<Icon name="bar-chart" size={20} />} label="KPI" isActive={activeTab === 'kpi'} onClick={() => { handleTabChange('kpi'); setMobileMenuOpen(false); }} />
+                                            <MobileMenuItem icon={<Icon name="layout-dashboard" size={20} />} label="Beranda" isActive={activeTab === 'dashboard'} onClick={() => { handleTabChange('dashboard'); setMobileMenuOpen(false); }} />
+                                            {canAccessMenu('Proyek') && (
+                                                <>
+                                                    <div className="col-span-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-2 px-2">PM & Control</div>
+                                                    <MobileMenuItem icon={<Icon name="briefcase" size={20} />} label="Proyek" isActive={activeTab === 'proyek'} onClick={() => { handleTabChange('proyek'); setMobileMenuOpen(false); }} />
+                                                    <MobileMenuItem icon={<Icon name="users" size={20} />} label="Tim" isActive={activeTab === 'tim'} onClick={() => { handleTabChange('tim'); setMobileMenuOpen(false); }} />
+                                                    <MobileMenuItem icon={<Icon name="calendar-days" size={20} />} label="Jadwal" isActive={activeTab === 'gantt'} onClick={() => { handleTabChange('gantt'); setMobileMenuOpen(false); }} />
+                                                </>
+                                            )}
+                                            {canAccessMenu('Tenaga Ahli') && (
+                                                <>
+                                                    <div className="col-span-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-2 px-2">Experts</div>
+                                                    <MobileMenuItem icon={<Icon name="award" size={20} />} label="Ahli" isActive={activeTab === 'ahli'} onClick={() => { handleTabChange('ahli'); setMobileMenuOpen(false); }} />
+                                                    <MobileMenuItem icon={<Icon name="briefcase" size={20} />} label="Tugas" isActive={activeTab === 'penugasan'} onClick={() => { handleTabChange('penugasan'); setMobileMenuOpen(false); }} />
+                                                </>
+                                            )}
+                                            {(canAccessMenu('Inventaris') || canAccessMenu('Admin Aset')) && (
+                                                <>
+                                                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-4">Assets</div>
+                                                    {canAccessMenu('Inventaris') && (
+                                                        <MobileMenuItem icon={<Icon name="box" size={20} />} label="Logistik & Inventaris" isActive={activeTab === 'inventaris'} onClick={() => { handleTabChange('inventaris'); setMobileMenuOpen(false); }} />
+                                                    )}
+                                                    {canAccessMenu('Admin Aset') && (
+                                                        <MobileMenuItem icon={<Icon name="package" size={20} />} label="Admin Aset" isActive={activeTab === 'admin-aset'} onClick={() => { handleTabChange('admin-aset'); setMobileMenuOpen(false); }} />
+                                                    )}
+                                                </>
+                                            )}
+                                            {canAccessMenu('KPI') && (
+                                                <MobileMenuItem icon={<Icon name="bar-chart" size={20} />} label="KPI" isActive={activeTab === 'kpi'} onClick={() => { handleTabChange('kpi'); setMobileMenuOpen(false); }} />
+                                            )}
+                                            {canAccessMenu('Manajemen Pengguna') && (
+                                                <MobileMenuItem icon={<Icon name="settings" size={20} />} label="Pengguna" isActive={activeTab === 'pengguna'} onClick={() => { handleTabChange('pengguna'); setMobileMenuOpen(false); }} />
+                                            )}
+                                            <div className="col-span-3 h-px bg-slate-200 dark:bg-slate-700 my-2"></div>
+                                            <button 
+                                                onClick={() => auth.signOut()}
+                                                className="col-span-3 w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:bg-slate-100 dark:hover:bg-slate-800 text-left group text-red-600 dark:text-red-400"
+                                            >
+                                                <div className="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-500 group-hover:bg-red-100 dark:group-hover:bg-red-900/50 transition-colors">
+                                                    <Icon name="log-out" size={20} />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-red-600 dark:text-red-400">Keluar Sistem</div>
+                                                    <div className="text-xs text-red-400 dark:text-red-500">Akhiri sesi ini</div>
+                                                </div>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -8228,12 +8501,18 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                             <nav className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 h-[70px] w-[90%] max-w-[380px] bg-white/70 dark:bg-slate-900/70 backdrop-blur-3xl border border-white/50 dark:border-slate-700/50 rounded-[35px] z-[90] flex justify-between items-center px-3 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-indigo-900/20 transition-all duration-500">
                                 <BottomNavItem icon={<Icon name="layout-dashboard" size={20} />} label="Beranda" isActive={activeTab === 'dashboard' && !mobileMenuOpen} onClick={() => { handleTabChange('dashboard'); setMobileMenuOpen(false); }} />
-                                <BottomNavItem icon={<Icon name="briefcase" size={20} />} label="Proyek" isActive={activeTab === 'proyek' && !mobileMenuOpen} onClick={() => { handleTabChange('proyek'); setMobileMenuOpen(false); }} />
-                                <BottomNavItem icon={<Icon name="users" size={20} />} label="Tim" isActive={activeTab === 'tim' && !mobileMenuOpen} onClick={() => { handleTabChange('tim'); setMobileMenuOpen(false); }} />
+                                {canAccessMenu('Proyek') && (
+                                    <>
+                                        <BottomNavItem icon={<Icon name="briefcase" size={20} />} label="Proyek" isActive={activeTab === 'proyek' && !mobileMenuOpen} onClick={() => { handleTabChange('proyek'); setMobileMenuOpen(false); }} />
+                                        <BottomNavItem icon={<Icon name="users" size={20} />} label="Tim" isActive={activeTab === 'tim' && !mobileMenuOpen} onClick={() => { handleTabChange('tim'); setMobileMenuOpen(false); }} />
+                                    </>
+                                )}
                                 <BottomNavItem icon={<Icon name="menu" size={20} />} label="Menu" isActive={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
                             </nav>
                         </div>
                     </div>
+                        </>
+                    )}
                 </>
             );
         }
@@ -8317,3 +8596,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
         
         
 export default App;
+// Fitur Sanitasi Firebase
+const encodeKey = (k) => typeof k === 'string' ? k.replace(/\./g, '__DOT__').replace(/#/g, '__HASH__').replace(/\$/g, '__DOLLAR__').replace(/\[/g, '__LBRACK__').replace(/\]/g, '__RBRACK__').replace(/\//g, '__SLASH__') : k;
+const decodeKey = (k) => typeof k === 'string' ? k.replace(/__DOT__/g, '.').replace(/__HASH__/g, '#').replace(/__DOLLAR__/g, '$').replace(/__LBRACK__/g, '[').replace(/__RBRACK__/g, ']').replace(/__SLASH__/g, '/') : k;
+
