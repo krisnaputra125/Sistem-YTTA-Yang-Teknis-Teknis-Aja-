@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { auth, db } from './firebase';
+import logoSidamon from './assets/logo-sidamon.png';
 
 const Icon = ({ name, size = 20, className = "" }) => {
     const paths = {
@@ -79,7 +80,7 @@ export default function Login() {
 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-12">
-                        <img src="/logo-sidamon.png" alt="SIDAMON Logo" className="w-12 h-12 object-contain drop-shadow-md" />
+                        <img src={logoSidamon} alt="SIDAMON Logo" className="w-12 h-12 object-contain drop-shadow-md" />
                         <h1 className="text-3xl font-black tracking-tight text-white">SIDAMON<span className="text-emerald-500">.</span></h1>
                     </div>
                     
@@ -102,7 +103,7 @@ export default function Login() {
                 <div className="w-full max-w-md">
                     {/* Mobile Branding (Visible only on small screens) */}
                     <div className="md:hidden text-center mb-10">
-                        <img src="/logo-sidamon.png" alt="SIDAMON Logo" className="w-16 h-16 object-contain mx-auto drop-shadow-lg mb-6" />
+                        <img src={logoSidamon} alt="SIDAMON Logo" className="w-16 h-16 object-contain mx-auto drop-shadow-lg mb-6" />
                         <h1 className="text-3xl font-black text-white tracking-tight mb-2">SIDAMON<span className="text-emerald-500">.</span></h1>
                         <p className="text-sm text-slate-400">Gaharu Sempana Group</p>
                     </div>

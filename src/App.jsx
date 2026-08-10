@@ -4,6 +4,7 @@ import Login from './Login';
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import logoImg from '../LGIHT TRANSPARAN (1).PNG';
+import logoSidamon from './assets/logo-sidamon.png';
 import firebase, { db, auth } from './firebase';
 
 import * as XLSX from 'xlsx-js-style';
@@ -6704,7 +6705,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                                     <div className="border-b-4 border-slate-300 dark:border-slate-700 pb-4 mb-6 flex items-center justify-between">
                                         <div className="flex items-center gap-6">
-                                            <img src={darkMode ? "/logo-sidamon.png" : logoImg} alt="Gaharu Sempana Group Logo" className="h-20 object-contain" />
+                                            <img src={darkMode ? logoSidamon : logoImg} alt="Gaharu Sempana Group Logo" className="h-20 object-contain" />
                                             <div>
                                                 <h1 className="text-2xl font-black uppercase tracking-wider">{title}</h1>
                                                 <p className="text-sm mt-1 font-semibold">SIDAMON (Sistem Database Dan Monitoring)</p>
@@ -8329,7 +8330,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 <div className="p-7 pb-5 border-b border-slate-200/50 dark:border-slate-700/30">
                                     <div className="flex items-center gap-3 w-full mb-3">
                                         <div className="w-10 h-10 shrink-0 flex items-center justify-center">
-                                            <img src={darkMode ? "/logo-sidamon.png" : logoImg} alt="Logo SIDAMON" className="w-full h-full object-contain drop-shadow-sm" />
+                                            <img src={darkMode ? logoSidamon : logoImg} alt="Logo SIDAMON" className="w-full h-full object-contain drop-shadow-sm" />
                                         </div>
                                         <div className="flex flex-col min-w-0">
                                             <h1 className="text-lg font-black tracking-widest leading-none text-slate-900 dark:text-white">SIDAMON</h1>
