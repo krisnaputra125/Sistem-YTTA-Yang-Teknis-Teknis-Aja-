@@ -8428,6 +8428,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
                                                 {activeTab === 'dashboard' && 'Ringkasan Proyek & Personil'}
                                                 {activeTab === 'proyek' && 'Manajemen Proyek'}
+                                                {activeTab === 'schedule' && 'Time Schedule Proyek'}
                                                 {activeTab === 'master-schedule' && 'Master Schedule (Portofolio)'}
                                                 {activeTab === 'tim' && 'Alokasi Sub-Tim'}
                                                 {activeTab === 'gantt' && 'Plotting Jadwal (Gantt)'}
@@ -8475,6 +8476,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 <div className="relative z-10 w-full animate-fade-in pb-24 lg:pb-0">
                                     {activeTab === 'dashboard' && renderDashboard()}
                                     {activeTab === 'proyek' && canAccessMenu('Proyek') && renderProyek()}
+                                    {activeTab === 'schedule' && canAccessMenu('Proyek') && renderTimeSchedule()}
                                     {activeTab === 'master-schedule' && canAccessMenu('Proyek') && renderMasterSchedule()}
                                     {activeTab === 'tim' && canAccessMenu('Proyek') && renderTim()}
                                     {activeTab === 'gantt' && canAccessMenu('Proyek') && renderGantt()}
