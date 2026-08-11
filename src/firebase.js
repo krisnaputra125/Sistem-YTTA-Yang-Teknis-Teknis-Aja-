@@ -19,4 +19,5 @@ if (!firebase.apps.length) {
 
 export const db = firebase.database();
 export const auth = firebase.auth();
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(console.error);
 export default firebase;

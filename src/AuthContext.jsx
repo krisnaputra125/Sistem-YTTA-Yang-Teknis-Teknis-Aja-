@@ -43,6 +43,33 @@ export const AuthProvider = ({ children }) => {
         return unsubscribe;
     }, []);
 
+    // Fitur Auto Log Out setelah 30 menit tidak ada aktivitas (1800000 ms)
+    useEffect(() => {
+        let inactivityTimeout;
+
+        const resetInactivityTimeout = () => {
+            if (inactivityTimeout) clearTimeout(inactivityTimeout);
+            inactivityTimeout = setTimeout(() => {
+                if (auth.currentUser) {
+                    auth.signOut().then(() => {
+                        alert("Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit demi keamanan data. Silakan login kembali.");
+                    }).catch(console.error);
+                }
+            }, 1800000);
+        };
+
+        if (currentUser) {
+            resetInactivityTimeout();
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+            events.forEach(event => window.addEventListener(event, resetInactivityTimeout));
+
+            return () => {
+                if (inactivityTimeout) clearTimeout(inactivityTimeout);
+                events.forEach(event => window.removeEventListener(event, resetInactivityTimeout));
+            };
+        }
+    }, [currentUser]);
+
     // RBAC Permissions Logic
     const canAccessMenu = (menuName) => {
         if (!userRole || userRole === 'Guest') return false;
