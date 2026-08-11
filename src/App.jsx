@@ -773,7 +773,6 @@ import * as XLSX from 'xlsx-js-style';
                         if (p.computedStatus !== 'Done') {
                             const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
 
-                            // Jika pengawasan dan statusnya tidak turun, lewati (tidak dihitung beban)
                             if (isPengawasan) {
                                 const statusTurun = p.pengawasanDetails?.[res.name]?.statusTurun;
                                 if (statusTurun === 'Tidak Turun') return;
@@ -855,11 +854,12 @@ import * as XLSX from 'xlsx-js-style';
                     firebase.database().ref('pmc_users').on('value', (snap) => {
                         const usersData = snap.val();
                         if (usersData) {
-                            // Convert object of { uid: { email, role } } into array of objects
-                            const usersArray = Object.keys(usersData).map(uid => ({
-                                uid,
-                                ...usersData[uid]
-                            }));
+                            const usersArray = Object.keys(usersData)
+                                .map(uid => ({
+                                    uid,
+                                    ...usersData[uid]
+                                }))
+                                .filter(u => u.role !== 'Deleted');
                             setUsersList(usersArray);
                         } else {
                             setUsersList([]);
@@ -869,6 +869,9 @@ import * as XLSX from 'xlsx-js-style';
                     // Listener Khusus untuk Tenaga Ahli (dipisah dari pmc_data)
                     firebase.database().ref('pmc_experts').on('value', (snap) => {
                         let expData = snap.val() || [];
+                        if (!Array.isArray(expData)) {
+                            expData = Object.values(expData);
+                        }
                         expData = expData.filter(Boolean);
 
                         // --- AUTO CLEANUP DUPLICATES ---
@@ -929,7 +932,10 @@ import * as XLSX from 'xlsx-js-style';
 
                     // Listener Khusus untuk Penugasan Tenaga Ahli
                     firebase.database().ref('pmc_assignments').on('value', (snap) => {
-                        const asgData = snap.val() || [];
+                        let asgData = snap.val() || [];
+                        if (!Array.isArray(asgData)) {
+                            asgData = Object.values(asgData);
+                        }
                         setAssignments(asgData.filter(Boolean));
                     });
 
@@ -7078,6 +7084,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                     "Kordinator Aset",
                     "PIC",
                     "Team Leader Pekerjaan",
+                    "HRD",
                     "Guest"
                 ];
 
@@ -7165,7 +7172,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                             <button 
                                                                 onClick={() => {
                                                                     if(window.confirm(`Apakah Anda yakin ingin menghapus pengguna ${usr.email}? Akses mereka akan sepenuhnya dicabut.`)) {
-                                                                        firebase.database().ref(`pmc_users/${usr.uid}`).remove()
+                                                                        firebase.database().ref(`pmc_users/${usr.uid}`).update({ role: 'Deleted' })
                                                                             .then(() => alert('Pengguna berhasil dihapus dari sistem.'))
                                                                             .catch(err => alert('Gagal menghapus pengguna: ' + err.message));
                                                                     }

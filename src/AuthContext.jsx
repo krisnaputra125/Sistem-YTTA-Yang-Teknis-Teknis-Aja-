@@ -18,6 +18,14 @@ export const AuthProvider = ({ children }) => {
                 roleRef.on('value', (snapshot) => {
                     const data = snapshot.val();
                     if (data && data.role) {
+                        if (data.role === 'Deleted') {
+                            auth.signOut().then(() => {
+                                alert("Akses Ditolak: Akun Anda telah dihapus secara permanen dari sistem.");
+                            });
+                            setUserRole(null);
+                            setLoading(false);
+                            return;
+                        }
                         setUserRole(data.role);
                         setLoading(false);
                     } else {
@@ -87,7 +95,7 @@ export const AuthProvider = ({ children }) => {
             case 'Rekan Rekanan':
             case 'Manajemen LPSE':
                 // Menu Database & Assignment Expert
-                return ['Manajer Administrasi'].includes(userRole);
+                return ['Manajer Administrasi', 'HRD'].includes(userRole);
 
             case 'Manajemen Pengguna':
                 return userRole === 'Super Admin';
@@ -96,7 +104,7 @@ export const AuthProvider = ({ children }) => {
                 return true;
 
             case 'Admin Aset':
-                return ['Kordinator Aset'].includes(userRole);
+                return ['Kordinator Aset', 'HRD'].includes(userRole);
                 
             case 'KPI':
                 return userRole === 'Super Admin';
