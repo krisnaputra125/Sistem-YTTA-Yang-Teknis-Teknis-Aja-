@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import Login from './Login';
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import logoImg from '../LGIHT TRANSPARAN (1).PNG';
 import logoSidamon from './assets/logo-sidamon.png';
 import firebase, { db, auth } from './firebase';
@@ -578,6 +579,14 @@ import * as XLSX from 'xlsx-js-style';
                     }, 1500); // Animation duration
                 }
             }, [currentUser, userRole, animateCurtain]);
+
+            useEffect(() => {
+                const handleShowAlert = (e) => {
+                    setAlertModal({ isOpen: true, title: e.detail.title, message: e.detail.message });
+                };
+                window.addEventListener('show-alert', handleShowAlert);
+                return () => window.removeEventListener('show-alert', handleShowAlert);
+            }, []);
 
             const [usersList, setUsersList] = useState([]);
             const [loadingUsers, setLoadingUsers] = useState(false);            
@@ -1398,28 +1407,42 @@ import * as XLSX from 'xlsx-js-style';
                         const importedData = Array.from(expertsMap.values());
 
                         if (importedData.length > 0) {
-                            if (confirm(`Ditemukan ${importedData.length} data tenaga ahli (baru/update) dari Excel. Lanjutkan sinkronisasi ke database?`)) {
-                                const newExperts = [...experts];
-                                
-                                importedData.forEach(importedExp => {
-                                    const index = newExperts.findIndex(e => e.id === importedExp.id);
-                                    if (index !== -1) {
-                                        newExperts[index] = importedExp;
-                                    } else {
-                                        newExperts.push(importedExp);
-                                    }
-                                });
+                            setConfirmDialog({
+                                isOpen: true,
+                                title: 'Konfirmasi Sinkronisasi',
+                                message: `Ditemukan ${importedData.length} data tenaga ahli (baru/update) dari Excel. Lanjutkan sinkronisasi ke database?`,
+                                type: 'info',
+                                onConfirm: async () => {
+                                    setLoading(true);
+                                    try {
+                                        const newExperts = [...experts];
+                                        
+                                        importedData.forEach(importedExp => {
+                                            const index = newExperts.findIndex(e => e.id === importedExp.id);
+                                            if (index !== -1) {
+                                                newExperts[index] = importedExp;
+                                            } else {
+                                                newExperts.push(importedExp);
+                                            }
+                                        });
 
-                                await firebase.database().ref('pmc_experts').set(newExperts);
-                                setExperts(newExperts);
-                                alert('Sinkronisasi data tenaga ahli berhasil diselesaikan!');
-                            }
+                                        await firebase.database().ref('pmc_experts').set(newExperts);
+                                        setExperts(newExperts);
+                                        setAlertModal({ isOpen: true, title: 'Sukses', message: 'Sinkronisasi data tenaga ahli berhasil diselesaikan!' });
+                                    } catch(err) {
+                                        console.error(err);
+                                        setAlertModal({ isOpen: true, title: 'Error', message: 'Gagal sinkronisasi data.' });
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }
+                            });
                         } else {
-                            alert('Tidak ada data valid yang ditemukan. Pastikan Excel Anda memiliki kolom "Nama Personil".');
+                            setAlertModal({ isOpen: true, title: 'Informasi', message: 'Tidak ada data valid yang ditemukan. Pastikan Excel Anda memiliki kolom "Nama Personil".' });
                         }
                     } catch (err) {
                         console.error('Import error:', err);
-                        alert('Gagal membaca atau memproses file Excel.');
+                        setAlertModal({ isOpen: true, title: 'Error', message: 'Gagal membaca atau memproses file Excel.' });
                     } finally {
                         setLoading(false);
                         e.target.value = '';
@@ -3862,7 +3885,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
             );
 
             const ExpertModalForm = () => {
-                if (!modalConfig.isOpen || modalConfig.type !== 'expert') return null;
+
                 const isEdit = modalConfig.mode === 'edit';
 
                 const [formData, setFormData] = useState(() => {
@@ -3876,8 +3899,10 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 };
 
                 return (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                        <div className="glass-card rounded-3xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setModalConfig({ isOpen: false, type: null, mode: null, data: null })} />
+                <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] rounded-3xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden">
+                    <div className="absolute inset-0 rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] pointer-events-none" />
                             <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{isEdit ? 'Edit Data Tenaga Ahli' : 'Tambah Tenaga Ahli'}</h3>
                                 <button onClick={() => setModalConfig({ isOpen: false, type: null })} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -3925,13 +3950,13 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     {loading ? <Icon name="refresh-ccw" className="animate-spin" size={16} /> : <Icon name="save" size={16} />} Simpan
                                 </button>
                             </div>
-                        </div>
-                    </div>
+                        </motion.div>
+            </div>
                 );
             };
 
             const ExpertCertModalForm = () => {
-                if (!modalConfig.isOpen || modalConfig.type !== 'expert_cert') return null;
+
                 const { expertId, certIndex, cert } = modalConfig.data;
                 const expert = experts.find(e => e.id === expertId);
                 const isEdit = modalConfig.mode === 'edit';
@@ -3954,8 +3979,10 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 };
 
                 return (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                        <div className="glass-card rounded-3xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setModalConfig({ isOpen: false, type: null, mode: null, data: null })} />
+                <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] rounded-3xl w-full max-w-md p-6 relative overflow-hidden">
+                    <div className="absolute inset-0 rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] pointer-events-none" />
                             <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{isEdit ? 'Edit Sertifikat' : 'Tambah Sertifikat'}</h3>
                                 <button onClick={() => setModalConfig({ isOpen: false, type: null })} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -4001,13 +4028,13 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     {loading ? <Icon name="refresh-ccw" className="animate-spin" size={16} /> : <Icon name="save" size={16} />} Simpan
                                 </button>
                             </div>
-                        </div>
-                    </div>
+                        </motion.div>
+            </div>
                 );
             };
 
             const ExpertTenderModalForm = () => {
-                if (!modalConfig.isOpen || modalConfig.type !== 'expert_tender') return null;
+
                 const { expertId, tenderIndex, tender } = modalConfig.data;
                 const expert = experts.find(e => e.id === expertId);
                 const isEdit = modalConfig.mode === 'edit';
@@ -4030,7 +4057,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                         );
 
                         if (existingActive) {
-                            alert(`Gagal menyimpan! Tenaga Ahli ini sudah memiliki tender aktif/menunggu di ${existingActive.lpseName}. Sesuai aturan, tidak boleh dipasang pada lebih dari 1 tender aktif di LPSE yang sama.`);
+                            setAlertModal({ isOpen: true, title: 'Kapasitas Penuh', message: `Gagal menyimpan! Tenaga Ahli ini sudah memiliki tender aktif/menunggu di ${existingActive.lpseName}. Sesuai aturan, tidak boleh dipasang pada lebih dari 1 tender aktif di LPSE yang sama.` });
                             return;
                         }
                     }
@@ -4045,8 +4072,10 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 };
 
                 return (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                        <div className="glass-card rounded-3xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800">
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setModalConfig({ isOpen: false, type: null, mode: null, data: null })} />
+                <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] rounded-3xl w-full max-w-md p-6 relative overflow-hidden">
+                    <div className="absolute inset-0 rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] pointer-events-none" />
                             <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{isEdit ? 'Edit Riwayat Tender' : 'Plotting Tender LPSE'}</h3>
                                 <button onClick={() => setModalConfig({ isOpen: false, type: null })} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -4087,18 +4116,20 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     {loading ? <Icon name="refresh-ccw" className="animate-spin" size={16} /> : <Icon name="save" size={16} />} Simpan
                                 </button>
                             </div>
-                        </div>
-                    </div>
+                        </motion.div>
+            </div>
                 );
             };
 
             // --- IMPORT EXCEL MODAL ---
             const ImportExcelModal = () => {
-                if (!modalConfig.isOpen || modalConfig.type !== 'import_expert') return null;
+
                 
                 return (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
-                        <div className="glass-card rounded-3xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden transform scale-in border border-slate-200 dark:border-slate-800 p-6">
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setImportModalOpen(false)} />
+                <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] rounded-3xl w-full max-w-md p-8 relative overflow-hidden">
+                    <div className="absolute inset-0 rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] pointer-events-none" />
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Import Data Excel</h3>
                                 <button onClick={() => setModalConfig({ isOpen: false, type: null })} className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
@@ -4134,14 +4165,14 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     }} className="hidden" />
                                 </label>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
                 );
             };
 
             // --- ASSIGNMENT MODAL FORM ---
             const AssignmentModalForm = () => {
-                if (!modalConfig.isOpen || modalConfig.type !== 'assignment') return null;
+
 
                 const isEdit = modalConfig.mode === 'edit';
 
@@ -4173,11 +4204,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 const handleSubmit = (e) => {
                     e.preventDefault();
                     if (!formData.jobName || !formData.lpseName) {
-                        alert("Harap lengkapi informasi pekerjaan!");
+                        setAlertModal({ isOpen: true, title: 'Validasi Form', message: 'Harap lengkapi informasi pekerjaan!' });
                         return;
                     }
                     if (!formData.experts || formData.experts.length === 0) {
-                        alert("Harap plot minimal 1 tenaga ahli ke pekerjaan ini!");
+                        setAlertModal({ isOpen: true, title: 'Validasi Form', message: 'Harap plot minimal 1 tenaga ahli ke pekerjaan ini!' });
                         return;
                     }
 
@@ -4521,1220 +4552,2127 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     {loading ? <Icon name="refresh-ccw" className="animate-spin" size={16} /> : <Icon name="save" size={16} />} Simpan
                                 </button>
                             </div>
+
                         </div>
                     </div>
                 );
             };
 
-            // --- MODAL FORMULAR ---
-            const ModalForm = () => {
-                if (!modalConfig.isOpen) return null;
-                if (modalConfig.type === 'expert' || modalConfig.type === 'expert_cert' || modalConfig.type === 'expert_tender' || modalConfig.type === 'assignment' || modalConfig.type === 'import_expert') return null;
-
-                const isProject = modalConfig.type === 'project';
-                const isInventory = modalConfig.type === 'inventory' || modalConfig.type === 'inventory-borrow' || modalConfig.type === 'inventory-return' || modalConfig.type === 'inventory-extend' || modalConfig.type === 'inventory-cart';
-
-                const [formData, setFormData] = useState(() => {
-                    const offset = new Date().getTimezoneOffset() * 60000;
-                    const defaultBorrowDate = new Date(Date.now() - offset).toISOString().split('T')[0];
-                    if (modalConfig.data) {
-                        const data = { ...modalConfig.data, adjustmentInput: 0 };
-                        if (modalConfig.mode === 'borrow' && !data.borrowDate) {
-                            data.borrowDate = defaultBorrowDate;
-                        }
-                        if (modalConfig.type === 'project' && data.type === 'Perencanaan' && data.surveyorTeam && data.surveyorTeam.length > 0) {
-                            data.team = (data.team || []).filter(m => !data.surveyorTeam.includes(m));
-                        }
-                        return data;
-                    }
-                    if (isProject) return { name: '', client: '', type: 'Perencanaan', status: 'On Progress', progress: 0, deadline: '', spmk: '', description: '', descriptionUpdatedAt: '', team: [], surveyorTeam: [], categoryDetails: {}, teamLeader: '', pengawasanDetails: {} };
-                    if (isInventory) return { id: '', name: '', type: 'Alat Ukur', condition: 'Baik', status: 'Tersedia', borrower: '', borrowDate: modalConfig.mode === 'borrow-cart' ? defaultBorrowDate : '', returnDate: '', projectAssigned: '' };
-                    return { name: '', role: 'Arsitek', level: 'Staff', rating: 3, manualPoints: 0, adjustmentInput: 0 };
-                });
-
-                const [searchTeam, setSearchTeam] = useState("");
-                const [freelanceInput, setFreelanceInput] = useState("");
-
-                const handleAddFreelance = (e) => {
-                    e.preventDefault();
-                    const name = freelanceInput.trim();
-                    if (!name) return;
-                    if (!(formData.team || []).includes(name)) {
-                        setFormData(prev => ({
-                            ...prev,
-                            team: [...(prev.team || []), name]
-                        }));
-                    }
-                    setFreelanceInput("");
+const ModalForm = () => {
+  if (!modalConfig.isOpen) return null;
+  if (
+    modalConfig.type === "expert" ||
+    modalConfig.type === "expert_cert" ||
+    modalConfig.type === "expert_tender" ||
+    modalConfig.type === "assignment" ||
+    modalConfig.type === "import_expert"
+  )
+    return null;
+  const isProject = modalConfig.type === "project";
+  const isInventory =
+    modalConfig.type === "inventory" ||
+    modalConfig.type === "inventory-borrow" ||
+    modalConfig.type === "inventory-return" ||
+    modalConfig.type === "inventory-extend" ||
+    modalConfig.type === "inventory-cart";
+  const [formData, setFormData] = useState(() => {
+    const offset = new Date().getTimezoneOffset() * 6e4;
+    const defaultBorrowDate = new Date(Date.now() - offset)
+      .toISOString()
+      .split("T")[0];
+    if (modalConfig.data) {
+      const data = {
+        ...modalConfig.data,
+        adjustmentInput: 0,
+      };
+      if (modalConfig.mode === "borrow" && !data.borrowDate) {
+        data.borrowDate = defaultBorrowDate;
+      }
+      if (
+        modalConfig.type === "project" &&
+        data.type === "Perencanaan" &&
+        data.surveyorTeam &&
+        data.surveyorTeam.length > 0
+      ) {
+        data.team = (data.team || []).filter(
+          (m) => !data.surveyorTeam.includes(m),
+        );
+      }
+      return data;
+    }
+    if (isProject)
+      return {
+        name: "",
+        client: "",
+        type: "Perencanaan",
+        status: "On Progress",
+        progress: 0,
+        deadline: "",
+        spmk: "",
+        description: "",
+        descriptionUpdatedAt: "",
+        team: [],
+        surveyorTeam: [],
+        categoryDetails: {},
+        teamLeader: "",
+        pengawasanDetails: {},
+      };
+    if (isInventory)
+      return {
+        id: "",
+        name: "",
+        type: "Alat Ukur",
+        condition: "Baik",
+        status: "Tersedia",
+        borrower: "",
+        borrowDate: modalConfig.mode === "borrow-cart" ? defaultBorrowDate : "",
+        returnDate: "",
+        projectAssigned: "",
+      };
+    return {
+      name: "",
+      role: "Arsitek",
+      level: "Staff",
+      rating: 3,
+      manualPoints: 0,
+      adjustmentInput: 0,
+    };
+  });
+  const [searchTeam, setSearchTeam] = useState("");
+  const [freelanceInput, setFreelanceInput] = useState("");
+  const handleAddFreelance = (e) => {
+    e.preventDefault();
+    const name = freelanceInput.trim();
+    if (!name) return;
+    if (!(formData.team || []).includes(name)) {
+      setFormData((prev) => ({
+        ...prev,
+        team: [...(prev.team || []), name],
+      }));
+    }
+    setFreelanceInput("");
+  };
+  const handleEditFreelance = (oldName) => {
+    const newName = window.prompt("Edit nama personil freelance:", oldName);
+    if (newName && newName.trim() !== "" && newName !== oldName) {
+      const finalName = newName.trim();
+      if ((formData.team || []).includes(finalName)) {
+        alert("Nama personil sudah ada di dalam tim.");
+        return;
+      }
+      setFormData((prev) => {
+        const newTeam = (prev.team || []).map((t) =>
+          t === oldName ? finalName : t,
+        );
+        const newPengawasanDetails = {
+          ...(prev.pengawasanDetails || {}),
+        };
+        if (newPengawasanDetails[oldName]) {
+          newPengawasanDetails[finalName] = newPengawasanDetails[oldName];
+          delete newPengawasanDetails[oldName];
+        }
+        return {
+          ...prev,
+          team: newTeam,
+          pengawasanDetails: newPengawasanDetails,
+        };
+      });
+    }
+  };
+  const handleFreelanceKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddFreelance(e);
+    }
+  };
+  const handleAutoPlotting = () => {
+    let recommendedTeam = [];
+    let recommendedLeader = "";
+    const checkPengawasan =
+      formData.type === "Pengawasan" ||
+      formData.type === "Manajemen Konstruksi";
+    const findBestPerson = (roleKeyword, excludeList, requiredLevel = null) => {
+      let candidates = resources.filter(
+        (r) =>
+          r.role.toLowerCase().includes(roleKeyword.toLowerCase()) &&
+          !excludeList.includes(r.name),
+      );
+      if (requiredLevel) {
+        candidates = candidates.filter((r) => r.level === requiredLevel);
+      }
+      if (candidates.length === 0) return null;
+      let bestCandidate = null;
+      let highestScore = -99999;
+      candidates.forEach((cand) => {
+        const activeProjCount = computedProjects.filter(
+          (p) =>
+            p.computedStatus !== "Done" &&
+            p.computedStatus !== "Pending" &&
+            p.team &&
+            p.team.includes(cand.name),
+        ).length;
+        const workload = activeProjCount * 25;
+        const isLeaderMode = cand.level === "Team Leader";
+        const kpiResult = isLeaderMode
+          ? calculateLeaderKPI(cand, computedProjects)
+          : calculateEmployeeKPI(cand, computedProjects);
+        let score = kpiResult.score;
+        if (workload >= 100) {
+          score -= 1e3;
+        } else {
+          score -= workload * 0.5;
+        }
+        score += (cand.rating || 0) * 10;
+        if (score > highestScore) {
+          highestScore = score;
+          bestCandidate = cand.name;
+        }
+      });
+      return bestCandidate;
+    };
+    if (!checkPengawasan) {
+      const leader = findBestPerson(
+        "Team Leader",
+        recommendedTeam,
+        "Team Leader",
+      );
+      if (leader) recommendedLeader = leader;
+      const rolesToFill = [
+        "Arsitek",
+        "Struktur",
+        "MEP",
+        "Estimator",
+        "Drafter",
+      ];
+      rolesToFill.forEach((role) => {
+        const best = findBestPerson(role, recommendedTeam);
+        if (best) recommendedTeam.push(best);
+      });
+    } else {
+      const rolesToFill = ["Inspector", "Site Engineer", "Quantity Surveyor"];
+      rolesToFill.forEach((role) => {
+        const best = findBestPerson(role, recommendedTeam);
+        if (best) recommendedTeam.push(best);
+      });
+    }
+    setFormData((prev) => ({
+      ...prev,
+      teamLeader: recommendedLeader,
+      team: recommendedTeam,
+    }));
+  };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      let newData = {
+        ...prev,
+        [name]: value,
+      };
+      if (name === "spmk") {
+        if (newData.pengawasanDetails) {
+          let updatedDetails = {
+            ...newData.pengawasanDetails,
+          };
+          Object.keys(updatedDetails).forEach((member) => {
+            const manMonth = updatedDetails[member].manMonth;
+            if (value && manMonth) {
+              const manMonthVal = parseFloat(manMonth);
+              if (!isNaN(manMonthVal)) {
+                const date = new Date(value);
+                date.setDate(date.getDate() + Math.round(manMonthVal * 30) - 1);
+                if (date.getDay() === 6) date.setDate(date.getDate() - 1);
+                else if (date.getDay() === 0) date.setDate(date.getDate() - 2);
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, "0");
+                const dd = String(date.getDate()).padStart(2, "0");
+                updatedDetails[member] = {
+                  ...updatedDetails[member],
+                  deadline: `${yyyy}-${mm}-${dd}`,
                 };
-
-                const handleEditFreelance = (oldName) => {
-                    const newName = window.prompt("Edit nama personil freelance:", oldName);
-                    if (newName && newName.trim() !== "" && newName !== oldName) {
-                        const finalName = newName.trim();
-                        if ((formData.team || []).includes(finalName)) {
-                            alert("Nama personil sudah ada di dalam tim.");
-                            return;
+              }
+            } else if (!value) {
+              updatedDetails[member] = {
+                ...updatedDetails[member],
+                deadline: "",
+              };
+            }
+          });
+          newData.pengawasanDetails = updatedDetails;
+        }
+      }
+      return newData;
+    });
+  };
+  const handleCategoryDetailChange = (category, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      categoryDetails: {
+        ...prev.categoryDetails,
+        [category]: {
+          ...(prev.categoryDetails?.[category] || {}),
+          [field]: value,
+        },
+      },
+    }));
+  };
+  const handleAddTask = (category, taskName) => {
+    if (!taskName.trim()) return;
+    setFormData((prev) => {
+      const currentCat = prev.categoryDetails?.[category] || {
+        progress: 0,
+        deadline: "",
+        tasks: [],
+        completedTasks: [],
+      };
+      const currentTasks = currentCat.tasks || [];
+      if (currentTasks.includes(taskName.trim())) return prev;
+      const newTasks = [...currentTasks, taskName.trim()];
+      const completed = currentCat.completedTasks || [];
+      const newProgress =
+        newTasks.length > 0
+          ? Math.round((completed.length / newTasks.length) * 100)
+          : 0;
+      return {
+        ...prev,
+        categoryDetails: {
+          ...prev.categoryDetails,
+          [category]: {
+            ...currentCat,
+            tasks: newTasks,
+            progress: newProgress,
+          },
+        },
+      };
+    });
+  };
+  const handleRemoveTask = (category, taskName) => {
+    setFormData((prev) => {
+      const currentCat = prev.categoryDetails?.[category] || {
+        progress: 0,
+        deadline: "",
+        tasks: [],
+        completedTasks: [],
+      };
+      const newTasks = (currentCat.tasks || []).filter((t) => t !== taskName);
+      const newCompleted = (currentCat.completedTasks || []).filter(
+        (t) => t !== taskName,
+      );
+      const newProgress =
+        newTasks.length > 0
+          ? Math.round((newCompleted.length / newTasks.length) * 100)
+          : 0;
+      return {
+        ...prev,
+        categoryDetails: {
+          ...prev.categoryDetails,
+          [category]: {
+            ...currentCat,
+            tasks: newTasks,
+            completedTasks: newCompleted,
+            progress: newProgress,
+          },
+        },
+      };
+    });
+  };
+  const handleToggleTask = (category, taskName) => {
+    setFormData((prev) => {
+      const currentCat = prev.categoryDetails?.[category] || {
+        progress: 0,
+        deadline: "",
+        tasks: [],
+        completedTasks: [],
+      };
+      const currentCompleted = currentCat.completedTasks || [];
+      const isCompleted = currentCompleted.includes(taskName);
+      const newCompleted = isCompleted
+        ? currentCompleted.filter((t) => t !== taskName)
+        : [...currentCompleted, taskName];
+      const totalTasks = currentCat.tasks || [];
+      const newProgress =
+        totalTasks.length > 0
+          ? Math.round((newCompleted.length / totalTasks.length) * 100)
+          : 0;
+      return {
+        ...prev,
+        categoryDetails: {
+          ...prev.categoryDetails,
+          [category]: {
+            ...currentCat,
+            completedTasks: newCompleted,
+            progress: newProgress,
+          },
+        },
+      };
+    });
+  };
+  const handlePengawasanDetailChange = (memberName, field, value) => {
+    setFormData((prev) => {
+      const currentDetail = prev.pengawasanDetails?.[memberName] || {
+        role: "Inspector",
+        deadline: "",
+        manMonth: "",
+        statusTurun: "Tidak Turun",
+      };
+      let newDetail = {
+        ...currentDetail,
+        [field]: value,
+      };
+      if (field === "manMonth") {
+        if (prev.spmk && newDetail.manMonth) {
+          const manMonthVal = parseFloat(newDetail.manMonth);
+          if (!isNaN(manMonthVal)) {
+            const date = new Date(prev.spmk);
+            date.setDate(date.getDate() + Math.round(manMonthVal * 30) - 1);
+            if (date.getDay() === 6) date.setDate(date.getDate() - 1);
+            else if (date.getDay() === 0) date.setDate(date.getDate() - 2);
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, "0");
+            const dd = String(date.getDate()).padStart(2, "0");
+            newDetail.deadline = `${yyyy}-${mm}-${dd}`;
+          }
+        } else if (!newDetail.manMonth) {
+          newDetail.deadline = "";
+        }
+      }
+      return {
+        ...prev,
+        pengawasanDetails: {
+          ...prev.pengawasanDetails,
+          [memberName]: newDetail,
+        },
+      };
+    });
+  };
+  const surveyorTeamList = formData.surveyorTeam || [];
+  const isPerencanaanForm = formData.type?.toLowerCase().includes("perencana");
+  const activeCategories = Array.from(
+    new Set(
+      (formData.team || [])
+        .map((memberName) => {
+          if (isPerencanaanForm && surveyorTeamList.includes(memberName))
+            return null;
+          const res = resources.find((r) => r.name === memberName);
+          return res ? getCategoryFromRole(res.role) : "Lainnya";
+        })
+        .filter((cat) => cat !== null),
+    ),
+  );
+  if (surveyorTeamList.length > 0) {
+    activeCategories.push("Surveyor");
+  }
+  const computedTotalProgress = useMemo(() => {
+    if (!isProject || activeCategories.length === 0) return 0;
+    let total = 0;
+    activeCategories.forEach((cat) => {
+      total += parseInt(formData.categoryDetails?.[cat]?.progress) || 0;
+    });
+    return Math.round(total / activeCategories.length);
+  }, [formData.categoryDetails, activeCategories, isProject]);
+  const handleResetTo100 = () => {
+    const dummyEmp = {
+      ...formData,
+    };
+    let calculated = null;
+    if (formData.level === "Team Leader") {
+      calculated = calculateLeaderKPI(dummyEmp, computedProjects);
+    } else {
+      calculated = calculateEmployeeKPI(dummyEmp, computedProjects);
+    }
+    const gap = 100 - calculated.score;
+    setFormData((prev) => ({
+      ...prev,
+      adjustmentInput: gap,
+    }));
+  };
+  const handleResetToAuto = () => {
+    const gap = -(formData.manualPoints || 0);
+    setFormData((prev) => ({
+      ...prev,
+      adjustmentInput: gap,
+    }));
+  };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    let finalPayload = {
+      ...formData,
+    };
+    if (isInventory) {
+      if (modalConfig.mode === "borrow-cart") {
+        handleInventoryAction("borrow-cart", {
+          selectedIds: borrowCart,
+          data: {
+            borrower: finalPayload.borrower,
+            borrowDate:
+              finalPayload.borrowDate || new Date().toISOString().split("T")[0],
+            returnDate: finalPayload.returnDate,
+            projectAssigned: finalPayload.projectAssigned,
+          },
+        });
+        return;
+      } else if (modalConfig.mode === "borrow") {
+        finalPayload.status = "Menunggu Verifikasi";
+        if (!finalPayload.borrowDate)
+          finalPayload.borrowDate = new Date().toISOString().split("T")[0];
+      } else if (modalConfig.mode === "return") {
+        finalPayload.status = "Menunggu Verifikasi Pengembalian";
+      } else if (modalConfig.mode === "extend") {
+        finalPayload.status = "Menunggu Verifikasi Perpanjangan";
+        finalPayload.newReturnDate = finalPayload.returnDate;
+        finalPayload.returnDate = modalConfig.data.returnDate;
+      }
+      handleInventoryAction(modalConfig.mode, finalPayload);
+      return;
+    }
+    if (isProject) {
+      finalPayload.progress = computedTotalProgress;
+      const oldDesc = modalConfig.data ? modalConfig.data.description : "";
+      if (finalPayload.description && finalPayload.description !== oldDesc) {
+        finalPayload.descriptionUpdatedAt = new Date().toISOString();
+      } else if (!finalPayload.description) {
+        finalPayload.descriptionUpdatedAt = "";
+      } else {
+        finalPayload.descriptionUpdatedAt = modalConfig.data
+          ? modalConfig.data.descriptionUpdatedAt
+          : "";
+      }
+      const activeCats = new Set(
+        (finalPayload.team || []).map((memberName) => {
+          const res = resources.find((r) => r.name === memberName);
+          return res ? getCategoryFromRole(res.role) : "Lainnya";
+        }),
+      );
+      if (
+        finalPayload.type === "Perencanaan" &&
+        finalPayload.surveyorTeam &&
+        finalPayload.surveyorTeam.length > 0
+      ) {
+        activeCats.add("Surveyor");
+        finalPayload.team = Array.from(
+          new Set([...(finalPayload.team || []), ...finalPayload.surveyorTeam]),
+        );
+      }
+      const cleanDetails = {};
+      activeCats.forEach((cat) => {
+        if (finalPayload.categoryDetails && finalPayload.categoryDetails[cat]) {
+          cleanDetails[cat] = finalPayload.categoryDetails[cat];
+        }
+      });
+      const teamDataObj = {
+        members: finalPayload.team || [],
+        details: cleanDetails,
+        leader: finalPayload.teamLeader || "",
+        individualStatus: finalPayload.individualStatus || {},
+        pengawasanDetails: finalPayload.pengawasanDetails || {},
+      };
+      finalPayload.team = JSON.stringify(teamDataObj).replace(/;/g, ",");
+    } else {
+      const newManualPoints =
+        (finalPayload.manualPoints || 0) + (finalPayload.adjustmentInput || 0);
+      finalPayload.role = `${finalPayload.role}|${finalPayload.level}|${newManualPoints}`;
+    }
+    handleCrudAction(modalConfig.mode, modalConfig.type, finalPayload);
+  };
+  const filteredResources = resources.filter(
+    (res) =>
+      res.name.toLowerCase().includes(searchTeam.toLowerCase()) ||
+      res.role.toLowerCase().includes(searchTeam.toLowerCase()),
+  );
+  const isPengawasanForm =
+    formData.type === "Pengawasan" || formData.type === "Manajemen Konstruksi";
+  const isSyncedProject =
+    modalConfig.mode === "edit" && Boolean(formData.sourceAssignmentId);
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center sm:p-4 fade-in">
+      <div
+        className={`bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-xl border border-transparent dark:border-slate-700/50 w-full ${isProject ? "sm:max-w-4xl" : "sm:max-w-2xl"} overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[95vh] pb-4 sm:pb-0`}
+      >
+        <div className="p-5 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 shrink-0">
+          <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
+            {modalConfig.mode === "add"
+              ? "Tambah "
+              : modalConfig.mode === "borrow"
+                ? "Pinjam "
+                : "Edit "}
+            {isProject
+              ? "Data Proyek Terpadu"
+              : isInventory
+                ? "Data Inventaris"
+                : "Data Personil"}
+          </h3>
+          <button
+            onClick={closeModal}
+            className="text-slate-400 hover:text-red-500 transition-colors"
+          >
+            <Icon name="x" size={20} />
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
+          <form id="crudForm" onSubmit={handleSubmit} className="space-y-5">
+            {isProject && isSyncedProject && (
+              <div className="flex items-start gap-2.5 px-3 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-xl text-[11px] text-indigo-700 dark:text-indigo-300">
+                <Icon name="link" size={14} className="mt-0.5 shrink-0" />
+                <span>
+                  <strong>Proyek Tersinkronisasi:</strong> Data utama (Nama,
+                  Klien, Tipe, Tim) dikelola otomatis melalui menu{" "}
+                  <strong>Penugasan Tenaga Ahli</strong>. Anda hanya dapat
+                  mengubah status <strong>Turun/Tidak Turun</strong> personil di
+                  sini.
+                </span>
+              </div>
+            )}
+            {isProject ? (
+              <Fragment>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="col-span-2 md:col-span-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Nama Proyek
+                    </label>
+                    <input
+                      required={true}
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      disabled={isSyncedProject}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                      placeholder="Cth: Perencanaan RSUD"
+                    />
+                  </div>
+                  <div className="col-span-2 md:col-span-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Klien / Owner
+                    </label>
+                    <input
+                      required={true}
+                      name="client"
+                      value={formData.client}
+                      onChange={handleChange}
+                      disabled={isSyncedProject}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                      placeholder="Cth: Dinas PUPR"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Tipe Proyek
+                    </label>
+                    <select
+                      name="type"
+                      value={formData.type}
+                      onChange={handleChange}
+                      disabled={isSyncedProject}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      <option value="Perencanaan">Perencanaan</option>
+                      {modalConfig.mode === "edit" &&
+                        formData.type === "Pengawasan" && (
+                          <option value="Pengawasan">Pengawasan</option>
+                        )}
+                      <option value="Manajemen Konstruksi">
+                        Manajemen Konstruksi
+                      </option>
+                    </select>
+                  </div>
+                  {isPerencanaanForm && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                        Divisi Kontrol
+                      </label>
+                      <select
+                        name="divisiKontrol"
+                        value={formData.divisiKontrol || ""}
+                        onChange={handleChange}
+                        className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-200"
+                      >
+                        <option value="">-- Pilih Divisi --</option>
+                        <option value="Divisi Jalan">Divisi Jalan</option>
+                        <option value="Divisi Gedung">Divisi Gedung</option>
+                        <option value="Divisi SDA">Divisi SDA</option>
+                        <option value="Divisi Perijinan">
+                          Divisi Perijinan
+                        </option>
+                        <option value="Divisi Tata Ruang">
+                          Divisi Tata Ruang
+                        </option>
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Status Proyek (Makro)
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-200"
+                    >
+                      <option value="On Progress">On Progress</option>
+                      <option value="Done">Done</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1">
+                    <Icon name="file-text" size={12} /> Deskripsi / Update
+                    Proyek
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description || ""}
+                    onChange={handleChange}
+                    rows="3"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors resize-none dark:text-slate-200"
+                    placeholder="Tuliskan update terkini proyek ini... Cth: Sudah masuk tahap DED, menunggu approval dari klien untuk revisi arsitektur."
+                  />
+                </div>
+                <div className="flex flex-col gap-4 bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                  {(isPengawasanForm || isPerencanaanForm) && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Tgl SPMK Proyek
+                      </label>
+                      <div className="relative w-full">
+                        <div className="flex items-center justify-between w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-800 min-h-[42px] text-slate-700 dark:text-slate-200">
+                          <span>
+                            {formData.spmk
+                              ? formatDateIndo(formData.spmk)
+                              : "Pilih tanggal..."}
+                          </span>
+                          <Icon
+                            name="calendar-clock"
+                            size={16}
+                            className="text-slate-400"
+                          />
+                        </div>
+                        <input
+                          type="date"
+                          name="spmk"
+                          className={`absolute inset-0 w-full h-full opacity-0 ${isSyncedProject ? "cursor-not-allowed" : "cursor-pointer"}`}
+                          value={formData.spmk || ""}
+                          onChange={handleChange}
+                          disabled={isSyncedProject}
+                          onClick={(e) =>
+                            !isSyncedProject &&
+                            e.target.showPicker &&
+                            e.target.showPicker()
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Tenggat Waktu Kontrak Akhir
+                    </label>
+                    <div className="relative w-full">
+                      <div className="flex items-center justify-between w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-800 min-h-[42px] text-slate-700 dark:text-slate-200">
+                        <span>
+                          {formData.deadline
+                            ? formatDateIndo(formData.deadline)
+                            : "Pilih tanggal..."}
+                        </span>
+                        <Icon
+                          name="calendar-clock"
+                          size={16}
+                          className="text-slate-400"
+                        />
+                      </div>
+                      <input
+                        type="date"
+                        name="deadline"
+                        className={`absolute inset-0 w-full h-full opacity-0 ${isSyncedProject ? "cursor-not-allowed" : "cursor-pointer"}`}
+                        value={formData.deadline || ""}
+                        onChange={handleChange}
+                        disabled={isSyncedProject}
+                        onClick={(e) =>
+                          !isSyncedProject &&
+                          e.target.showPicker &&
+                          e.target.showPicker()
                         }
-                        setFormData(prev => {
-                            const newTeam = (prev.team || []).map(t => t === oldName ? finalName : t);
-                            const newPengawasanDetails = { ...(prev.pengawasanDetails || {}) };
-                            if (newPengawasanDetails[oldName]) {
-                                newPengawasanDetails[finalName] = newPengawasanDetails[oldName];
-                                delete newPengawasanDetails[oldName];
-                            }
-                            return {
-                                ...prev,
-                                team: newTeam,
-                                pengawasanDetails: newPengawasanDetails
-                            };
-                        });
-                    }
-                };
-
-                const handleFreelanceKeyDown = (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddFreelance(e);
-                    }
-                };
-
-                // --- ALGORITMA AI AUTO-PLOTTING ---
-                const handleAutoPlotting = () => {
-                    let recommendedTeam = [];
-                    let recommendedLeader = "";
-                    const checkPengawasan = formData.type === 'Pengawasan' || formData.type === 'Manajemen Konstruksi';
-
-                    // Helper mencari orang terbaik untuk role tertentu
-                    const findBestPerson = (roleKeyword, excludeList, requiredLevel = null) => {
-                        let candidates = resources.filter(r => r.role.toLowerCase().includes(roleKeyword.toLowerCase()) && !excludeList.includes(r.name));
-                        if (requiredLevel) {
-                            candidates = candidates.filter(r => r.level === requiredLevel);
-                        }
-                        if (candidates.length === 0) return null;
-
-                        let bestCandidate = null;
-                        let highestScore = -99999;
-
-                        candidates.forEach(cand => {
-                            // Hitung Workload
-                            const activeProjCount = computedProjects.filter(p => p.computedStatus !== 'Done' && p.computedStatus !== 'Pending' && p.team && p.team.includes(cand.name)).length;
-                            const workload = activeProjCount * 25; // Asumsi 1 project = 25% load
-
-                            // Hitung skor KPI
-                            const isLeaderMode = cand.level === 'Team Leader';
-                            const kpiResult = isLeaderMode
-                                ? calculateLeaderKPI(cand, computedProjects)
-                                : calculateEmployeeKPI(cand, computedProjects);
-
-                            let score = kpiResult.score;
-
-                            // Penalty AI untuk Workload
-                            if (workload >= 100) {
-                                score -= 1000; // Diskualifikasi jika full load
-                            } else {
-                                score -= (workload * 0.5); // Penalti proporsional beban
-                            }
-
-                            // Tambah poin dari manual rating (1-5 star)
-                            score += ((cand.rating || 0) * 10);
-
-                            if (score > highestScore) {
-                                highestScore = score;
-                                bestCandidate = cand.name;
-                            }
-                        });
-
-                        return bestCandidate;
-                    };
-
-                    if (!checkPengawasan) {
-                        // Perencanaan
-                        const leader = findBestPerson('Team Leader', recommendedTeam, 'Team Leader');
-                        if (leader) recommendedLeader = leader;
-
-                        const rolesToFill = ['Arsitek', 'Struktur', 'MEP', 'Estimator', 'Drafter'];
-                        rolesToFill.forEach(role => {
-                            const best = findBestPerson(role, recommendedTeam);
-                            if (best) recommendedTeam.push(best);
-                        });
-                    } else {
-                        // Pengawasan (Ambil top Inspector/Site Engineer)
-                        const rolesToFill = ['Inspector', 'Site Engineer', 'Quantity Surveyor'];
-                        rolesToFill.forEach(role => {
-                            const best = findBestPerson(role, recommendedTeam);
-                            if (best) recommendedTeam.push(best);
-                        });
-                    }
-
-                    setFormData(prev => ({
-                        ...prev,
-                        teamLeader: recommendedLeader,
-                        team: recommendedTeam
-                    }));
-                };
-
-                const handleChange = (e) => {
-                    const { name, value } = e.target;
-                    setFormData(prev => {
-                        let newData = { ...prev, [name]: value };
-                        if (name === 'spmk') {
-                            if (newData.pengawasanDetails) {
-                                let updatedDetails = { ...newData.pengawasanDetails };
-                                Object.keys(updatedDetails).forEach(member => {
-                                    const manMonth = updatedDetails[member].manMonth;
-                                    if (value && manMonth) {
-                                        const manMonthVal = parseFloat(manMonth);
-                                        if (!isNaN(manMonthVal)) {
-                                            const date = new Date(value);
-                                            date.setDate(date.getDate() + Math.round(manMonthVal * 30) - 1);
-                                            if (date.getDay() === 6) date.setDate(date.getDate() - 1);
-                                            else if (date.getDay() === 0) date.setDate(date.getDate() - 2);
-                                            const yyyy = date.getFullYear();
-                                            const mm = String(date.getMonth() + 1).padStart(2, '0');
-                                            const dd = String(date.getDate()).padStart(2, '0');
-                                            updatedDetails[member] = { ...updatedDetails[member], deadline: `${yyyy}-${mm}-${dd}` };
+                      />
+                    </div>
+                  </div>
+                  {!isPengawasanForm && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Progress Keseluruhan Proyek (%)
+                      </label>
+                      <input
+                        type="number"
+                        readOnly={true}
+                        value={computedTotalProgress}
+                        className="block w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-sm outline-none cursor-not-allowed appearance-none m-0"
+                        title="Nilai ini dihitung otomatis"
+                      />
+                      <p className="text-[9px] text-slate-500 mt-1">
+                        Dihitung otomatis dari rata-rata progress sub-tim.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50">
+                  {!isSyncedProject && (
+                    <Fragment>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                        <label className="block text-sm font-bold text-slate-800 dark:text-slate-100">
+                          Penugasan Personil
+                        </label>
+                        {!isPengawasanForm && (
+                          <button
+                            type="button"
+                            onClick={handleAutoPlotting}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-md"
+                          >
+                            <Icon
+                              name="zap"
+                              size={14}
+                              className="text-amber-300 fill-amber-300"
+                            />{" "}
+                            Auto-Assign AI
+                          </button>
+                        )}
+                      </div>
+                      {!isPengawasanForm && (
+                        <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200 dark:border-amber-800/50 shadow-sm">
+                          <label className="block text-xs font-bold text-amber-800 mb-1 flex items-center gap-1.5">
+                            <Icon
+                              name="star"
+                              size={14}
+                              className="text-amber-500"
+                            />{" "}
+                            Pilih Team Leader Proyek
+                          </label>
+                          <select
+                            name="teamLeader"
+                            value={formData.teamLeader || ""}
+                            onChange={handleChange}
+                            className="w-full p-2.5 border border-amber-200 dark:border-amber-700/50 rounded-xl text-sm outline-none focus:border-amber-500 bg-white dark:bg-slate-800 shadow-sm font-semibold text-slate-700 dark:text-slate-200"
+                          >
+                            <option value="">
+                              -- Tidak Ada Team Leader --
+                            </option>
+                            {resources
+                              .filter((r) => r.level === "Team Leader")
+                              .map((r) => (
+                                <option value={r.name}>
+                                  {r.name} ({r.role})
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      )}
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        {isPengawasanForm
+                          ? "Daftar Personil Tim Pengawasan"
+                          : "Anggota Sub-Tim"}
+                      </label>
+                      <div className="relative mb-3">
+                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                          <Icon name="search" size={14} />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Cari nama personil untuk ditugaskan..."
+                          className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 transition-all shadow-sm dark:text-slate-200"
+                          value={searchTeam}
+                          onChange={(e) => setSearchTeam(e.target.value)}
+                        />
+                      </div>
+                      <div className="border border-slate-200 dark:border-slate-700/50 rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3 max-h-48 overflow-y-auto">
+                        {resources.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic">
+                            Belum ada data tim. Tambahkan di menu Alokasi Tim.
+                          </p>
+                        ) : filteredResources.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic">
+                            Pencarian tidak ditemukan.
+                          </p>
+                        ) : isPengawasanForm ? (
+                          <TeamCheckboxGroup
+                            title="Pilih Anggota Tim (Bebas Lintas Jabatan)"
+                            roleFilter={(r) => true}
+                            isOptional={false}
+                            filteredResources={filteredResources}
+                            formData={formData}
+                            setFormData={setFormData}
+                          />
+                        ) : (
+                          <Fragment>
+                            <TeamCheckboxGroup
+                              title="Tim Arsitek"
+                              roleFilter={(r) =>
+                                r.role.toLowerCase().includes("arsitek")
+                              }
+                              isOptional={false}
+                              filteredResources={filteredResources}
+                              formData={formData}
+                              setFormData={setFormData}
+                            />
+                            <TeamCheckboxGroup
+                              title="Tim Quantity Surveyor (QS)"
+                              roleFilter={(r) =>
+                                r.role.toLowerCase() === "qs" ||
+                                r.role.toLowerCase().includes("quantity")
+                              }
+                              isOptional={false}
+                              filteredResources={filteredResources}
+                              formData={formData}
+                              setFormData={setFormData}
+                            />
+                            <TeamCheckboxGroup
+                              title="Tim Struktur"
+                              roleFilter={(r) =>
+                                r.role.toLowerCase().includes("struktur")
+                              }
+                              isOptional={true}
+                              filteredResources={filteredResources}
+                              formData={formData}
+                              setFormData={setFormData}
+                            />
+                            <TeamCheckboxGroup
+                              title="Tim MEP"
+                              roleFilter={(r) =>
+                                r.role.toLowerCase().includes("mep")
+                              }
+                              isOptional={true}
+                              filteredResources={filteredResources}
+                              formData={formData}
+                              setFormData={setFormData}
+                            />
+                            <TeamCheckboxGroup
+                              title="Tim Tata Ruang"
+                              roleFilter={(r) =>
+                                r.role.toLowerCase().includes("tata ruang") ||
+                                r.role.toLowerCase().includes("planologi")
+                              }
+                              isOptional={true}
+                              filteredResources={filteredResources}
+                              formData={formData}
+                              setFormData={setFormData}
+                            />
+                            <TeamCheckboxGroup
+                              title="Lainnya"
+                              roleFilter={(r) =>
+                                !r.role.toLowerCase().includes("arsitek") &&
+                                !(
+                                  r.role.toLowerCase() === "qs" ||
+                                  r.role.toLowerCase().includes("quantity")
+                                ) &&
+                                !r.role.toLowerCase().includes("struktur") &&
+                                !r.role.toLowerCase().includes("mep") &&
+                                !(
+                                  r.role.toLowerCase().includes("tata ruang") ||
+                                  r.role.toLowerCase().includes("planologi")
+                                )
+                              }
+                              isOptional={true}
+                              filteredResources={filteredResources}
+                              formData={formData}
+                              setFormData={setFormData}
+                            />
+                          </Fragment>
+                        )}
+                      </div>
+                      {!isPengawasanForm && resources.length > 0 && (
+                        <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                            Penugasan Ekstra (Opsional)
+                          </label>
+                          <TeamVisionaryMultiSelect
+                            title="Tim Surveyor (Sub Tim Khusus Lintas Jabatan)"
+                            filteredResources={resources}
+                            formData={formData}
+                            setFormData={setFormData}
+                            teamField="surveyorTeam"
+                          />
+                        </div>
+                      )}
+                      {isPengawasanForm && (
+                        <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Tambah Personil Freelance Manual
+                          </label>
+                          <p className="text-[10px] text-slate-500 mb-2">
+                            Ketik nama personil freelance lalu tekan Enter.
+                            Personil ini akan otomatis masuk ke Rincian
+                            Penugasan di bawah namun tidak dihitung dalam KPI.
+                          </p>
+                          <div className="flex gap-2 mb-3">
+                            <input
+                              type="text"
+                              value={freelanceInput}
+                              onChange={(e) =>
+                                setFreelanceInput(e.target.value)
+                              }
+                              onKeyDown={handleFreelanceKeyDown}
+                              className="flex-1 p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-blue-500 bg-white dark:bg-slate-800 transition-colors dark:text-slate-200 shadow-sm"
+                              placeholder="Ketik nama freelance..."
+                            />
+                            <button
+                              type="button"
+                              onClick={handleAddFreelance}
+                              className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                            >
+                              Tambah
+                            </button>
+                          </div>
+                          {formData.team &&
+                            formData.team.filter(
+                              (name) => !resources.some((r) => r.name === name),
+                            ).length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {formData.team
+                                  .filter(
+                                    (name) =>
+                                      !resources.some((r) => r.name === name),
+                                  )
+                                  .map((name) => (
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-md text-xs font-semibold text-amber-700 dark:text-amber-400">
+                                      <span>{name}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleEditFreelance(name)
                                         }
-                                    } else if (!value) {
-                                        updatedDetails[member] = { ...updatedDetails[member], deadline: '' };
-                                    }
-                                });
-                                newData.pengawasanDetails = updatedDetails;
-                            }
-                        }
-                        return newData;
-                    });
-                };
-
-                // Handler khusus untuk detail kategori
-                const handleCategoryDetailChange = (category, field, value) => {
-                    setFormData(prev => ({
-                        ...prev,
-                        categoryDetails: {
-                            ...prev.categoryDetails,
-                            [category]: {
-                                ...(prev.categoryDetails?.[category] || {}),
-                                [field]: value
-                            }
-                        }
-                    }));
-                };
-
-                // --- SISTEM MICRO-CHECKLIST ---
-                const handleAddTask = (category, taskName) => {
-                    if (!taskName.trim()) return;
-                    setFormData(prev => {
-                        const currentCat = prev.categoryDetails?.[category] || { progress: 0, deadline: '', tasks: [], completedTasks: [] };
-                        const currentTasks = currentCat.tasks || [];
-                        if (currentTasks.includes(taskName.trim())) return prev;
-                        const newTasks = [...currentTasks, taskName.trim()];
-
-                        const completed = currentCat.completedTasks || [];
-                        const newProgress = newTasks.length > 0 ? Math.round((completed.length / newTasks.length) * 100) : 0;
-
-                        return {
-                            ...prev,
-                            categoryDetails: {
-                                ...prev.categoryDetails,
-                                [category]: { ...currentCat, tasks: newTasks, progress: newProgress }
-                            }
-                        };
-                    });
-                };
-
-                const handleRemoveTask = (category, taskName) => {
-                    setFormData(prev => {
-                        const currentCat = prev.categoryDetails?.[category] || { progress: 0, deadline: '', tasks: [], completedTasks: [] };
-                        const newTasks = (currentCat.tasks || []).filter(t => t !== taskName);
-                        const newCompleted = (currentCat.completedTasks || []).filter(t => t !== taskName);
-
-                        const newProgress = newTasks.length > 0 ? Math.round((newCompleted.length / newTasks.length) * 100) : 0;
-
-                        return {
-                            ...prev,
-                            categoryDetails: {
-                                ...prev.categoryDetails,
-                                [category]: { ...currentCat, tasks: newTasks, completedTasks: newCompleted, progress: newProgress }
-                            }
-                        };
-                    });
-                };
-
-                const handleToggleTask = (category, taskName) => {
-                    setFormData(prev => {
-                        const currentCat = prev.categoryDetails?.[category] || { progress: 0, deadline: '', tasks: [], completedTasks: [] };
-                        const currentCompleted = currentCat.completedTasks || [];
-                        const isCompleted = currentCompleted.includes(taskName);
-                        const newCompleted = isCompleted
-                            ? currentCompleted.filter(t => t !== taskName)
-                            : [...currentCompleted, taskName];
-
-                        const totalTasks = currentCat.tasks || [];
-                        const newProgress = totalTasks.length > 0 ? Math.round((newCompleted.length / totalTasks.length) * 100) : 0;
-
-                        return {
-                            ...prev,
-                            categoryDetails: {
-                                ...prev.categoryDetails,
-                                [category]: { ...currentCat, completedTasks: newCompleted, progress: newProgress }
-                            }
-                        };
-                    });
-                };
-
-                const handlePengawasanDetailChange = (memberName, field, value) => {
-                    setFormData(prev => {
-                        const currentDetail = prev.pengawasanDetails?.[memberName] || { role: 'Inspector', deadline: '', manMonth: '', statusTurun: 'Tidak Turun' };
-                        let newDetail = { ...currentDetail, [field]: value };
-
-                        if (field === 'manMonth') {
-                            if (prev.spmk && newDetail.manMonth) {
-                                const manMonthVal = parseFloat(newDetail.manMonth);
-                                if (!isNaN(manMonthVal)) {
-                                    const date = new Date(prev.spmk);
-                                    date.setDate(date.getDate() + Math.round(manMonthVal * 30) - 1);
-                                    if (date.getDay() === 6) date.setDate(date.getDate() - 1);
-                                    else if (date.getDay() === 0) date.setDate(date.getDate() - 2);
-                                    const yyyy = date.getFullYear();
-                                    const mm = String(date.getMonth() + 1).padStart(2, '0');
-                                    const dd = String(date.getDate()).padStart(2, '0');
-                                    newDetail.deadline = `${yyyy}-${mm}-${dd}`;
-                                }
-                            } else if (!newDetail.manMonth) {
-                                newDetail.deadline = '';
-                            }
-                        }
-
-                        return {
-                            ...prev,
-                            pengawasanDetails: {
-                                ...prev.pengawasanDetails,
-                                [memberName]: newDetail
-                            }
-                        };
-                    });
-                };
-
-                const surveyorTeamList = formData.surveyorTeam || [];
-                const isPerencanaanForm = formData.type?.toLowerCase().includes('perencana');
-
-                // Dapatkan Kategori Aktif untuk menampilkan form progres spesifik tim & menghitung rata-rata
-                const activeCategories = Array.from(new Set((formData.team || []).map(memberName => {
-                    if (isPerencanaanForm && surveyorTeamList.includes(memberName)) return null;
-                    const res = resources.find(r => r.name === memberName);
-                    return res ? getCategoryFromRole(res.role) : 'Lainnya';
-                }).filter(cat => cat !== null)));
-
-                if (surveyorTeamList.length > 0) {
-                    activeCategories.push('Surveyor');
-                }
-
-                // HITUNG PROGRESS TOTAL OTOMATIS BERDASARKAN RATA-RATA SUB-TIM
-                const computedTotalProgress = useMemo(() => {
-                    if (!isProject || activeCategories.length === 0) return 0;
-                    let total = 0;
-                    activeCategories.forEach(cat => {
-                        total += parseInt(formData.categoryDetails?.[cat]?.progress) || 0;
-                    });
-                    return Math.round(total / activeCategories.length);
-                }, [formData.categoryDetails, activeCategories, isProject]);
-
-                const handleResetTo100 = () => {
-                    const dummyEmp = { ...formData };
-                    let calculated = null;
-                    if (formData.level === 'Team Leader') {
-                        calculated = calculateLeaderKPI(dummyEmp, computedProjects);
-                    } else {
-                        calculated = calculateEmployeeKPI(dummyEmp, computedProjects);
-                    }
-                    const gap = 100 - calculated.score;
-                    setFormData(prev => ({ ...prev, adjustmentInput: gap }));
-                };
-
-                const handleResetToAuto = () => {
-                    const gap = -(formData.manualPoints || 0);
-                    setFormData(prev => ({ ...prev, adjustmentInput: gap }));
-                };
-
-
-                const handleSubmit = (e) => {
-                    e.preventDefault();
-                    let finalPayload = { ...formData };
-
-                    if (isInventory) {
-                        if (modalConfig.mode === 'borrow-cart') {
-                            handleInventoryAction('borrow-cart', {
-                                selectedIds: borrowCart,
-                                data: {
-                                    borrower: finalPayload.borrower,
-                                    borrowDate: finalPayload.borrowDate || new Date().toISOString().split('T')[0],
-                                    returnDate: finalPayload.returnDate,
-                                    projectAssigned: finalPayload.projectAssigned
-                                }
-                            });
-                            return;
-                        } else if (modalConfig.mode === 'borrow') {
-                            finalPayload.status = 'Menunggu Verifikasi';
-                            if (!finalPayload.borrowDate) finalPayload.borrowDate = new Date().toISOString().split('T')[0];
-                        } else if (modalConfig.mode === 'return') {
-                            finalPayload.status = 'Menunggu Verifikasi Pengembalian';
-                        } else if (modalConfig.mode === 'extend') {
-                            finalPayload.status = 'Menunggu Verifikasi Perpanjangan';
-                            finalPayload.newReturnDate = finalPayload.returnDate;
-                            finalPayload.returnDate = modalConfig.data.returnDate;
-                        }
-                        handleInventoryAction(modalConfig.mode, finalPayload);
-                        return;
-                    }
-
-                    if (isProject) {
-                        // OTOMATISASI PROGRESS PROJECT (TIDAK LAGI MANUAL)
-                        finalPayload.progress = computedTotalProgress;
-
-                        // Otomatisasi Timestamp Deskripsi: Hanya update waktu jika deskripsi berubah
-                        const oldDesc = modalConfig.data ? modalConfig.data.description : '';
-                        if (finalPayload.description && finalPayload.description !== oldDesc) {
-                            finalPayload.descriptionUpdatedAt = new Date().toISOString();
-                        } else if (!finalPayload.description) {
-                            finalPayload.descriptionUpdatedAt = '';
-                        } else {
-                            finalPayload.descriptionUpdatedAt = modalConfig.data ? modalConfig.data.descriptionUpdatedAt : '';
-                        }
-
-                        // Bersihkan kategori detail jika member dari kategori tersebut sudah dihapus
-                        const activeCats = new Set((finalPayload.team || []).map(memberName => {
-                            const res = resources.find(r => r.name === memberName);
-                            return res ? getCategoryFromRole(res.role) : 'Lainnya';
-                        }));
-                        if (finalPayload.type === 'Perencanaan' && finalPayload.surveyorTeam && finalPayload.surveyorTeam.length > 0) {
-                            activeCats.add('Surveyor');
-                            finalPayload.team = Array.from(new Set([...(finalPayload.team || []), ...finalPayload.surveyorTeam]));
-                        }
-
-                        const cleanDetails = {};
-                        activeCats.forEach(cat => {
-                            if (finalPayload.categoryDetails && finalPayload.categoryDetails[cat]) {
-                                cleanDetails[cat] = finalPayload.categoryDetails[cat];
-                            }
-                        });
-
-                        const teamDataObj = {
-                            members: finalPayload.team || [],
-                            details: cleanDetails,
-                            leader: finalPayload.teamLeader || "",
-                            individualStatus: finalPayload.individualStatus || {},
-                            pengawasanDetails: finalPayload.pengawasanDetails || {}
-                        };
-
-                        // Enkripsi ke string agar aman masuk backend lama
-                        finalPayload.team = JSON.stringify(teamDataObj).replace(/;/g, ',');
-                    } else {
-                        // Gabungkan role, level, dan manualPoints untuk personil
-                        const newManualPoints = (finalPayload.manualPoints || 0) + (finalPayload.adjustmentInput || 0);
-                        finalPayload.role = `${finalPayload.role}|${finalPayload.level}|${newManualPoints}`;
-                    }
-                    handleCrudAction(modalConfig.mode, modalConfig.type, finalPayload);
-                };
-
-                const filteredResources = resources.filter(res =>
-                    res.name.toLowerCase().includes(searchTeam.toLowerCase()) ||
-                    res.role.toLowerCase().includes(searchTeam.toLowerCase())
-                );
-
-                const isPengawasanForm = formData.type === 'Pengawasan' || formData.type === 'Manajemen Konstruksi';
-                const isSyncedProject = modalConfig.mode === 'edit' && Boolean(formData.sourceAssignmentId);
-
-                return (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center sm:p-4 fade-in">
-                        <div className={`bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-xl border border-transparent dark:border-slate-700/50 w-full ${isProject ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[95vh] pb-4 sm:pb-0`}>
-                            <div className="p-5 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 shrink-0">
-                                <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
-                                    {modalConfig.mode === 'add' ? 'Tambah ' : modalConfig.mode === 'borrow' ? 'Pinjam ' : 'Edit '}
-                                    {isProject ? 'Data Proyek Terpadu' : isInventory ? 'Data Inventaris' : 'Data Personil'}
-                                </h3>
-                                <button onClick={closeModal} className="text-slate-400 hover:text-red-500 transition-colors"><Icon name="x" size={20} /></button>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto flex-1 min-h-0">
-                                <form id="crudForm" onSubmit={handleSubmit} className="space-y-5">
-                                    {isProject && isSyncedProject && (
-                                        <div className="flex items-start gap-2.5 px-3 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-xl text-[11px] text-indigo-700 dark:text-indigo-300">
-                                            <Icon name="link" size={14} className="mt-0.5 shrink-0" />
-                                            <span><strong>Proyek Tersinkronisasi:</strong> Data utama (Nama, Klien, Tipe, Tim) dikelola otomatis melalui menu <strong>Penugasan Tenaga Ahli</strong>. Anda hanya dapat mengubah status <strong>Turun/Tidak Turun</strong> personil di sini.</span>
-                                        </div>
-                                    )}
-                                    {isProject ? (
-                                        <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div className="col-span-2 md:col-span-1">
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nama Proyek</label>
-                                                    <input required name="name" value={formData.name} onChange={handleChange} disabled={isSyncedProject} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed" placeholder="Cth: Perencanaan RSUD" />
-                                                </div>
-                                                <div className="col-span-2 md:col-span-1">
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Klien / Owner</label>
-                                                    <input required name="client" value={formData.client} onChange={handleChange} disabled={isSyncedProject} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed" placeholder="Cth: Dinas PUPR" />
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tipe Proyek</label>
-                                                    <select name="type" value={formData.type} onChange={handleChange} disabled={isSyncedProject} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed">
-                                                        <option value="Perencanaan">Perencanaan</option>
-                                                        {(modalConfig.mode === 'edit' && formData.type === 'Pengawasan') && <option value="Pengawasan">Pengawasan</option>}
-                                                        <option value="Manajemen Konstruksi">Manajemen Konstruksi</option>
-                                                    </select>
-                                                </div>
-                                                {isPerencanaanForm && (
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1 text-blue-600 dark:text-blue-400">Divisi Kontrol</label>
-                                                        <select name="divisiKontrol" value={formData.divisiKontrol || ""} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-200">
-                                                            <option value="">-- Pilih Divisi --</option>
-                                                            <option value="Divisi Jalan">Divisi Jalan</option>
-                                                            <option value="Divisi Gedung">Divisi Gedung</option>
-                                                            <option value="Divisi SDA">Divisi SDA</option>
-                                                            <option value="Divisi Perijinan">Divisi Perijinan</option>
-                                                            <option value="Divisi Tata Ruang">Divisi Tata Ruang</option>
-                                                        </select>
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Status Proyek (Makro)</label>
-                                                    <select name="status" value={formData.status} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-200">
-                                                        <option value="On Progress">On Progress</option>
-                                                        <option value="Done">Done</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1"><Icon name="file-text" size={12} /> Deskripsi / Update Proyek</label>
-                                                <textarea name="description" value={formData.description || ''} onChange={handleChange} rows="3" className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors resize-none dark:text-slate-200" placeholder="Tuliskan update terkini proyek ini... Cth: Sudah masuk tahap DED, menunggu approval dari klien untuk revisi arsitektur." />
-                                            </div>
-
-                                            <div className="flex flex-col gap-4 bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                                                {(isPengawasanForm || isPerencanaanForm) && (
-                                                    <div>
-                                                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Tgl SPMK Proyek</label>
-                                                        <div className="relative w-full">
-                                                            <div className="flex items-center justify-between w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-800 min-h-[42px] text-slate-700 dark:text-slate-200">
-                                                                <span>{formData.spmk ? formatDateIndo(formData.spmk) : 'Pilih tanggal...'}</span>
-                                                                <Icon name="calendar-clock" size={16} className="text-slate-400" />
-                                                            </div>
-                                                            <input type="date" name="spmk" className={`absolute inset-0 w-full h-full opacity-0 ${isSyncedProject ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                                                value={formData.spmk || ''}
-                                                                onChange={handleChange}
-                                                                disabled={isSyncedProject}
-                                                                onClick={(e) => !isSyncedProject && e.target.showPicker && e.target.showPicker()}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Tenggat Waktu Kontrak Akhir</label>
-                                                    <div className="relative w-full">
-                                                        <div className="flex items-center justify-between w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-800 min-h-[42px] text-slate-700 dark:text-slate-200">
-                                                            <span>{formData.deadline ? formatDateIndo(formData.deadline) : 'Pilih tanggal...'}</span>
-                                                            <Icon name="calendar-clock" size={16} className="text-slate-400" />
-                                                        </div>
-                                                        <input type="date" name="deadline" className={`absolute inset-0 w-full h-full opacity-0 ${isSyncedProject ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                                            value={formData.deadline || ''}
-                                                            onChange={handleChange}
-                                                            disabled={isSyncedProject}
-                                                            onClick={(e) => !isSyncedProject && e.target.showPicker && e.target.showPicker()}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                {!isPengawasanForm && (
-                                                    <div>
-                                                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Progress Keseluruhan Proyek (%)</label>
-                                                        <input
-                                                            type="number"
-                                                            readOnly
-                                                            value={computedTotalProgress}
-                                                            className="block w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-sm outline-none cursor-not-allowed appearance-none m-0"
-                                                            title="Nilai ini dihitung otomatis"
-                                                        />
-                                                        <p className="text-[9px] text-slate-500 mt-1">Dihitung otomatis dari rata-rata progress sub-tim.</p>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* BAGIAN PENUGASAN TIM */}
-                                            <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50">
-                                                {!isSyncedProject && (
-                                                    <>
-                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                                                            <label className="block text-sm font-bold text-slate-800 dark:text-slate-100">Penugasan Personil</label>
-                                                            {!isPengawasanForm && (
-                                                                <button type="button" onClick={handleAutoPlotting} className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-md">
-                                                                    <Icon name="zap" size={14} className="text-amber-300 fill-amber-300" /> Auto-Assign AI
-                                                                </button>
-                                                            )}
-                                                        </div>
-
-                                                        {!isPengawasanForm && (
-                                                            <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200 dark:border-amber-800/50 shadow-sm">
-                                                                <label className="block text-xs font-bold text-amber-800 mb-1 flex items-center gap-1.5"><Icon name="star" size={14} className="text-amber-500" /> Pilih Team Leader Proyek</label>
-                                                                <select name="teamLeader" value={formData.teamLeader || ""} onChange={handleChange} className="w-full p-2.5 border border-amber-200 dark:border-amber-700/50 rounded-xl text-sm outline-none focus:border-amber-500 bg-white dark:bg-slate-800 shadow-sm font-semibold text-slate-700 dark:text-slate-200">
-                                                                    <option value="">-- Tidak Ada Team Leader --</option>
-                                                                    {resources.filter(r => r.level === 'Team Leader').map(r => (
-                                                                        <option key={r.id} value={r.name}>{r.name} ({r.role})</option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>
-                                                        )}
-
-                                                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">{isPengawasanForm ? "Daftar Personil Tim Pengawasan" : "Anggota Sub-Tim"}</label>
-
-                                                        <div className="relative mb-3">
-                                                            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
-                                                                <Icon name="search" size={14} />
-                                                            </div>
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Cari nama personil untuk ditugaskan..."
-                                                                className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 transition-all shadow-sm dark:text-slate-200"
-                                                                value={searchTeam}
-                                                                onChange={(e) => setSearchTeam(e.target.value)}
-                                                            />
-                                                        </div>
-
-                                                        <div className="border border-slate-200 dark:border-slate-700/50 rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3 max-h-48 overflow-y-auto">
-                                                            {resources.length === 0 ? (
-                                                                <p className="text-xs text-slate-400 italic">Belum ada data tim. Tambahkan di menu Alokasi Tim.</p>
-                                                            ) : filteredResources.length === 0 ? (
-                                                                <p className="text-xs text-slate-400 italic">Pencarian tidak ditemukan.</p>
-                                                            ) : isPengawasanForm ? (
-                                                                <TeamCheckboxGroup title="Pilih Anggota Tim (Bebas Lintas Jabatan)" roleFilter={r => true} isOptional={false} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                            ) : (
-                                                                <>
-                                                                    <TeamCheckboxGroup title="Tim Arsitek" roleFilter={r => r.role.toLowerCase().includes('arsitek')} isOptional={false} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                                    <TeamCheckboxGroup title="Tim Quantity Surveyor (QS)" roleFilter={r => r.role.toLowerCase() === 'qs' || r.role.toLowerCase().includes('quantity')} isOptional={false} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                                    <TeamCheckboxGroup title="Tim Struktur" roleFilter={r => r.role.toLowerCase().includes('struktur')} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                                    <TeamCheckboxGroup title="Tim MEP" roleFilter={r => r.role.toLowerCase().includes('mep')} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                                    <TeamCheckboxGroup title="Tim Tata Ruang" roleFilter={r => r.role.toLowerCase().includes('tata ruang') || r.role.toLowerCase().includes('planologi')} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                                    <TeamCheckboxGroup title="Lainnya" roleFilter={r => !r.role.toLowerCase().includes('arsitek') && !(r.role.toLowerCase() === 'qs' || r.role.toLowerCase().includes('quantity')) && !r.role.toLowerCase().includes('struktur') && !r.role.toLowerCase().includes('mep') && !(r.role.toLowerCase().includes('tata ruang') || r.role.toLowerCase().includes('planologi'))} isOptional={true} filteredResources={filteredResources} formData={formData} setFormData={setFormData} />
-                                                                </>
-                                                            )}
-                                                        </div>
-
-                                                        {!isPengawasanForm && resources.length > 0 && (
-                                                            <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
-                                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Penugasan Ekstra (Opsional)</label>
-                                                                <TeamVisionaryMultiSelect title="Tim Surveyor (Sub Tim Khusus Lintas Jabatan)" filteredResources={resources} formData={formData} setFormData={setFormData} teamField="surveyorTeam" />
-                                                            </div>
-                                                        )}
-
-                                                        {isPengawasanForm && (
-                                                            <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
-                                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tambah Personil Freelance Manual</label>
-                                                                <p className="text-[10px] text-slate-500 mb-2">Ketik nama personil freelance lalu tekan Enter. Personil ini akan otomatis masuk ke Rincian Penugasan di bawah namun tidak dihitung dalam KPI.</p>
-                                                                <div className="flex gap-2 mb-3">
-                                                                    <input
-                                                                        type="text"
-                                                                        value={freelanceInput}
-                                                                        onChange={(e) => setFreelanceInput(e.target.value)}
-                                                                        onKeyDown={handleFreelanceKeyDown}
-                                                                        className="flex-1 p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-blue-500 bg-white dark:bg-slate-800 transition-colors dark:text-slate-200 shadow-sm"
-                                                                        placeholder="Ketik nama freelance..."
-                                                                    />
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={handleAddFreelance}
-                                                                        className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                                                                    >
-                                                                        Tambah
-                                                                    </button>
-                                                                </div>
-                                                                {formData.team && formData.team.filter(name => !resources.some(r => r.name === name)).length > 0 && (
-                                                                    <div className="flex flex-wrap gap-2">
-                                                                        {formData.team.filter(name => !resources.some(r => r.name === name)).map(name => (
-                                                                            <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-md text-xs font-semibold text-amber-700 dark:text-amber-400">
-                                                                                <span>{name}</span>
-                                                                                <button type="button" onClick={() => handleEditFreelance(name)} className="text-amber-500 hover:text-amber-700 transition-colors ml-1" title="Edit Nama">
-                                                                                    <Icon name="edit" size={12} />
-                                                                                </button>
-                                                                                <button type="button" onClick={() => {
-                                                                                    setFormData(prev => ({
-                                                                                        ...prev,
-                                                                                        team: prev.team.filter(t => t !== name)
-                                                                                    }))
-                                                                                }} className="text-amber-500 hover:text-amber-700 transition-colors" title="Hapus">
-                                                                                    <Icon name="x" size={12} />
-                                                                                </button>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                )}
-
-                                                {isPengawasanForm && (formData.team || []).length > 0 && (
-                                                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-700/50">
-                                                        <label className="flex items-center gap-1.5 text-sm font-bold text-slate-800 dark:text-slate-100 mb-3"><Icon name="user-check" size={16} className="text-emerald-600 dark:text-emerald-400" /> Rincian Penugasan Personil Pengawasan</label>
-                                                        <div className="space-y-2 border border-slate-200 dark:border-slate-700/50 rounded-xl p-3 bg-emerald-50/30 dark:bg-emerald-900/10">
-                                                            {formData.team.map(member => {
-                                                                const detail = formData.pengawasanDetails?.[member] || { role: 'Inspector', deadline: '', manMonth: '', spmk: '', statusTurun: 'Tidak Turun' };
-                                                                return (
-                                                                    <div key={member} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex flex-col gap-3 shadow-sm">
-                                                                        <div className="border-b border-slate-100 dark:border-slate-700 pb-2 flex justify-between items-center">
-                                                                            <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">{member}</h4>
-                                                                            <button type="button" onClick={() => {
-                                                                                setFormData(prev => ({
-                                                                                    ...prev,
-                                                                                    team: (prev.team || []).filter(t => t !== member)
-                                                                                }))
-                                                                            }} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold transition-colors bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/50">
-                                                                                <Icon name="trash-2" size={12} /> Hapus
-                                                                            </button>
-                                                                        </div>
-                                                                        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[4fr_3fr_3fr] gap-3">
-                                                                            <div className="flex flex-col justify-end">
-                                                                                <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Peran / Jabatan</label>
-                                                                                <select className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                                                                                    value={detail.role || 'Inspector'}
-                                                                                    onChange={(e) => handlePengawasanDetailChange(member, 'role', e.target.value)}
-                                                                                    disabled={isSyncedProject}
-                                                                                >
-                                                                                    <option value="Team Leader">Team Leader</option>
-                                                                                    <option value="Tenaga Ahli">Tenaga Ahli</option>
-                                                                                    <option value="Inspector">Inspector</option>
-                                                                                    <option value="Laboratory Technician">Laboratory Technician</option>
-                                                                                    <option value="Quantity Surveyor">Quantity Surveyor</option>
-                                                                                    <option value="K3">K3</option>
-                                                                                    <option value="Administrasi">Administrasi</option>
-                                                                                </select>
-                                                                            </div>
-                                                                            <div className="flex flex-col justify-end">
-                                                                                <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase whitespace-nowrap">Status</label>
-                                                                                <select className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
-                                                                                    value={detail.statusTurun || 'Tidak Turun'}
-                                                                                    onChange={(e) => handlePengawasanDetailChange(member, 'statusTurun', e.target.value)}
-                                                                                >
-                                                                                    <option value="Turun">Turun</option>
-                                                                                    <option value="Tidak Turun">Tidak Turun</option>
-                                                                                    <option value="Belum Diketahui">Belum Diketahui</option>
-                                                                                </select>
-                                                                            </div>
-                                                                            <div className="flex flex-col justify-end">
-                                                                                <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase whitespace-nowrap">Lama (Man/Month)</label>
-                                                                                <input type="number" step="0.1" className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                                                                                    value={detail.manMonth || ''}
-                                                                                    onChange={(e) => handlePengawasanDetailChange(member, 'manMonth', e.target.value)}
-                                                                                    placeholder="Cth: 1.5"
-                                                                                    disabled={isSyncedProject}
-                                                                                />
-                                                                            </div>
-                                                                            
-                                                                        </div>
-                                                                    </div>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* BAGIAN TARGET MICRO PER SUB-TIM */}
-                                            {!isPengawasanForm && activeCategories.length > 0 && (
-                                                <div className="pt-4 border-t border-slate-100 dark:border-slate-700/50">
-                                                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-800 dark:text-slate-100 mb-3"><Icon name="target" size={16} className="text-blue-600 dark:text-blue-400" /> Target Khusus Per Sub-Tim</label>
-                                                    <div className="space-y-2 border border-slate-200 dark:border-slate-700/50 rounded-xl p-3 bg-blue-50/30 dark:bg-blue-900/10">
-                                                        {['Arsitek', 'QS', 'Struktur', 'MEP', 'Tata Ruang', 'Surveyor', 'Lainnya'].map(cat => {
-                                                            if (!activeCategories.includes(cat)) return null;
-
-                                                            const details = formData.categoryDetails?.[cat] || { progress: 0, deadline: '' };
-                                                            const catMembers = cat === 'Surveyor' ? (formData.surveyorTeam || []) : formData.team.filter(m => {
-                                                                if (isPerencanaanForm && (formData.surveyorTeam || []).includes(m)) return false;
-                                                                const r = resources.find(x => x.name === m);
-                                                                return r && getCategoryFromRole(r.role) === cat;
-                                                            });
-
-                                                            return (
-                                                                <div key={cat} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex flex-col gap-3 shadow-sm">
-                                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                                                        <div className="w-full sm:w-1/4 sm:border-r border-slate-100 dark:border-slate-700 sm:pr-2">
-                                                                            <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5"><Icon name="target" size={14} className="text-blue-500" /> {cat}</h4>
-                                                                            <p className="text-[9px] text-slate-500 truncate mt-0.5" title={catMembers.join(', ')}>
-                                                                                {catMembers.join(', ')}
-                                                                            </p>
-                                                                        </div>
-                                                                        <div className="w-full sm:w-1/4">
-                                                                            {(details.tasks || []).length > 0 ? (
-                                                                                <>
-                                                                                    <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Progress Terkunci (%)</label>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                                                                            <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${details.progress || 0}%` }}></div>
-                                                                                        </div>
-                                                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{details.progress || 0}%</span>
-                                                                                    </div>
-                                                                                </>
-                                                                            ) : (
-                                                                                <>
-                                                                                    <div className="flex items-center justify-between mb-1">
-                                                                                        <label className="block text-[9px] font-bold text-slate-500 uppercase">Progress Manual</label>
-                                                                                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">{details.progress || 0}%</span>
-                                                                                    </div>
-                                                                                    <div className="relative w-full h-[34px] flex items-center">
-                                                                                        <div className="relative w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center">
-                                                                                            <div className="absolute top-0 left-0 h-full bg-green-500 rounded-lg pointer-events-none" style={{ width: `${details.progress || 0}%` }}></div>
-                                                                                            <div className="absolute w-4 h-4 bg-white border-[3px] border-green-500 rounded-full shadow pointer-events-none" style={{ left: `calc(${details.progress || 0}% - 8px)` }}></div>
-                                                                                            <input
-                                                                                                type="range"
-                                                                                                min="0"
-                                                                                                max="100"
-                                                                                                value={details.progress || 0}
-                                                                                                onChange={(e) => handleCategoryDetailChange(cat, 'progress', parseInt(e.target.value))}
-                                                                                                className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer m-0 z-10"
-                                                                                            />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="w-full sm:w-1/4 sm:border-r border-slate-100 dark:border-slate-700 sm:pr-2">
-                                                                            <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Tanggal Mulai</label>
-                                                                            <div className="relative w-full">
-                                                                                <div className="flex items-center justify-between w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-900/50 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-800 transition-colors min-h-[34px] text-slate-700 dark:text-slate-200">
-                                                                                    <span>{details.startDate ? formatDateIndo(details.startDate) : 'Pilih...'}</span>
-                                                                                    <Icon name="calendar-clock" size={14} className="text-slate-400" />
-                                                                                </div>
-                                                                                <input type="date" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                                                    value={details.startDate || ''}
-                                                                                    onChange={(e) => handleCategoryDetailChange(cat, 'startDate', e.target.value)}
-                                                                                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="w-full sm:w-1/4">
-                                                                            <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Deadline Tim</label>
-                                                                            <div className="relative w-full">
-                                                                                <div className="flex items-center justify-between w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-900/50 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-800 transition-colors min-h-[34px] text-slate-700 dark:text-slate-200">
-                                                                                    <span>{details.deadline ? formatDateIndo(details.deadline) : 'Pilih tanggal...'}</span>
-                                                                                    <Icon name="calendar-clock" size={14} className="text-slate-400" />
-                                                                                </div>
-                                                                                <input type="date" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                                                    value={details.deadline || ''}
-                                                                                    onChange={(e) => handleCategoryDetailChange(cat, 'deadline', e.target.value)}
-                                                                                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* Micro-Tasks Checklist */}
-                                                                    <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/50 mt-1">
-                                                                        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">Custom Micro-Tasks</label>
-                                                                        <input
-                                                                            type="text"
-                                                                            placeholder={
-                                                                                cat === 'QS' ? "Ketik tugas baru (Cth: RAB) lalu tekan Enter..." :
-                                                                                    cat === 'Struktur' ? "Ketik tugas baru (Cth: Perhitungan Struktur Kolom) lalu tekan Enter..." :
-                                                                                        cat === 'MEP' ? "Ketik tugas baru (Cth: Perhitungan sanitair) lalu tekan Enter..." :
-                                                                                            "Ketik tugas baru (Cth: Denah Lantai 1) lalu tekan Enter..."
-                                                                            }
-                                                                            className="w-full p-2 text-xs border border-slate-200 dark:border-slate-700 rounded-md mb-2 bg-white dark:bg-slate-800 outline-none focus:border-blue-500 dark:text-slate-200 transition-colors"
-                                                                            onKeyDown={(e) => {
-                                                                                if (e.key === 'Enter') {
-                                                                                    e.preventDefault();
-                                                                                    handleAddTask(cat, e.target.value);
-                                                                                    e.target.value = '';
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                        <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
-                                                                            {(details.tasks || []).length === 0 ? (
-                                                                                <p className="text-[10px] text-slate-400 italic">Belum ada tugas. Tambahkan tugas agar progres dapat dihitung.</p>
-                                                                            ) : (
-                                                                                (details.tasks || []).map((task, idx) => {
-                                                                                    const isChecked = (details.completedTasks || []).includes(task);
-                                                                                    return (
-                                                                                        <div key={idx} className={`flex items-center justify-between p-1.5 rounded-md border text-xs transition-all ${isChecked ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/50' : 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}>
-                                                                                            <label className="flex items-center gap-2 cursor-pointer flex-1">
-                                                                                                <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                                                                                    checked={isChecked}
-                                                                                                    onChange={() => handleToggleTask(cat, task)}
-                                                                                                />
-                                                                                                <span className={`${isChecked ? 'text-blue-800 dark:text-blue-300 line-through opacity-70' : 'text-slate-700 dark:text-slate-200 font-medium'}`}>{task}</span>
-                                                                                            </label>
-                                                                                            <button type="button" onClick={() => handleRemoveTask(cat, task)} className="text-slate-400 hover:text-red-500 transition-colors px-1 ml-2 flex-shrink-0" title="Hapus Tugas">
-                                                                                                <Icon name="x" size={12} />
-                                                                                            </button>
-                                                                                        </div>
-                                                                                    )
-                                                                                })
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
-                                    ) : isInventory ? (
-                                        modalConfig.mode === 'borrow' ? (
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Peminjam (Team Leader)</label>
-                                                    <select required name="borrower" value={formData.borrower} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200">
-                                                        <option value="">-- Pilih Team Leader --</option>
-                                                        {resources.filter(r => r.level === 'Team Leader').map(r => (
-                                                            <option key={r.name} value={r.name}>{r.name}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tanggal Dipinjam</label>
-                                                    <input type="date" required name="borrowDate" value={formData.borrowDate} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tanggal Pengembalian</label>
-                                                    <input type="date" required name="returnDate" value={formData.returnDate} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Proyek (Opsional)</label>
-                                                    <input name="projectAssigned" value={formData.projectAssigned} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" placeholder="Cth: Perencanaan RSUD" />
-                                                </div>
-                                            </div>
-                                        ) : modalConfig.mode === 'borrow-cart' ? (
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-xl mb-2">
-                                                    <p className="text-xs text-indigo-800 dark:text-indigo-300">
-                                                        Anda akan meminjam <strong className="font-bold">{borrowCart.length} alat sekaligus</strong>. Data formulir ini akan diaplikasikan ke semua alat yang Anda pilih.
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Peminjam (Team Leader)</label>
-                                                    <select required name="borrower" value={formData.borrower} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200">
-                                                        <option value="">-- Pilih Team Leader --</option>
-                                                        {resources.filter(r => r.level === 'Team Leader').map(r => (
-                                                            <option key={r.name} value={r.name}>{r.name}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tanggal Dipinjam</label>
-                                                    <input type="date" required name="borrowDate" value={formData.borrowDate} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tanggal Pengembalian</label>
-                                                    <input type="date" required name="returnDate" value={formData.returnDate} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Proyek (Opsional)</label>
-                                                    <input name="projectAssigned" value={formData.projectAssigned} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" placeholder="Cth: Perencanaan RSUD" />
-                                                </div>
-                                            </div>
-                                        ) : modalConfig.mode === 'extend' ? (
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-slate-200 dark:border-amber-800/50 rounded-xl mb-2">
-                                                    <p className="text-xs text-amber-800 dark:text-amber-300">
-                                                        Perpanjang masa pinjam untuk alat <strong className="font-bold">{formData.name}</strong> yang sedang dipinjam oleh <strong className="font-bold">{formData.borrower}</strong>.
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tanggal Pengembalian Baru</label>
-                                                    <input type="date" required name="returnDate" value={formData.returnDate} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" />
-                                                </div>
-                                            </div>
-                                        ) : modalConfig.mode === 'return' ? (
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-xl mb-2">
-                                                    <p className="text-xs text-indigo-800 dark:text-indigo-300">
-                                                        Anda akan mengembalikan alat <strong className="font-bold">{formData.name}</strong> yang dipinjam oleh <strong className="font-bold">{formData.borrower}</strong>. Silakan perbarui kondisi terakhir alat ini.
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Kondisi Alat Saat Dikembalikan</label>
-                                                    <select name="condition" value={formData.condition} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200">
-                                                        <option value="Baik">Baik</option>
-                                                        <option value="Rusak Ringan">Rusak Ringan</option>
-                                                        <option value="Rusak Berat">Rusak Berat</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                {modalConfig.mode !== 'edit' && (
-                                                    <div className="col-span-2 sm:col-span-1">
-                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">ID / Kode Alat</label>
-                                                        <input required name="id" value={formData.id} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" placeholder="Cth: INV-2023-001" />
-                                                    </div>
-                                                )}
-                                                <div className={`col-span-2 ${modalConfig.mode !== 'edit' ? 'sm:col-span-1' : ''}`}>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nama Alat</label>
-                                                    <input required name="name" value={formData.name} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" placeholder="Cth: Drone DJI Mavic" />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Kategori</label>
-                                                    <select name="type" value={formData.type} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200">
-                                                        <option value="Alat Ukur">Alat Ukur</option>
-                                                        <option value="Kendaraan">Kendaraan</option>
-                                                        <option value="Elektronik">Elektronik</option>
-                                                        <option value="Lainnya">Lainnya</option>
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Kondisi</label>
-                                                    <select name="condition" value={formData.condition} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200">
-                                                        <option value="Baik">Baik</option>
-                                                        <option value="Rusak Ringan">Rusak Ringan</option>
-                                                        <option value="Rusak Berat">Rusak Berat</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        )
-                                    ) : (
-                                        <>
-                                            <div><label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nama Personil</label><input required name="name" value={formData.name} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200" placeholder="Cth: Ir. Budi Santoso" /></div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tim</label>
-                                                <select name="role" value={formData.role} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200">
-                                                    <option value="Arsitek">Arsitek</option>
-                                                    <option value="QS">Quantity Surveyor (QS)</option>
-                                                    <option value="Struktur">Struktur</option>
-                                                    <option value="MEP">MEP</option>
-                                                    <option value="Tata Ruang">Tata Ruang</option>
-                                                    <option value="Lainnya">Lainnya</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tingkat Jabatan</label>
-                                                <select name="level" value={formData.level} onChange={handleChange} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200">
-                                                    <option value="Staff">Staff (Anggota)</option>
-                                                    <option value="Team Leader">Team Leader</option>
-                                                    <option value="PIC">PIC</option>
-                                                    <option value="Kordinator Divisi Jalan">Kordinator Divisi Jalan</option>
-                                                    <option value="Kordinator Divisi Gedung">Kordinator Divisi Gedung</option>
-                                                    <option value="Kordinator Divisi SDA">Kordinator Divisi SDA</option>
-                                                    <option value="Kordinator Divisi Perijinan">Kordinator Divisi Perijinan</option>
-                                                    <option value="Kordinator Divisi Tata Ruang">Kordinator Divisi Tata Ruang</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Rating Kinerja (1-5)</label>
-                                                <div className="flex gap-2 items-center p-1">
-                                                    {[1, 2, 3, 4, 5].map(star => (
-                                                        <button
-                                                            key={star}
-                                                            type="button"
-                                                            onClick={() => setFormData({ ...formData, rating: star })}
-                                                            className={`transition-colors focus:outline-none ${star <= (formData.rating || 3) ? 'text-amber-500' : 'text-slate-200 dark:text-slate-700'}`}
-                                                        >
-                                                            <Icon name="star" size={28} />
-                                                        </button>
-                                                    ))}
-                                                    <span className="text-xs text-slate-500 dark:text-slate-400 ml-2 font-medium">Bintang {formData.rating || 3}</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
-                                                <div>
-                                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tambah / Kurang Skor KPI (+/-)</label>
-                                                    <p className="text-[10px] text-slate-500 mb-2 leading-relaxed">Nilai ini akan langsung ditambahkan secara relatif ke skor terakhir. Contoh: Jika skor 60 dan Anda isi 40, skor menjadi 100.</p>
-                                                    <div className="flex flex-wrap gap-3 items-center mt-2">
-                                                        <input
-                                                            type="number"
-                                                            name="adjustmentInput"
-                                                            value={formData.adjustmentInput === '' || isNaN(formData.adjustmentInput) ? '' : (formData.adjustmentInput !== undefined ? formData.adjustmentInput : 0)}
-                                                            onChange={(e) => setFormData({ ...formData, adjustmentInput: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                                                            className="w-24 p-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-center outline-none focus:border-blue-500 bg-white dark:bg-slate-800 dark:text-slate-200"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleResetTo100}
-                                                            className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
-                                                        >
-                                                            <Icon name="target" size={12} />
-                                                            Reset ke 100
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleResetToAuto}
-                                                            className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
-                                                            title="Hapus semua penyesuaian manual dan kembalikan ke perhitungan murni otomatis proyek."
-                                                        >
-                                                            <Icon name="refresh-ccw" size={12} />
-                                                            Hapus Manual
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl mt-4">
-                                                <p className="text-xs text-blue-800 dark:text-blue-300 font-medium leading-relaxed">
-                                                    💡 <strong className="font-bold">Info Cerdas:</strong> Jumlah proyek dan Persentase Beban Kerja orang ini tidak perlu diinput manual. Sistem akan otomatis menghitungnya berdasarkan seberapa banyak proyek yang ia tangani di menu List Proyek.
-                                                </p>
-                                            </div>
-                                        </>
-                                    )}
-                                </form>
-                            </div>
-
-                            <div className="p-5 border-t border-slate-100 dark:border-slate-700/50 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900/50 shrink-0">
-                                <button onClick={closeModal} type="button" className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors">Batal</button>
-                                <button form="crudForm" type="submit" disabled={loading} className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm disabled:opacity-70">
-                                    {loading ? <Icon name="refresh-ccw" className="animate-spin" size={16} /> : <Icon name="save" size={16} />}
-                                    Simpan
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
-
-            
-            const renderAlertModal = () => {
-                if (!alertModal.isOpen) return null;
-                return (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setAlertModal({ ...alertModal, isOpen: false })}></div>
-                        <div className="relative bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full scale-in-center">
-                            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{alertModal.title}</h3>
-                            <p className="text-slate-600 dark:text-slate-300 mb-6 whitespace-pre-wrap">{alertModal.message}</p>
-                            <div className="flex justify-end">
-                                <button onClick={() => setAlertModal({ ...alertModal, isOpen: false })} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">Tutup</button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
-
-            const renderFuturisticConfirm = () => {
-                if (!confirmDialog.isOpen) return null;
-
-                return (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}></div>
-                        <div className="relative bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-3xl w-full max-w-sm p-8 overflow-hidden scale-in-center">
-                            <div className={`absolute -top-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-20 ${confirmDialog.type === 'danger' ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-                            <div className={`absolute -bottom-20 -left-20 w-48 h-48 rounded-full blur-3xl opacity-10 ${confirmDialog.type === 'danger' ? 'bg-rose-500' : 'bg-indigo-500'}`}></div>
-
-                            <div className="flex flex-col items-center text-center relative z-10">
-                                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-5 shadow-inner backdrop-blur-md ${confirmDialog.type === 'danger' ? 'bg-red-50/80 text-red-500 shadow-red-200 border border-red-100' : 'bg-blue-50/80 text-blue-500 shadow-blue-200 border border-blue-100'}`}>
-                                    <Icon name={confirmDialog.type === 'danger' ? 'alert-triangle' : 'help-circle'} size={36} />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">{confirmDialog.title}</h3>
-                                <p className="text-sm text-slate-500 mb-8 leading-relaxed px-2">{confirmDialog.message}</p>
-
-                                <div className="flex w-full gap-3">
-                                    <button
-                                        onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
-                                        className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-100 transition-all border border-slate-200/60 dark:border-slate-600/50"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
+                                        className="text-amber-500 hover:text-amber-700 transition-colors ml-1"
+                                        title="Edit Nama"
+                                      >
+                                        <Icon name="edit" size={12} />
+                                      </button>
+                                      <button
+                                        type="button"
                                         onClick={() => {
-                                            if (confirmDialog.onConfirm) confirmDialog.onConfirm();
-                                            setConfirmDialog({ ...confirmDialog, isOpen: false });
+                                          setFormData((prev) => ({
+                                            ...prev,
+                                            team: prev.team.filter(
+                                              (t) => t !== name,
+                                            ),
+                                          }));
                                         }}
-                                        className={`flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-lg ${confirmDialog.type === 'danger' ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/30' : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/30'}`}
-                                    >
-                                        Konfirmasi
-                                    </button>
-                                </div>
-                            </div>
+                                        className="text-amber-500 hover:text-amber-700 transition-colors"
+                                        title="Hapus"
+                                      >
+                                        <Icon name="x" size={12} />
+                                      </button>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
                         </div>
+                      )}
+                    </Fragment>
+                  )}
+                  {isPengawasanForm && (formData.team || []).length > 0 && (
+                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-700/50">
+                      <label className="flex items-center gap-1.5 text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">
+                        <Icon
+                          name="user-check"
+                          size={16}
+                          className="text-emerald-600 dark:text-emerald-400"
+                        />{" "}
+                        Rincian Penugasan Personil Pengawasan
+                      </label>
+                      <div className="space-y-2 border border-slate-200 dark:border-slate-700/50 rounded-xl p-3 bg-emerald-50/30 dark:bg-emerald-900/10">
+                        {formData.team.map((member) => {
+                          const detail = formData.pengawasanDetails?.[
+                            member
+                          ] || {
+                            role: "Inspector",
+                            deadline: "",
+                            manMonth: "",
+                            spmk: "",
+                            statusTurun: "Tidak Turun",
+                          };
+                          return (
+                            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex flex-col gap-3 shadow-sm">
+                              <div className="border-b border-slate-100 dark:border-slate-700 pb-2 flex justify-between items-center">
+                                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                  {member}
+                                </h4>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      team: (prev.team || []).filter(
+                                        (t) => t !== member,
+                                      ),
+                                    }));
+                                  }}
+                                  className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold transition-colors bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/50"
+                                >
+                                  <Icon name="trash-2" size={12} /> Hapus
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[4fr_3fr_3fr] gap-3">
+                                <div className="flex flex-col justify-end">
+                                  <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">
+                                    Peran / Jabatan
+                                  </label>
+                                  <select
+                                    className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    value={detail.role || "Inspector"}
+                                    onChange={(e) =>
+                                      handlePengawasanDetailChange(
+                                        member,
+                                        "role",
+                                        e.target.value,
+                                      )
+                                    }
+                                    disabled={isSyncedProject}
+                                  >
+                                    <option value="Team Leader">
+                                      Team Leader
+                                    </option>
+                                    <option value="Tenaga Ahli">
+                                      Tenaga Ahli
+                                    </option>
+                                    <option value="Inspector">Inspector</option>
+                                    <option value="Laboratory Technician">
+                                      Laboratory Technician
+                                    </option>
+                                    <option value="Quantity Surveyor">
+                                      Quantity Surveyor
+                                    </option>
+                                    <option value="K3">K3</option>
+                                    <option value="Administrasi">
+                                      Administrasi
+                                    </option>
+                                  </select>
+                                </div>
+                                <div className="flex flex-col justify-end">
+                                  <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase whitespace-nowrap">
+                                    Status
+                                  </label>
+                                  <select
+                                    className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                                    value={detail.statusTurun || "Tidak Turun"}
+                                    onChange={(e) =>
+                                      handlePengawasanDetailChange(
+                                        member,
+                                        "statusTurun",
+                                        e.target.value,
+                                      )
+                                    }
+                                  >
+                                    <option value="Turun">Turun</option>
+                                    <option value="Tidak Turun">
+                                      Tidak Turun
+                                    </option>
+                                    <option value="Belum Diketahui">
+                                      Belum Diketahui
+                                    </option>
+                                  </select>
+                                </div>
+                                <div className="flex flex-col justify-end">
+                                  <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase whitespace-nowrap">
+                                    Lama (Man/Month)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.1"
+                                    className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    value={detail.manMonth || ""}
+                                    onChange={(e) =>
+                                      handlePengawasanDetailChange(
+                                        member,
+                                        "manMonth",
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="Cth: 1.5"
+                                    disabled={isSyncedProject}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                );
-            };
+                  )}
+                </div>
+                {!isPengawasanForm && activeCategories.length > 0 && (
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-700/50">
+                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">
+                      <Icon
+                        name="target"
+                        size={16}
+                        className="text-blue-600 dark:text-blue-400"
+                      />{" "}
+                      Target Khusus Per Sub-Tim
+                    </label>
+                    <div className="space-y-2 border border-slate-200 dark:border-slate-700/50 rounded-xl p-3 bg-blue-50/30 dark:bg-blue-900/10">
+                      {[
+                        "Arsitek",
+                        "QS",
+                        "Struktur",
+                        "MEP",
+                        "Tata Ruang",
+                        "Surveyor",
+                        "Lainnya",
+                      ].map((cat) => {
+                        if (!activeCategories.includes(cat)) return null;
+                        const details = formData.categoryDetails?.[cat] || {
+                          progress: 0,
+                          deadline: "",
+                        };
+                        const catMembers =
+                          cat === "Surveyor"
+                            ? formData.surveyorTeam || []
+                            : formData.team.filter((m) => {
+                                if (
+                                  isPerencanaanForm &&
+                                  (formData.surveyorTeam || []).includes(m)
+                                )
+                                  return false;
+                                const r = resources.find((x) => x.name === m);
+                                return r && getCategoryFromRole(r.role) === cat;
+                              });
+                        return (
+                          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex flex-col gap-3 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="w-full sm:w-1/4 sm:border-r border-slate-100 dark:border-slate-700 sm:pr-2">
+                                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                                  <Icon
+                                    name="target"
+                                    size={14}
+                                    className="text-blue-500"
+                                  />{" "}
+                                  {cat}
+                                </h4>
+                                <p
+                                  className="text-[9px] text-slate-500 truncate mt-0.5"
+                                  title={catMembers.join(", ")}
+                                >
+                                  {catMembers.join(", ")}
+                                </p>
+                              </div>
+                              <div className="w-full sm:w-1/4">
+                                {(details.tasks || []).length > 0 ? (
+                                  <Fragment>
+                                    <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">
+                                      Progress Terkunci (%)
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                        <div
+                                          className="h-full bg-blue-500 transition-all duration-500"
+                                          style={{
+                                            width: `${details.progress || 0}%`,
+                                          }}
+                                        />
+                                      </div>
+                                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                        {details.progress || 0}%
+                                      </span>
+                                    </div>
+                                  </Fragment>
+                                ) : (
+                                  <Fragment>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <label className="block text-[9px] font-bold text-slate-500 uppercase">
+                                        Progress Manual
+                                      </label>
+                                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                                        {details.progress || 0}%
+                                      </span>
+                                    </div>
+                                    <div className="relative w-full h-[34px] flex items-center">
+                                      <div className="relative w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center">
+                                        <div
+                                          className="absolute top-0 left-0 h-full bg-green-500 rounded-lg pointer-events-none"
+                                          style={{
+                                            width: `${details.progress || 0}%`,
+                                          }}
+                                        />
+                                        <div
+                                          className="absolute w-4 h-4 bg-white border-[3px] border-green-500 rounded-full shadow pointer-events-none"
+                                          style={{
+                                            left: `calc(${details.progress || 0}% - 8px)`,
+                                          }}
+                                        />
+                                        <input
+                                          type="range"
+                                          min="0"
+                                          max="100"
+                                          value={details.progress || 0}
+                                          onChange={(e) =>
+                                            handleCategoryDetailChange(
+                                              cat,
+                                              "progress",
+                                              parseInt(e.target.value),
+                                            )
+                                          }
+                                          className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer m-0 z-10"
+                                        />
+                                      </div>
+                                    </div>
+                                  </Fragment>
+                                )}
+                              </div>
+                              <div className="w-full sm:w-1/4 sm:border-r border-slate-100 dark:border-slate-700 sm:pr-2">
+                                <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">
+                                  Tanggal Mulai
+                                </label>
+                                <div className="relative w-full">
+                                  <div className="flex items-center justify-between w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-900/50 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-800 transition-colors min-h-[34px] text-slate-700 dark:text-slate-200">
+                                    <span>
+                                      {details.startDate
+                                        ? formatDateIndo(details.startDate)
+                                        : "Pilih..."}
+                                    </span>
+                                    <Icon
+                                      name="calendar-clock"
+                                      size={14}
+                                      className="text-slate-400"
+                                    />
+                                  </div>
+                                  <input
+                                    type="date"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    value={details.startDate || ""}
+                                    onChange={(e) =>
+                                      handleCategoryDetailChange(
+                                        cat,
+                                        "startDate",
+                                        e.target.value,
+                                      )
+                                    }
+                                    onClick={(e) =>
+                                      e.target.showPicker &&
+                                      e.target.showPicker()
+                                    }
+                                  />
+                                </div>
+                              </div>
+                              <div className="w-full sm:w-1/4">
+                                <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">
+                                  Deadline Tim
+                                </label>
+                                <div className="relative w-full">
+                                  <div className="flex items-center justify-between w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-900/50 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-800 transition-colors min-h-[34px] text-slate-700 dark:text-slate-200">
+                                    <span>
+                                      {details.deadline
+                                        ? formatDateIndo(details.deadline)
+                                        : "Pilih tanggal..."}
+                                    </span>
+                                    <Icon
+                                      name="calendar-clock"
+                                      size={14}
+                                      className="text-slate-400"
+                                    />
+                                  </div>
+                                  <input
+                                    type="date"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    value={details.deadline || ""}
+                                    onChange={(e) =>
+                                      handleCategoryDetailChange(
+                                        cat,
+                                        "deadline",
+                                        e.target.value,
+                                      )
+                                    }
+                                    onClick={(e) =>
+                                      e.target.showPicker &&
+                                      e.target.showPicker()
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/50 mt-1">
+                              <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">
+                                Custom Micro-Tasks
+                              </label>
+                              <input
+                                type="text"
+                                placeholder={
+                                  cat === "QS"
+                                    ? "Ketik tugas baru (Cth: RAB) lalu tekan Enter..."
+                                    : cat === "Struktur"
+                                      ? "Ketik tugas baru (Cth: Perhitungan Struktur Kolom) lalu tekan Enter..."
+                                      : cat === "MEP"
+                                        ? "Ketik tugas baru (Cth: Perhitungan sanitair) lalu tekan Enter..."
+                                        : "Ketik tugas baru (Cth: Denah Lantai 1) lalu tekan Enter..."
+                                }
+                                className="w-full p-2 text-xs border border-slate-200 dark:border-slate-700 rounded-md mb-2 bg-white dark:bg-slate-800 outline-none focus:border-blue-500 dark:text-slate-200 transition-colors"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddTask(cat, e.target.value);
+                                    e.target.value = "";
+                                  }
+                                }}
+                              />
+                              <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
+                                {(details.tasks || []).length === 0 ? (
+                                  <p className="text-[10px] text-slate-400 italic">
+                                    Belum ada tugas. Tambahkan tugas agar
+                                    progres dapat dihitung.
+                                  </p>
+                                ) : (
+                                  (details.tasks || []).map((task, idx) => {
+                                    const isChecked = (
+                                      details.completedTasks || []
+                                    ).includes(task);
+                                    return (
+                                      <div
+                                        className={`flex items-center justify-between p-1.5 rounded-md border text-xs transition-all ${isChecked ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/50" : "bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700"}`}
+                                      >
+                                        <label className="flex items-center gap-2 cursor-pointer flex-1">
+                                          <input
+                                            type="checkbox"
+                                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                            checked={isChecked}
+                                            onChange={() =>
+                                              handleToggleTask(cat, task)
+                                            }
+                                          />
+                                          <span
+                                            className={`${isChecked ? "text-blue-800 dark:text-blue-300 line-through opacity-70" : "text-slate-700 dark:text-slate-200 font-medium"}`}
+                                          >
+                                            {task}
+                                          </span>
+                                        </label>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleRemoveTask(cat, task)
+                                          }
+                                          className="text-slate-400 hover:text-red-500 transition-colors px-1 ml-2 flex-shrink-0"
+                                          title="Hapus Tugas"
+                                        >
+                                          <Icon name="x" size={12} />
+                                        </button>
+                                      </div>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </Fragment>
+            ) : isInventory ? (
+              modalConfig.mode === "borrow" ? (
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Peminjam (Team Leader)
+                    </label>
+                    <select
+                      required={true}
+                      name="borrower"
+                      value={formData.borrower}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    >
+                      <option value="">-- Pilih Team Leader --</option>
+                      {resources
+                        .filter((r) => r.level === "Team Leader")
+                        .map((r) => (
+                          <option value={r.name}>{r.name}</option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Tanggal Dipinjam
+                    </label>
+                    <input
+                      type="date"
+                      required={true}
+                      name="borrowDate"
+                      value={formData.borrowDate}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Tanggal Pengembalian
+                    </label>
+                    <input
+                      type="date"
+                      required={true}
+                      name="returnDate"
+                      value={formData.returnDate}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Proyek (Opsional)
+                    </label>
+                    <input
+                      name="projectAssigned"
+                      value={formData.projectAssigned}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                      placeholder="Cth: Perencanaan RSUD"
+                    />
+                  </div>
+                </div>
+              ) : modalConfig.mode === "borrow-cart" ? (
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-xl mb-2">
+                    <p className="text-xs text-indigo-800 dark:text-indigo-300">
+                      Anda akan meminjam{" "}
+                      <strong className="font-bold">
+                        {borrowCart.length} alat sekaligus
+                      </strong>
+                      . Data formulir ini akan diaplikasikan ke semua alat yang
+                      Anda pilih.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Peminjam (Team Leader)
+                    </label>
+                    <select
+                      required={true}
+                      name="borrower"
+                      value={formData.borrower}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    >
+                      <option value="">-- Pilih Team Leader --</option>
+                      {resources
+                        .filter((r) => r.level === "Team Leader")
+                        .map((r) => (
+                          <option value={r.name}>{r.name}</option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Tanggal Dipinjam
+                    </label>
+                    <input
+                      type="date"
+                      required={true}
+                      name="borrowDate"
+                      value={formData.borrowDate}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Tanggal Pengembalian
+                    </label>
+                    <input
+                      type="date"
+                      required={true}
+                      name="returnDate"
+                      value={formData.returnDate}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Proyek (Opsional)
+                    </label>
+                    <input
+                      name="projectAssigned"
+                      value={formData.projectAssigned}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                      placeholder="Cth: Perencanaan RSUD"
+                    />
+                  </div>
+                </div>
+              ) : modalConfig.mode === "extend" ? (
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-slate-200 dark:border-amber-800/50 rounded-xl mb-2">
+                    <p className="text-xs text-amber-800 dark:text-amber-300">
+                      Perpanjang masa pinjam untuk alat{" "}
+                      <strong className="font-bold">{formData.name}</strong>{" "}
+                      yang sedang dipinjam oleh{" "}
+                      <strong className="font-bold">{formData.borrower}</strong>
+                      .
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Tanggal Pengembalian Baru
+                    </label>
+                    <input
+                      type="date"
+                      required={true}
+                      name="returnDate"
+                      value={formData.returnDate}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    />
+                  </div>
+                </div>
+              ) : modalConfig.mode === "return" ? (
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-xl mb-2">
+                    <p className="text-xs text-indigo-800 dark:text-indigo-300">
+                      Anda akan mengembalikan alat{" "}
+                      <strong className="font-bold">{formData.name}</strong>{" "}
+                      yang dipinjam oleh{" "}
+                      <strong className="font-bold">{formData.borrower}</strong>
+                      . Silakan perbarui kondisi terakhir alat ini.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Kondisi Alat Saat Dikembalikan
+                    </label>
+                    <select
+                      name="condition"
+                      value={formData.condition}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    >
+                      <option value="Baik">Baik</option>
+                      <option value="Rusak Ringan">Rusak Ringan</option>
+                      <option value="Rusak Berat">Rusak Berat</option>
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {modalConfig.mode !== "edit" && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                        ID / Kode Alat
+                      </label>
+                      <input
+                        required={true}
+                        name="id"
+                        value={formData.id}
+                        onChange={handleChange}
+                        className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                        placeholder="Cth: INV-2023-001"
+                      />
+                    </div>
+                  )}
+                  <div
+                    className={`col-span-2 ${modalConfig.mode !== "edit" ? "sm:col-span-1" : ""}`}
+                  >
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Nama Alat
+                    </label>
+                    <input
+                      required={true}
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                      placeholder="Cth: Drone DJI Mavic"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Kategori
+                    </label>
+                    <select
+                      name="type"
+                      value={formData.type}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    >
+                      <option value="Alat Ukur">Alat Ukur</option>
+                      <option value="Kendaraan">Kendaraan</option>
+                      <option value="Elektronik">Elektronik</option>
+                      <option value="Lainnya">Lainnya</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Kondisi
+                    </label>
+                    <select
+                      name="condition"
+                      value={formData.condition}
+                      onChange={handleChange}
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    >
+                      <option value="Baik">Baik</option>
+                      <option value="Rusak Ringan">Rusak Ringan</option>
+                      <option value="Rusak Berat">Rusak Berat</option>
+                    </select>
+                  </div>
+                </div>
+              )
+            ) : (
+              <Fragment>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Nama Personil
+                  </label>
+                  <input
+                    required={true}
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                    placeholder="Cth: Ir. Budi Santoso"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Tim
+                  </label>
+                  <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                  >
+                    <option value="Arsitek">Arsitek</option>
+                    <option value="QS">Quantity Surveyor (QS)</option>
+                    <option value="Struktur">Struktur</option>
+                    <option value="MEP">MEP</option>
+                    <option value="Tata Ruang">Tata Ruang</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Tingkat Jabatan
+                  </label>
+                  <select
+                    name="level"
+                    value={formData.level}
+                    onChange={handleChange}
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
+                  >
+                    <option value="Staff">Staff (Anggota)</option>
+                    <option value="Team Leader">Team Leader</option>
+                    <option value="PIC">PIC</option>
+                    <option value="Kordinator Divisi Jalan">
+                      Kordinator Divisi Jalan
+                    </option>
+                    <option value="Kordinator Divisi Gedung">
+                      Kordinator Divisi Gedung
+                    </option>
+                    <option value="Kordinator Divisi SDA">
+                      Kordinator Divisi SDA
+                    </option>
+                    <option value="Kordinator Divisi Perijinan">
+                      Kordinator Divisi Perijinan
+                    </option>
+                    <option value="Kordinator Divisi Tata Ruang">
+                      Kordinator Divisi Tata Ruang
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Rating Kinerja (1-5)
+                  </label>
+                  <div className="flex gap-2 items-center p-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            rating: star,
+                          })
+                        }
+                        className={`transition-colors focus:outline-none ${star <= (formData.rating || 3) ? "text-amber-500" : "text-slate-200 dark:text-slate-700"}`}
+                      >
+                        <Icon name="star" size={28} />
+                      </button>
+                    ))}
+                    <span className="text-xs text-slate-500 dark:text-slate-400 ml-2 font-medium">
+                      Bintang {formData.rating || 3}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Tambah / Kurang Skor KPI (+/-)
+                    </label>
+                    <p className="text-[10px] text-slate-500 mb-2 leading-relaxed">
+                      Nilai ini akan langsung ditambahkan secara relatif ke skor
+                      terakhir. Contoh: Jika skor 60 dan Anda isi 40, skor
+                      menjadi 100.
+                    </p>
+                    <div className="flex flex-wrap gap-3 items-center mt-2">
+                      <input
+                        type="number"
+                        name="adjustmentInput"
+                        value={
+                          formData.adjustmentInput === "" ||
+                          isNaN(formData.adjustmentInput)
+                            ? ""
+                            : formData.adjustmentInput !== void 0
+                              ? formData.adjustmentInput
+                              : 0
+                        }
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            adjustmentInput:
+                              e.target.value === ""
+                                ? ""
+                                : parseInt(e.target.value),
+                          })
+                        }
+                        className="w-24 p-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-center outline-none focus:border-blue-500 bg-white dark:bg-slate-800 dark:text-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleResetTo100}
+                        className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        <Icon name="target" size={12} />
+                        Reset ke 100
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetToAuto}
+                        className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
+                        title="Hapus semua penyesuaian manual dan kembalikan ke perhitungan murni otomatis proyek."
+                      >
+                        <Icon name="refresh-ccw" size={12} />
+                        Hapus Manual
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl mt-4">
+                  <p className="text-xs text-blue-800 dark:text-blue-300 font-medium leading-relaxed">
+                    💡 <strong className="font-bold">Info Cerdas:</strong>{" "}
+                    Jumlah proyek dan Persentase Beban Kerja orang ini tidak
+                    perlu diinput manual. Sistem akan otomatis menghitungnya
+                    berdasarkan seberapa banyak proyek yang ia tangani di menu
+                    List Proyek.
+                  </p>
+                </div>
+              </Fragment>
+            )}
+          </form>
+        </div>
+        <div className="p-5 border-t border-slate-100 dark:border-slate-700/50 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900/50 shrink-0">
+          <button
+            onClick={closeModal}
+            type="button"
+            className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
+          >
+            Batal
+          </button>
+          <button
+            form="crudForm"
+            type="submit"
+            disabled={loading}
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm disabled:opacity-70"
+          >
+            {loading ? (
+              <Icon name="refresh-ccw" className="animate-spin" size={16} />
+            ) : (
+              <Icon name="save" size={16} />
+            )}
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-            const renderDominoModal = () => {
-                if (!dominoAnalysis) return null;
-                const { project, delayDays, impactedEmployees } = dominoAnalysis;
+        const renderAlertModal = () => {
+            if (!alertModal.isOpen) return null;
+            return (
+                <AnimatePresence>
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }} 
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" 
+                            onClick={() => setAlertModal({ ...alertModal, isOpen: false })} 
+                        />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            className="relative bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] rounded-3xl w-full max-w-md p-6 flex flex-col items-center text-center overflow-hidden"
+                        >
+                            <div className="absolute inset-0 rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] pointer-events-none" />
+                            
+                            <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center shadow-inner mb-4">
+                                <Icon name="alert-triangle" size={32} />
+                            </div>
+                            
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">{alertModal.title}</h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 font-medium mb-6 whitespace-pre-wrap">{alertModal.message}</p>
+                            
+                            <button 
+                                onClick={() => setAlertModal({ ...alertModal, isOpen: false })} 
+                                className="w-full px-5 py-3 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-lg shadow-amber-600/30 relative z-10"
+                            >
+                                Mengerti
+                            </button>
+                        </motion.div>
+                    </div>
+                </AnimatePresence>
+            );
+        };
 
-                return (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDominoAnalysis(null)}></div>
-                        <div className="relative bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden scale-in-center">
-                            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 shadow-sm">
-                                        <Icon name="alert-triangle" size={20} />
+        const renderFuturisticConfirm = () => {
+  if (!confirmDialog.isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+        onClick={() =>
+          setConfirmDialog({
+            ...confirmDialog,
+            isOpen: false,
+          })
+        }
+      />
+      <div className="relative bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-3xl w-full max-w-sm p-8 overflow-hidden scale-in-center">
+        <div
+          className={`absolute -top-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-20 ${confirmDialog.type === "danger" ? "bg-red-500" : "bg-blue-500"}`}
+        />
+        <div
+          className={`absolute -bottom-20 -left-20 w-48 h-48 rounded-full blur-3xl opacity-10 ${confirmDialog.type === "danger" ? "bg-rose-500" : "bg-indigo-500"}`}
+        />
+        <div className="flex flex-col items-center text-center relative z-10">
+          <div
+            className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-5 shadow-inner backdrop-blur-md ${confirmDialog.type === "danger" ? "bg-red-50/80 text-red-500 shadow-red-200 border border-red-100" : "bg-blue-50/80 text-blue-500 shadow-blue-200 border border-blue-100"}`}
+          >
+            <Icon
+              name={
+                confirmDialog.type === "danger"
+                  ? "alert-triangle"
+                  : "help-circle"
+              }
+              size={36}
+            />
+          </div>
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+            {confirmDialog.title}
+          </h3>
+          <p className="text-sm text-slate-500 mb-8 leading-relaxed px-2">
+            {confirmDialog.message}
+          </p>
+          <div className="flex w-full gap-3">
+            <button
+              onClick={() =>
+                setConfirmDialog({
+                  ...confirmDialog,
+                  isOpen: false,
+                })
+              }
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-100 transition-all border border-slate-200/60 dark:border-slate-600/50"
+            >
+              Batal
+            </button>
+            <button
+              onClick={() => {
+                if (confirmDialog.onConfirm) confirmDialog.onConfirm();
+                setConfirmDialog({
+                  ...confirmDialog,
+                  isOpen: false,
+                });
+              }}
+              className={`flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-lg ${confirmDialog.type === "danger" ? "bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/30" : "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/30"}`}
+            >
+              Konfirmasi
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+const renderDeveloperPromptModal = () => {
+  if (!showDevPrompt) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        onClick={() => setShowDevPrompt(false)}
+      />
+      <div className="relative bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-3xl w-full max-w-sm p-8 overflow-hidden scale-in-center">
+        <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-20 bg-indigo-500" />
+        <div className="flex flex-col items-center text-center relative z-10">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-indigo-50 text-indigo-500 shadow-inner">
+            <Icon name="alert-triangle" size={32} />
+          </div>
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+            Akses Terbatas (BETA)
+          </h3>
+          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            Menu{" "}
+            {pendingTabAttempt === "inventaris"
+              ? "Logistik & Inventaris"
+              : pendingTabAttempt === "ahli"
+                ? "Tenaga Ahli"
+                : pendingTabAttempt === "penugasan"
+                  ? "Penugasan Tenaga Ahli"
+                  : "Evaluasi & KPI"}{" "}
+            masih dalam tahap uji coba (BETA) dan sedang dalam tahap
+            pengembangan sementara hanya dapat diakses oleh Developer (Krisna).
+          </p>
+          <input
+            type="password"
+            placeholder="Masukkan Password Developer"
+            className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-center text-sm font-semibold mb-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all dark:text-slate-200"
+            value={devPassword}
+            onChange={(e) => {
+              setDevPassword(e.target.value);
+              setDevAuthError("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleDevLogin();
+            }}
+          />
+          {devAuthError ? (
+            <p className="text-xs text-red-500 font-medium mb-4">
+              {devAuthError}
+            </p>
+          ) : (
+            <div className="mb-4" />
+          )}
+          <div className="flex w-full gap-3">
+            <button
+              onClick={() => setShowDevPrompt(false)}
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all border border-slate-200/60 dark:border-slate-600/50"
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleDevLogin}
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/30"
+            >
+              Akses
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+        const renderDominoModal = () => {
+            if (!dominoAnalysis) return null;
+
+            return (
+                <AnimatePresence>
+                    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }} 
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" 
+                            onClick={() => setDominoAnalysis(null)} 
+                        />
+                        <motion.div 
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="relative bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+                    >
+                        <div className="absolute inset-0 rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] pointer-events-none" />
+                        <div className="relative z-10 flex flex-col h-full">
+                            <div className="flex items-center justify-between p-5 border-b border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400 shadow-inner">
+                                        <Icon name="alert-triangle" size={24} />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 leading-tight">Analisis Efek Domino 💥</h3>
-                                        <p className="text-xs text-slate-500 font-medium">Prediksi tabrakan jadwal akibat keterlambatan proyek</p>
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight">Analisis Efek Domino 💥</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">Prediksi tabrakan jadwal akibat keterlambatan</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setDominoAnalysis(null)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Icon name="x" size={20} /></button>
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setDominoAnalysis(null)} 
+                                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                                >
+                                    <Icon name="x" size={20} />
+                                </motion.button>
                             </div>
 
-                            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-slate-800">
-                                <div className="mb-6 bg-red-50 border border-red-100 p-4 rounded-xl">
-                                    <p className="text-sm text-slate-700 leading-relaxed">
-                                        Proyek <strong className="text-red-600">{project.name}</strong> saat ini terlambat <strong className="text-red-600 text-lg">{delayDays} hari</strong>.
+                            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white/50 dark:bg-slate-800/50">
+                                <div className="mb-6 bg-red-50/50 dark:bg-red-900/20 border border-red-100 dark:border-red-500/20 p-5 rounded-2xl">
+                                    <p className="text-base text-slate-700 dark:text-slate-300 leading-relaxed">
+                                        Proyek <strong className="text-red-600 dark:text-red-400">{dominoAnalysis.project.name}</strong> saat ini terlambat <strong className="text-red-600 dark:text-red-400 text-lg">{dominoAnalysis.delayDays} hari</strong>.
                                     </p>
-                                    <p className="text-xs text-slate-500 mt-1">
-                                        Sistem memprediksi anggota sub-tim yang belum selesai di proyek ini akan membawa keterlambatan ini ke proyek mereka selanjutnya yang sedang berjalan.
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                                        Sistem memprediksi anggota sub-tim yang belum selesai di proyek ini akan membawa keterlambatan ini ke proyek mereka selanjutnya.
                                     </p>
                                 </div>
 
-                                {impactedEmployees.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                                        <Icon name="check-circle-2" size={48} className="mb-3 text-emerald-400 opacity-50" />
-                                        <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Aman Terkendali</h4>
-                                        <p className="text-sm text-center max-w-sm mt-1">Tidak ditemukan efek domino. Anggota sub-tim tidak memiliki jadwal proyek lain di masa depan yang saling berdekatan.</p>
+                                {dominoAnalysis.impactedEmployees.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                                        <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-4">
+                                            <Icon name="check-circle-2" size={32} className="text-emerald-500" />
+                                        </div>
+                                        <h4 className="text-lg font-bold text-slate-800 dark:text-slate-200">Aman Terkendali</h4>
+                                        <p className="text-sm text-center max-w-sm mt-2">Tidak ditemukan efek domino. Anggota sub-tim tidak memiliki jadwal proyek lain di masa depan yang berdekatan.</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-6">
-                                        {impactedEmployees.map((emp, i) => (
-                                            <div key={i} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-2xl overflow-hidden">
-                                                <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 px-4 py-3 flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">{emp.name.substring(0, 2).toUpperCase()}</div>
+                                    <div className="space-y-4">
+                                        {dominoAnalysis.impactedEmployees.map((emp, i) => (
+                                            <div key={i} className="p-5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-800/80 shadow-sm hover:shadow-md transition-shadow">
+                                                <div className="flex justify-between items-start mb-3">
                                                     <div>
-                                                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{emp.name}</p>
-                                                        <p className="text-[10px] text-slate-500 font-medium">Beresiko membawa keterlambatan {delayDays} hari</p>
+                                                        <h5 className="font-bold text-lg text-slate-800 dark:text-slate-100 tracking-tight">{emp.name}</h5>
+                                                        <p className="text-sm text-slate-500 dark:text-slate-400">{emp.role}</p>
                                                     </div>
                                                 </div>
-                                                <div className="p-4 bg-slate-50/50 dark:bg-slate-900/20">
-                                                    <p className="text-xs font-semibold text-slate-600 mb-3 uppercase tracking-wider">Proyek Masa Depan Yang Terancam Terlambat:</p>
-                                                    <div className="space-y-3">
-                                                        {emp.futureProjects.map((fp, j) => (
-                                                            <div key={j} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm relative overflow-hidden">
-                                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
-                                                                <div>
-                                                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{fp.name}</p>
-                                                                    <p className="text-xs text-slate-500 mt-0.5">Deadline: {formatDateIndo(fp.deadlineStr)} (Sisa <span className="font-semibold">{fp.remainingDays} hari</span>)</p>
-                                                                </div>
-                                                                <div className="bg-red-50 px-3 py-2 rounded-lg border border-red-100 text-right">
-                                                                    <p className="text-[10px] text-red-600 font-bold uppercase tracking-wider mb-0.5">Prediksi Hasil</p>
-                                                                    <p className="text-sm font-black text-red-700 flex items-center gap-1.5 justify-end">
-                                                                        Terlambat {Math.abs(fp.clashDays)} Hari <Icon name="trending-down" size={14} />
-                                                                    </p>
-                                                                </div>
-                                                            </div>
+                                                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50">
+                                                    <p className="text-sm text-slate-600 dark:text-slate-300 font-medium mb-2">Berdampak pada proyek berikutnya:</p>
+                                                    <ul className="space-y-3">
+                                                        {emp.nextProjects.map((np, j) => (
+                                                            <li key={j} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm gap-2 p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                                                                <span className="font-semibold text-slate-800 dark:text-slate-200">{np.projectName}</span>
+                                                                <span className="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-3 py-1 rounded-md text-xs font-bold whitespace-nowrap">
+                                                                    Mulai: {np.spmkDate}
+                                                                </span>
+                                                            </li>
                                                         ))}
-                                                    </div>
+                                                    </ul>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
-
-                            <div className="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50 flex justify-end">
-                                <button onClick={() => setDominoAnalysis(null)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">Tutup Analisis</button>
-                            </div>
                         </div>
-                    </div>
-                );
-            };
-
-
-            const renderKPIInfoModal = () => {
+                    </motion.div>
+                </div>
+            
+        </AnimatePresence>
+    );
+};
+const renderKPIInfoModal = () => {
                 if (!showKPIInfoModal) return null;
 
                 return (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowKPIInfoModal(false)}></div>
-                        <div className="relative bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden scale-in-center">
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowKPIInfoModal(false)} />
+                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+                            <div className="absolute inset-0 rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] pointer-events-none" />
                             <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
@@ -5800,7 +6738,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                             <div className="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50 flex justify-end">
                                 <button onClick={() => setShowKPIInfoModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30">Mengerti</button>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
                 );
             };
@@ -7171,11 +8109,17 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                             )}
                                                             <button 
                                                                 onClick={() => {
-                                                                    if(window.confirm(`Apakah Anda yakin ingin menghapus pengguna ${usr.email}? Akses mereka akan sepenuhnya dicabut.`)) {
-                                                                        firebase.database().ref(`pmc_users/${usr.uid}`).update({ role: 'Deleted' })
-                                                                            .then(() => alert('Pengguna berhasil dihapus dari sistem.'))
-                                                                            .catch(err => alert('Gagal menghapus pengguna: ' + err.message));
-                                                                    }
+                                                                    setConfirmDialog({
+                                                                        isOpen: true,
+                                                                        title: 'Konfirmasi Hapus',
+                                                                        message: `Apakah Anda yakin ingin menghapus pengguna ${usr.email}? Akses mereka akan sepenuhnya dicabut.`,
+                                                                        type: 'danger',
+                                                                        onConfirm: () => {
+                                                                            firebase.database().ref(`pmc_users/${usr.uid}`).update({ role: 'Deleted' })
+                                                                                .then(() => setAlertModal({ isOpen: true, title: 'Sukses', message: 'Pengguna berhasil dihapus dari sistem.' }))
+                                                                                .catch(err => setAlertModal({ isOpen: true, title: 'Error', message: 'Gagal menghapus pengguna: ' + err.message }));
+                                                                        }
+                                                                    });
                                                                 }}
                                                                 className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                                                                 title="Hapus Pengguna"
@@ -7926,7 +8870,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => setModalConfig({ isOpen: true, type: 'assignment', mode: 'edit', data: asg })} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-800 rounded-lg" title="Edit Penugasan"><Icon name="edit-3" size={16} /></button>
                                                 <button onClick={() => {
-                                                    if (confirm(`Hapus pekerjaan ${asg.jobName}?`)) handleAssignmentAction('delete', { id: asg.id });
+                                                    setConfirmDialog({ isOpen: true, title: 'Hapus Pekerjaan', message: `Hapus pekerjaan ${asg.jobName}?`, type: 'danger', onConfirm: () => handleAssignmentAction('delete', { id: asg.id }) });
                                                 }} className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-800 rounded-lg" title="Hapus"><Icon name="trash-2" size={16} /></button>
                                             </div>
                                         </div>
@@ -8080,7 +9024,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button onClick={() => setModalConfig({ isOpen: true, type: 'expert', mode: 'edit', data: exp })} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-800 rounded-lg" title="Edit Identitas"><Icon name="edit-3" size={16} /></button>
                                             <button onClick={() => {
-                                                if (confirm(`Hapus tenaga ahli ${exp.name}?`)) handleExpertAction('delete', { id: exp.id });
+                                                setConfirmDialog({ isOpen: true, title: 'Hapus Tenaga Ahli', message: `Hapus tenaga ahli ${exp.name}?`, type: 'danger', onConfirm: () => handleExpertAction('delete', { id: exp.id }) });
                                             }} className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-800 rounded-lg" title="Hapus"><Icon name="trash-2" size={16} /></button>
                                         </div>
                                     </div>
@@ -8113,12 +9057,18 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                 <div className="flex gap-1">
                                                                     <button onClick={() => setModalConfig({ isOpen: true, type: 'expert_cert', mode: 'edit', data: { expertId: exp.id, certIndex: idx, cert } })} className="text-slate-400 hover:text-blue-600 p-1 rounded transition-colors opacity-0 group-hover/cert:opacity-100"><Icon name="edit-2" size={14} /></button>
                                                                     <button onClick={() => {
-                                                                        if (confirm('Hapus sertifikat ini?')) {
+                                                                        setConfirmDialog({
+                                                                            isOpen: true,
+                                                                            title: 'Hapus Sertifikat',
+                                                                            message: 'Hapus sertifikat ini?',
+                                                                            type: 'danger',
+                                                                            onConfirm: () => {
                                                                             let updatedCerts = [...exp.certificates];
                                                                             updatedCerts.splice(idx, 1);
                                                                             handleExpertAction('update_certificates', { ...exp, certificates: updatedCerts });
                                                                         }
-                                                                    }} className="text-slate-400 hover:text-red-600 p-1 rounded transition-colors opacity-0 group-hover/cert:opacity-100"><Icon name="trash-2" size={14} /></button>
+                                                                    });
+                                                                }} className="text-slate-400 hover:text-red-600 p-1 rounded transition-colors opacity-0 group-hover/cert:opacity-100"><Icon name="trash-2" size={14} /></button>
                                                                 </div>
                                                             </div>
                                                         );
@@ -8226,7 +9176,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                 );
                             })()}
                         </div>
-                    </div>
+            </div>
                 );
             };
 
@@ -8565,19 +9515,21 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                     </div>
 
                             {/* --- SEMUA MODAL SISTEM --- */}
-                            <ModalForm />
-                            <ExpertModalForm />
-                            <ExpertCertModalForm />
-                            <ExpertTenderModalForm />
-                            <ImportExcelModal />
-                            <AssignmentModalForm />
+                            <AnimatePresence>
+                                {modalConfig.isOpen && !['expert', 'expert_cert', 'expert_tender', 'assignment', 'import_expert'].includes(modalConfig.type) && <ModalForm key="modal-project" />}
+                                {modalConfig.isOpen && modalConfig.type === 'expert' && <ExpertModalForm key="modal-expert" />}
+                                {modalConfig.isOpen && modalConfig.type === 'expert_cert' && <ExpertCertModalForm key="modal-expert-cert" />}
+                                {modalConfig.isOpen && modalConfig.type === 'expert_tender' && <ExpertTenderModalForm key="modal-expert-tender" />}
+                                {modalConfig.isOpen && modalConfig.type === 'import_expert' && <ImportExcelModal key="modal-import" />}
+                                {modalConfig.isOpen && modalConfig.type === 'assignment' && <AssignmentModalForm key="modal-assignment" />}
+                            </AnimatePresence>
                             {renderDominoModal()}
                             {renderKPIInfoModal()}
                             {renderFuturisticConfirm()}
-                            {renderAlertModal()}
 
                         </>
                     )}
+                {renderAlertModal()}
                 </>
             );
         }

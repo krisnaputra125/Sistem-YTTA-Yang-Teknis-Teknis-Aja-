@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
                     if (data && data.role) {
                         if (data.role === 'Deleted') {
                             auth.signOut().then(() => {
-                                alert("Akses Ditolak: Akun Anda telah dihapus secara permanen dari sistem.");
+                                window.dispatchEvent(new CustomEvent('show-alert', { detail: { title: 'Akses Ditolak', message: 'Akun Anda telah dihapus secara permanen dari sistem.' } }));
                             });
                             setUserRole(null);
                             setLoading(false);
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
             inactivityTimeout = setTimeout(() => {
                 if (auth.currentUser) {
                     auth.signOut().then(() => {
-                        alert("Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit demi keamanan data. Silakan login kembali.");
+                        window.dispatchEvent(new CustomEvent('show-alert', { detail: { title: 'Sesi Berakhir', message: 'Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit demi keamanan data. Silakan login kembali.' } }));
                     }).catch(console.error);
                 }
             }, 1800000);
