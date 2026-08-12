@@ -3610,23 +3610,70 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
             };
 
             const handleAdminAsetReject = (item) => {
-                setAdminAsetConfirm({ isOpen: true, item: item, action: 'reject' });
+                setConfirmDialog({
+                    isOpen: true,
+                    title: 'Tolak Peminjaman',
+                    message: `Tolak pengajuan peminjaman alat ${item.name} dari ${item.borrower}?`,
+                    type: 'danger',
+                    onConfirm: () => {
+                        const updatedItem = { ...item, status: 'Tersedia', borrower: null, borrowDate: null, returnDate: null, projectAssigned: null };
+                        handleAdminAsetInventoryAction('verify', updatedItem);
+                    }
+                });
             };
 
             const handleAdminAsetReturnVerify = (item) => {
-                setAdminAsetConfirm({ isOpen: true, item: item, action: 'accept_return' });
+                setConfirmDialog({
+                    isOpen: true,
+                    title: 'Terima Pengembalian',
+                    message: `Terima pengembalian alat ${item.name} dari ${item.borrower}?`,
+                    type: 'info',
+                    onConfirm: () => {
+                        const updatedItem = { ...item, status: 'Tersedia', lastBorrower: item.borrower, lastBorrowDate: item.borrowDate, borrower: null, borrowDate: null, returnDate: null, projectAssigned: null };
+                        handleAdminAsetInventoryAction('verify', updatedItem);
+                    }
+                });
             };
 
             const handleAdminAsetReturnReject = (item) => {
-                setAdminAsetConfirm({ isOpen: true, item: item, action: 'reject_return' });
+                setConfirmDialog({
+                    isOpen: true,
+                    title: 'Tolak Pengembalian',
+                    message: `Tolak pengajuan pengembalian alat ${item.name}?`,
+                    type: 'danger',
+                    onConfirm: () => {
+                        const updatedItem = { ...item, status: 'Dipinjam' };
+                        handleAdminAsetInventoryAction('verify', updatedItem);
+                    }
+                });
             };
 
             const handleAdminAsetExtendVerify = (item) => {
-                setAdminAsetConfirm({ isOpen: true, item: item, action: 'accept_extend' });
+                setConfirmDialog({
+                    isOpen: true,
+                    title: 'Setujui Perpanjangan',
+                    message: `Setujui perpanjangan alat ${item.name} hingga ${formatDateIndo(item.newReturnDate)}?`,
+                    type: 'info',
+                    onConfirm: () => {
+                        const updatedItem = { ...item, status: 'Dipinjam', returnDate: item.newReturnDate };
+                        delete updatedItem.newReturnDate;
+                        handleAdminAsetInventoryAction('verify', updatedItem);
+                    }
+                });
             };
 
             const handleAdminAsetExtendReject = (item) => {
-                setAdminAsetConfirm({ isOpen: true, item: item, action: 'reject_extend' });
+                setConfirmDialog({
+                    isOpen: true,
+                    title: 'Tolak Perpanjangan',
+                    message: `Tolak pengajuan perpanjangan alat ${item.name}?`,
+                    type: 'danger',
+                    onConfirm: () => {
+                        const updatedItem = { ...item, status: 'Dipinjam' };
+                        delete updatedItem.newReturnDate;
+                        handleAdminAsetInventoryAction('verify', updatedItem);
+                    }
+                });
             };
 
             const handleAdminAsetConfirmAction = () => {
@@ -3802,7 +3849,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             </tr>
                                         ) : (
                                             filteredInv.map(item => {
-                                                const overdue = item.status === 'Dipinjam' && isOverdue(item.returnDate);
+                                                const overdue = item.status === 'Dipinjam' && (item.returnDate && new Date(item.returnDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0));
                                                 return (
                                                 <tr key={item.id} className={item.status === 'Menunggu Verifikasi' ? 'bg-purple-50/50 dark:bg-purple-900/10' : item.status === 'Menunggu Verifikasi Pengembalian' ? 'bg-orange-50/50 dark:bg-orange-900/10' : item.status === 'Menunggu Verifikasi Perpanjangan' ? 'bg-amber-50/50 dark:bg-amber-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors'}>
                                                     <td className="px-5 py-4">
@@ -3880,7 +3927,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                 </div>
                                                             )}
                                                             <button onClick={() => { setAdminAsetFormData({...item}); setAdminAsetModal({ isOpen: true, mode: 'edit', data: item }); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors" title="Edit Alat"><Icon name="edit" size={16} /></button>
-                                                            <button onClick={() => setAdminAsetConfirm({ isOpen: true, item, action: 'delete' })} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Hapus Alat"><Icon name="trash-2" size={16} /></button>
+                                                            <button onClick={() => setConfirmDialog({ isOpen: true, title: 'Hapus Alat', message: `Yakin ingin menghapus alat ${item.name}?`, type: 'danger', onConfirm: () => handleAdminAsetInventoryAction('delete', item) })} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Hapus Alat"><Icon name="trash-2" size={16} /></button>
                                                         </div>
                                                     </td>
                                                 </tr>
