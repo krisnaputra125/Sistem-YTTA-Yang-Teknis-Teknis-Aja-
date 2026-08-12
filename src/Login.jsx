@@ -10,7 +10,9 @@ const Icon = ({ name, size = 20, className = "" }) => {
         "lock": '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
         "loader-2": '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
         "alert-circle": '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
-        "check-circle-2": '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'
+        "check-circle-2": '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+        "eye": '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+        "eye-off": '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>'
     };
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: paths[name] || '' }} />
@@ -22,7 +24,10 @@ export default function Login() {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [name, setName] = useState(''); // Hanya untuk Sign Up
+    const [username, setUsername] = useState(''); // Menggantikan name
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
@@ -38,14 +43,23 @@ export default function Login() {
                 await auth.signInWithEmailAndPassword(email, password);
                 // AuthContext akan otomatis mendeteksi auth state change
             } else {
-                if (!name.trim()) throw new Error("Nama lengkap harus diisi");
+                if (!username.trim()) throw new Error("Username harus diisi");
+                if (password !== confirmPassword) throw new Error("Kata sandi dan konfirmasi tidak cocok");
+                
+                // Cek apakah username sudah ada
+                const usersRef = db.ref('pmc_users');
+                const snapshot = await usersRef.orderByChild('username').equalTo(username).once('value');
+                if (snapshot.exists()) {
+                    throw new Error("Username sudah digunakan oleh akun lain. Silakan pilih username yang berbeda.");
+                }
+
                 // Register
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 
                 // Set default user data in database
                 await db.ref(`pmc_users/${userCredential.user.uid}`).set({
                     email: email,
-                    name: name,
+                    username: username,
                     role: 'Guest', // Default role sebelum di-approve Admin
                     createdAt: new Date().toISOString()
                 });
@@ -148,7 +162,7 @@ export default function Login() {
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {!isLogin && (
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Nama Lengkap</label>
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Username</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-emerald-400 transition-colors">
                                             <Icon name="user" size={18} />
@@ -156,9 +170,9 @@ export default function Login() {
                                         <input 
                                             type="text" 
                                             className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner placeholder:text-slate-600"
-                                            placeholder="John Doe"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
+                                            placeholder="username_unik"
+                                            value={username}
+                                            onChange={(e) => setUsername(e.target.value)}
                                             required={!isLogin}
                                         />
                                     </div>
@@ -187,15 +201,40 @@ export default function Login() {
                                         <Icon name="lock" size={18} />
                                     </div>
                                     <input 
-                                        type="password" 
-                                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner placeholder:text-slate-600"
+                                        type={showPassword ? "text" : "password"}
+                                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-12 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner placeholder:text-slate-600"
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
                                     />
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors focus:outline-none">
+                                        <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+                                    </button>
                                 </div>
                             </div>
+                            
+                            {!isLogin && (
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Konfirmasi Password</label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-emerald-400 transition-colors">
+                                            <Icon name="lock" size={18} />
+                                        </div>
+                                        <input 
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-12 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner placeholder:text-slate-600"
+                                            placeholder="••••••••"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            required={!isLogin}
+                                        />
+                                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors focus:outline-none">
+                                            <Icon name={showConfirmPassword ? "eye-off" : "eye"} size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             <button 
                                 type="submit" 
@@ -216,7 +255,7 @@ export default function Login() {
                         <div className="mt-8 text-center border-t border-slate-700/50 pt-6">
                             <button 
                                 type="button" 
-                                onClick={() => { setIsLogin(!isLogin); setError(''); setSuccessMsg(''); }}
+                                onClick={() => { setIsLogin(!isLogin); setError(''); setSuccessMsg(''); setPassword(''); setConfirmPassword(''); }}
                                 className="text-sm text-slate-400 hover:text-white transition-colors font-medium flex items-center justify-center gap-2 mx-auto"
                             >
                                 {isLogin ? (

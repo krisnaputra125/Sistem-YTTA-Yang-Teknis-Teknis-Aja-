@@ -8,6 +8,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [userRole, setUserRole] = useState(null); // String: "Super Admin", dll.
+    const [username, setUsername] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }) => {
                             return;
                         }
                         setUserRole(data.role);
+                        setUsername(data.username || data.name || null);
                         setLoading(false);
                     } else {
                         // Auto-assign Super Admin to the first user
@@ -147,6 +149,7 @@ export const AuthProvider = ({ children }) => {
     const value = {
         currentUser,
         userRole,
+        username,
         loading,
         canAccessMenu,
         canCreateProject,

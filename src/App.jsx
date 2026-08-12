@@ -557,7 +557,7 @@ import * as XLSX from 'xlsx-js-style';
         let assignmentSaveTimeout = null;
 
         function App() {
-    const { currentUser, userRole, canAccessMenu, canCreateProject, canDeleteProject, canEditProjectAdmin, canEditProjectTechnical, canEditTeamAllocation } = useAuth();
+    const { currentUser, userRole, username, canAccessMenu, canCreateProject, canDeleteProject, canEditProjectAdmin, canEditProjectTechnical, canEditTeamAllocation } = useAuth();
     
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -863,6 +863,18 @@ import * as XLSX from 'xlsx-js-style';
                     firebase.database().ref('pmc_users').on('value', (snap) => {
                         const usersData = snap.val();
                         if (usersData) {
+                            let updated = false;
+                            const newUsersData = { ...usersData };
+                            Object.keys(newUsersData).forEach(uid => {
+                                const u = newUsersData[uid];
+                                if (!u.username && u.email) {
+                                    u.username = u.name ? u.name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9_]/g, '') : u.email.split('@')[0];
+                                    updated = true;
+                                }
+                            });
+                            if (updated) {
+                                firebase.database().ref('pmc_users').set(newUsersData);
+                            }
                             const usersArray = Object.keys(usersData)
                                 .map(uid => ({
                                     uid,
@@ -2135,7 +2147,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                     <Icon name="sun" size={160} />
                                 </div>
                                 <div className="relative z-10">
-                                    <h2 className="text-2xl lg:text-3xl font-black mb-2 tracking-tight">Selamat Datang, {currentUser.displayName || currentUser.email.split('@')[0]}! 👋</h2>
+                                    <h2 className="text-2xl lg:text-3xl font-black mb-2 tracking-tight">Selamat Datang, {username || currentUser.displayName || currentUser.email.split('@')[0]}! 👋</h2>
                                     <p className="text-blue-100 font-medium text-sm lg:text-base">SIDAMON Gaharu Sempana Group, Anda masuk sebagai <span className="px-3 py-1 bg-white/20 rounded-full ml-1 font-bold text-[10px] lg:text-xs uppercase tracking-wider">{userRole}</span></p>
                                 </div>
                                 <div className="hidden lg:block relative z-10">
