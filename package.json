@@ -1,7 +1,7 @@
 {
-  "name": "project-management-control-app",
+  "name": "sidamon-gaharu-sempana",
   "version": "3.0.0",
-  "description": "Project Management Control App",
+  "description": "Sidamon Gaharu Sempana Group",
   "main": "main.js",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,7 @@
   },
   "build": {
     "appId": "com.project.management",
-    "productName": "Project Management App",
+    "productName": "Sidamon Gaharu Sempana Group",
     "win": {
       "target": "nsis",
       "icon": "icon-512.png"
@@ -38,6 +38,7 @@
   "license": "ISC",
   "dependencies": {
     "firebase": "^10.12.2",
+    "motion": "^13.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "xlsx-js-style": "^1.2.0"
