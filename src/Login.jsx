@@ -54,7 +54,19 @@ export default function Login() {
                 setIsLogin(true); // Kembali ke form login
             }
         } catch (err) {
-            setError(err.message);
+            let errorMsg = err.message;
+            if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+                errorMsg = 'Email atau kata sandi yang Anda masukkan salah. Silakan coba lagi.';
+            } else if (err.code === 'auth/invalid-email') {
+                errorMsg = 'Format email tidak valid.';
+            } else if (err.code === 'auth/email-already-in-use') {
+                errorMsg = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk ke sistem.';
+            } else if (err.code === 'auth/too-many-requests') {
+                errorMsg = 'Akses ditolak karena terlalu banyak percobaan masuk yang gagal. Silakan coba lagi nanti.';
+            } else if (err.code === 'auth/weak-password') {
+                errorMsg = 'Kata sandi terlalu lemah. Gunakan minimal 6 karakter.';
+            }
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
