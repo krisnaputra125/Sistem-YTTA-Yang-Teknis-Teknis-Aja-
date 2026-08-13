@@ -557,7 +557,7 @@ import * as XLSX from 'xlsx-js-style';
         let assignmentSaveTimeout = null;
 
         function App() {
-    const { currentUser, userRole, username, canAccessMenu, canCreateProject, canDeleteProject, canEditProjectAdmin, canEditProjectTechnical, canEditTeamAllocation } = useAuth();
+    const { currentUser, userRole, username, canAccessMenu, canCreateProject, canDeleteProject, canEditProjectAdmin, canEditProjectTechnical, canEditTeamAllocation, canEditExperts, canManageAssignments, canManageAsset } = useAuth();
     
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -579,6 +579,21 @@ import * as XLSX from 'xlsx-js-style';
                     }, 1500); // Animation duration
                 }
             }, [currentUser, userRole, animateCurtain]);
+
+            // Fallback: If user loses access to current tab, redirect to dashboard
+            useEffect(() => {
+                if (userRole) {
+                    if (activeTab === 'proyek' && !canAccessMenu('Proyek')) setActiveTab('dashboard');
+                    if (activeTab === 'tim' && !canAccessMenu('Alokasi Tim')) setActiveTab('dashboard');
+                    if (activeTab === 'gantt' && !canAccessMenu('Plotting Jadwal')) setActiveTab('dashboard');
+                    if (activeTab === 'ahli' && !canAccessMenu('Tenaga Ahli')) setActiveTab('dashboard');
+                    if (activeTab === 'penugasan' && !canAccessMenu('Rekan Rekanan')) setActiveTab('dashboard');
+                    if (activeTab === 'pengguna' && !canAccessMenu('Manajemen Pengguna')) setActiveTab('dashboard');
+                    if (activeTab === 'admin-aset' && !canAccessMenu('Admin Aset')) setActiveTab('dashboard');
+                    if (activeTab === 'kpi' && !canAccessMenu('KPI')) setActiveTab('dashboard');
+                }
+            }, [userRole, activeTab]);
+
 
             useEffect(() => {
                 const handleShowAlert = (e) => {
@@ -1244,6 +1259,10 @@ import * as XLSX from 'xlsx-js-style';
                 });
             };
             const handleTogglePendingSubmit = () => {
+            if (!canEditProjectTechnical()) {
+                window.dispatchEvent(new CustomEvent('show-alert', { detail: { title: 'Akses Ditolak', message: 'Anda tidak memiliki akses untuk mengubah status proyek.' } }));
+                return;
+            }
                 if (!pendingProjectData) return;
 
                 const now = new Date();
@@ -1820,6 +1839,10 @@ import * as XLSX from 'xlsx-js-style';
             };
 
             const openModal = (type, mode, data = null) => {
+            if (userRole === 'Manajer') {
+                window.dispatchEvent(new CustomEvent('show-alert', { detail: { title: 'Akses Ditolak', message: 'Role Manajer hanya dapat melihat data (View Only).' } }));
+                return;
+            }
                 let parsedData = data;
                 if (type === 'project' && data) {
                     let normalizedStatus = data.status === "On Track" ? "On Progress" : data.status;
@@ -1846,6 +1869,10 @@ import * as XLSX from 'xlsx-js-style';
             const closeModal = () => setModalConfig({ isOpen: false, type: null, mode: 'add', data: null });
 
             const handleDelete = (type, id) => {
+            if (userRole === 'Manajer') {
+                window.dispatchEvent(new CustomEvent('show-alert', { detail: { title: 'Akses Ditolak', message: 'Role Manajer hanya dapat melihat data (View Only).' } }));
+                return;
+            }
                 setConfirmDialog({
                     isOpen: true,
                     type: 'danger',
@@ -2486,9 +2513,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             <Icon name="filter" size={14} />
                                         </div>
                                     </div>
-                                    <button onClick={() => openModal('project', 'add')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm whitespace-nowrap">
-                                        <Icon name="plus" size={16} /> Tambah
-                                    </button>
+                                    {canCreateProject() && (
+                                        <button onClick={() => openModal('project', 'add')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm whitespace-nowrap">
+                                            <Icon name="plus" size={16} /> Tambah
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             <div className="p-0 overflow-x-auto min-h-[400px]">
@@ -2732,11 +2761,13 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                     <button onClick={() => { setActiveScheduleProject(p); setActiveTab('schedule'); }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-lg border border-purple-200 dark:border-purple-800/50"><Icon name="calendar" size={14} /> Time Schedule</button>
                                                                 )}
 
-                                                                {!(p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi')) && (
+                                                                {canEditProjectTechnical() && !(p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi')) && (
                                                                     p.isPending ? (
                                                                         <button onClick={() => handleResumeProject(p)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/50 rounded-lg border border-orange-200 dark:border-orange-800/50"><Icon name="play" size={14} /> Resume Proyek</button>
                                                                     ) : (
-                                                                        <button onClick={() => { setPendingProjectData(p); setShowPendingModal(true); }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg border border-slate-300 dark:border-slate-600"><Icon name="pause" size={14} /> Set Pending</button>
+                                                                        <button onClick={() => { 
+        setPendingProjectData(p); setShowPendingModal(true); 
+    }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg border border-slate-300 dark:border-slate-600"><Icon name="pause" size={14} /> Set Pending</button>
                                                                     )
                                                                 )}
 
@@ -2753,11 +2784,15 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                         setPrintData({ type: 'project', id: p.id });
                                                                     }
                                                                 }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg border border-indigo-200 dark:border-indigo-800/50"><Icon name="printer" size={14} /> Cetak PDF</button>
-                                                                <button onClick={() => openModal('project', 'edit', p)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg border border-blue-200 dark:border-blue-800/50"><Icon name="edit" size={14} /> Edit Data</button>
-                                                                {p.sourceAssignmentId ? (
-                                                                    <button onClick={() => setAlertModal({ isOpen: true, title: 'Proyek Tersinkronisasi', message: 'Proyek ini dikelola secara otomatis dari menu Penugasan Tenaga Ahli.\n\nUntuk menghapus proyek ini, silakan hapus data penugasan terkait dari menu Penugasan Tenaga Ahli.' })} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-lg border border-slate-300 dark:border-slate-600 cursor-not-allowed"><Icon name="trash" size={14} /> Hapus</button>
-                                                                ) : (
-                                                                    <button onClick={() => handleDelete('project', p.id)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg border border-red-200 dark:border-red-800/50"><Icon name="trash" size={14} /> Hapus</button>
+                                                                {canEditProjectTechnical() && (
+                                                                    <>
+                                                                        <button onClick={() => openModal('project', 'edit', p)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg border border-blue-200 dark:border-blue-800/50"><Icon name="edit" size={14} /> Edit Data</button>
+                                                                        {p.sourceAssignmentId ? (
+                                                                            <button onClick={() => setAlertModal({ isOpen: true, title: 'Proyek Tersinkronisasi', message: 'Proyek ini dikelola secara otomatis dari menu Penugasan Tenaga Ahli.\n\nUntuk menghapus proyek ini, silakan hapus data penugasan terkait dari menu Penugasan Tenaga Ahli.' })} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-lg border border-slate-300 dark:border-slate-600 cursor-not-allowed"><Icon name="trash" size={14} /> Hapus</button>
+                                                                        ) : (
+                                                                            <button onClick={() => handleDelete('project', p.id)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg border border-red-200 dark:border-red-800/50"><Icon name="trash" size={14} /> Hapus</button>
+                                                                        )}
+                                                                    </>
                                                                 )}
                                                             </div>
                                                         </td>
@@ -3356,9 +3391,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                             onChange={(e) => setSearchTeamTab(e.target.value)}
                                         />
                                     </div>
-                                    <button onClick={() => openModal('team', 'add')} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm whitespace-nowrap">
-                                        <Icon name="plus" size={16} /> Tambah
-                                    </button>
+                                    {canEditTeamAllocation() && (
+                                        <button onClick={() => openModal('team', 'add')} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm whitespace-nowrap">
+                                            <Icon name="user-plus" size={16} /> Tambah
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             <div className="p-0 overflow-x-auto min-h-[400px]">
@@ -3418,8 +3455,12 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                     <Icon name="folder-open" size={14} /> Rincian
                                                                 </button>
                                                                 <div className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex gap-2">
-                                                                    <button onClick={() => openModal('team', 'edit', res)} className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"><Icon name="edit" size={16} /></button>
-                                                                    <button onClick={() => handleDelete('team', res.id)} className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"><Icon name="trash" size={16} /></button>
+                                                                {canEditTeamAllocation() && (
+                                                                    <>
+                                                                        <button onClick={() => openModal('team', 'edit', res)} className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"><Icon name="edit" size={16} /></button>
+                                                                        <button onClick={() => handleDelete('team', res.id)} className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"><Icon name="trash" size={16} /></button>
+                                                                    </>
+                                                                )}
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -3816,17 +3857,19 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm"
                                     />
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        setAdminAsetFormData({
-                                            id: '', name: '', type: 'Alat Ukur', condition: 'Baik', status: 'Tersedia', borrower: null, borrowDate: null, returnDate: null, lastBorrower: null, lastBorrowDate: null, projectAssigned: null
-                                        });
-                                        setAdminAsetModal({ isOpen: true, mode: 'add', data: null });
-                                    }}
-                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap text-sm"
-                                >
-                                    <Icon name="plus" size={16} /> Tambah Alat
-                                </button>
+                                {canManageAsset() && (
+                                    <button
+                                        onClick={() => {
+                                            setAdminAsetFormData({
+                                                id: '', name: '', type: 'Alat Ukur', condition: 'Baik', status: 'Tersedia', borrower: null, borrowDate: null, returnDate: null, lastBorrower: null, lastBorrowDate: null, projectAssigned: null
+                                            });
+                                            setAdminAsetModal({ isOpen: true, mode: 'add', data: null });
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap text-sm"
+                                    >
+                                        <Icon name="plus" size={16} /> Tambah Alat
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -3915,26 +3958,30 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                     </td>
                                                     <td className="px-5 py-4">
                                                         <div className="flex items-center justify-end gap-1.5">
-                                                            {item.status === 'Menunggu Verifikasi' && (
-                                                                <div className="flex gap-1.5 mr-2">
-                                                                    <button onClick={() => handleAdminAsetVerify(item)} title="Verifikasi & Serahkan" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors text-xs flex items-center gap-1.5"><Icon name="check-circle-2" size={14} /> Serahkan</button>
-                                                                    <button onClick={() => handleAdminAsetReject(item)} title="Tolak Penyerahan" className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 font-medium rounded-lg transition-colors text-xs flex items-center border border-red-100 dark:border-red-800/50"><Icon name="x" size={14} /> Tolak</button>
-                                                                </div>
+                                                            {canManageAsset() && (
+                                                                <>
+                                                                    {item.status === 'Menunggu Verifikasi' && (
+                                                                        <div className="flex gap-1.5 mr-2">
+                                                                            <button onClick={() => handleAdminAsetVerify(item)} title="Verifikasi & Serahkan" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors text-xs flex items-center gap-1.5"><Icon name="check-circle-2" size={14} /> Serahkan</button>
+                                                                            <button onClick={() => handleAdminAsetReject(item)} title="Tolak Penyerahan" className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 font-medium rounded-lg transition-colors text-xs flex items-center border border-red-100 dark:border-red-800/50"><Icon name="x" size={14} /> Tolak</button>
+                                                                        </div>
+                                                                    )}
+                                                                    {item.status === 'Menunggu Verifikasi Pengembalian' && (
+                                                                        <div className="flex gap-1.5 mr-2">
+                                                                            <button onClick={() => handleAdminAsetReturnVerify(item)} title="Terima Barang Pengembalian" className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition-colors text-xs flex items-center gap-1.5"><Icon name="check-circle-2" size={14} /> Terima</button>
+                                                                            <button onClick={() => handleAdminAsetReturnReject(item)} title="Tolak Pengembalian" className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 font-medium rounded-lg transition-colors text-xs flex items-center border border-red-100 dark:border-red-800/50"><Icon name="x" size={14} /> Tolak</button>
+                                                                        </div>
+                                                                    )}
+                                                                    {item.status === 'Menunggu Verifikasi Perpanjangan' && (
+                                                                        <div className="flex gap-1.5 mr-2">
+                                                                            <button onClick={() => handleAdminAsetExtendVerify(item)} title="Setujui Perpanjangan" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors text-xs flex items-center gap-1.5"><Icon name="check-circle-2" size={14} /> Setujui</button>
+                                                                            <button onClick={() => handleAdminAsetExtendReject(item)} title="Tolak Perpanjangan" className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 font-medium rounded-lg transition-colors text-xs flex items-center border border-red-100 dark:border-red-800/50"><Icon name="x" size={14} /> Tolak</button>
+                                                                        </div>
+                                                                    )}
+                                                                    <button onClick={() => { setAdminAsetFormData({...item}); setAdminAsetModal({ isOpen: true, mode: 'edit', data: item }); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors" title="Edit Alat"><Icon name="edit" size={16} /></button>
+                                                                    <button onClick={() => setConfirmDialog({ isOpen: true, title: 'Hapus Alat', message: `Yakin ingin menghapus alat ${item.name}?`, type: 'danger', onConfirm: () => handleAdminAsetInventoryAction('delete', item) })} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Hapus Alat"><Icon name="trash-2" size={16} /></button>
+                                                                </>
                                                             )}
-                                                            {item.status === 'Menunggu Verifikasi Pengembalian' && (
-                                                                <div className="flex gap-1.5 mr-2">
-                                                                    <button onClick={() => handleAdminAsetReturnVerify(item)} title="Terima Barang Pengembalian" className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition-colors text-xs flex items-center gap-1.5"><Icon name="check-circle-2" size={14} /> Terima</button>
-                                                                    <button onClick={() => handleAdminAsetReturnReject(item)} title="Tolak Pengembalian" className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 font-medium rounded-lg transition-colors text-xs flex items-center border border-red-100 dark:border-red-800/50"><Icon name="x" size={14} /> Tolak</button>
-                                                                </div>
-                                                            )}
-                                                            {item.status === 'Menunggu Verifikasi Perpanjangan' && (
-                                                                <div className="flex gap-1.5 mr-2">
-                                                                    <button onClick={() => handleAdminAsetExtendVerify(item)} title="Setujui Perpanjangan" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors text-xs flex items-center gap-1.5"><Icon name="check-circle-2" size={14} /> Setujui</button>
-                                                                    <button onClick={() => handleAdminAsetExtendReject(item)} title="Tolak Perpanjangan" className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 font-medium rounded-lg transition-colors text-xs flex items-center border border-red-100 dark:border-red-800/50"><Icon name="x" size={14} /> Tolak</button>
-                                                                </div>
-                                                            )}
-                                                            <button onClick={() => { setAdminAsetFormData({...item}); setAdminAsetModal({ isOpen: true, mode: 'edit', data: item }); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors" title="Edit Alat"><Icon name="edit" size={16} /></button>
-                                                            <button onClick={() => setConfirmDialog({ isOpen: true, title: 'Hapus Alat', message: `Yakin ingin menghapus alat ${item.name}?`, type: 'danger', onConfirm: () => handleAdminAsetInventoryAction('delete', item) })} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Hapus Alat"><Icon name="trash-2" size={16} /></button>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -6043,22 +6090,17 @@ const ModalForm = () => {
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      Peminjam (Team Leader)
+                      Nama Peminjam
                     </label>
-                    <select
+                    <input
                       required={true}
+                      type="text"
                       name="borrower"
-                      value={formData.borrower}
+                      value={formData.borrower || ''}
                       onChange={handleChange}
+                      placeholder="Masukkan nama peminjam..."
                       className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
-                    >
-                      <option value="">-- Pilih Team Leader --</option>
-                      {resources
-                        .filter((r) => r.level === "Team Leader")
-                        .map((r) => (
-                          <option value={r.name}>{r.name}</option>
-                        ))}
-                    </select>
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
@@ -6113,22 +6155,17 @@ const ModalForm = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      Peminjam (Team Leader)
+                      Nama Peminjam
                     </label>
-                    <select
+                    <input
                       required={true}
+                      type="text"
                       name="borrower"
-                      value={formData.borrower}
+                      value={formData.borrower || ''}
                       onChange={handleChange}
+                      placeholder="Masukkan nama peminjam..."
                       className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
-                    >
-                      <option value="">-- Pilih Team Leader --</option>
-                      {resources
-                        .filter((r) => r.level === "Team Leader")
-                        .map((r) => (
-                          <option value={r.name}>{r.name}</option>
-                        ))}
-                    </select>
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
@@ -8352,6 +8389,7 @@ const renderKPIInfoModal = () => {
             const renderManajemenPengguna = () => {
                 const roles = [
                     "Super Admin",
+                    "Manajer",
                     "Manajer Teknis",
                     "Manajer Administrasi",
                     "Kordinator Divisi Teknis",
@@ -8418,7 +8456,10 @@ const renderKPIInfoModal = () => {
                                                             <select
                                                                 value={usr.role || 'Guest'}
                                                                 onChange={(e) => handleRoleChange(usr.uid, e.target.value)}
+                                                                disabled={usr.uid === currentUser?.uid}
+                                                                title={usr.uid === currentUser?.uid ? 'Anda tidak dapat mengubah role Anda sendiri' : ''}
                                                                 className={`w-full appearance-none pl-4 pr-10 py-2.5 rounded-xl border text-sm font-semibold transition-all shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none
+                                                                    ${usr.uid === currentUser?.uid ? 'opacity-50 cursor-not-allowed ' : ''}
                                                                     ${usr.role === 'Guest' ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400' :
                                                                     usr.role === 'Super Admin' ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400' :
                                                                     'bg-white border-slate-300 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200'}`}
@@ -9183,9 +9224,11 @@ const renderKPIInfoModal = () => {
                                 }} className="px-4 py-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-semibold flex items-center gap-2 text-sm shrink-0 border border-slate-300 dark:border-slate-700">
                                     <Icon name="printer" size={18} /> Ekspor Laporan
                                 </button>
-                                <button onClick={() => setModalConfig({ isOpen: true, type: 'assignment', mode: 'add', data: null })} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all font-semibold flex items-center gap-2 text-sm shrink-0">
-                                    <Icon name="plus" size={18} /> Tambah Penugasan
-                                </button>
+                                {canManageAssignments() && (
+                                    <button onClick={() => setModalConfig({ isOpen: true, type: 'assignment', mode: 'add', data: null })} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all font-semibold flex items-center gap-2 text-sm shrink-0">
+                                        <Icon name="plus" size={18} /> Tambah Penugasan
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -9203,12 +9246,14 @@ const renderKPIInfoModal = () => {
                                                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{asg.lpseName}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => setModalConfig({ isOpen: true, type: 'assignment', mode: 'edit', data: asg })} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-800 rounded-lg" title="Edit Penugasan"><Icon name="edit-3" size={16} /></button>
-                                                <button onClick={() => {
-                                                    setConfirmDialog({ isOpen: true, title: 'Hapus Pekerjaan', message: `Hapus pekerjaan ${asg.jobName}?`, type: 'danger', onConfirm: () => handleAssignmentAction('delete', { id: asg.id }) });
-                                                }} className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-800 rounded-lg" title="Hapus"><Icon name="trash-2" size={16} /></button>
-                                            </div>
+                                            {canManageAssignments() && (
+                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => setModalConfig({ isOpen: true, type: 'assignment', mode: 'edit', data: asg })} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-800 rounded-lg" title="Edit Penugasan"><Icon name="edit-3" size={16} /></button>
+                                                    <button onClick={() => {
+                                                        setConfirmDialog({ isOpen: true, title: 'Hapus Pekerjaan', message: `Hapus pekerjaan ${asg.jobName}?`, type: 'danger', onConfirm: () => handleAssignmentAction('delete', { id: asg.id }) });
+                                                    }} className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-800 rounded-lg" title="Hapus"><Icon name="trash-2" size={16} /></button>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="p-5 space-y-3 flex-1">
@@ -9313,12 +9358,16 @@ const renderKPIInfoModal = () => {
                                     <input type="text" placeholder="Cari tenaga ahli..." value={searchExpertTab} onChange={(e) => { setSearchExpertTab(e.target.value); setExpertPage(1); }} className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow" />
                                     <Icon name="search" size={16} className="absolute left-3 top-3 text-slate-400" />
                                 </div>
-                                <button onClick={() => setModalConfig({ isOpen: true, type: 'expert', mode: 'add', data: null })} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all font-semibold flex items-center gap-2 text-sm shrink-0">
-                                    <Icon name="plus" size={18} /> Tambah
-                                </button>
-                                <button onClick={() => setModalConfig({ isOpen: true, type: 'import_expert', mode: 'add', data: null })} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all font-semibold flex items-center gap-2 text-sm shrink-0">
-                                    <Icon name="file-text" size={18} /> Import Excel
-                                </button>
+                                {canEditExperts() && (
+                                    <>
+                                        <button onClick={() => setModalConfig({ isOpen: true, type: 'expert', mode: 'add', data: null })} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all font-semibold flex items-center gap-2 text-sm shrink-0">
+                                            <Icon name="plus" size={18} /> Tambah
+                                        </button>
+                                        <button onClick={() => setModalConfig({ isOpen: true, type: 'import_expert', mode: 'add', data: null })} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all font-semibold flex items-center gap-2 text-sm shrink-0">
+                                            <Icon name="file-text" size={18} /> Import Excel
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -9357,12 +9406,14 @@ const renderKPIInfoModal = () => {
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => setModalConfig({ isOpen: true, type: 'expert', mode: 'edit', data: exp })} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-800 rounded-lg" title="Edit Identitas"><Icon name="edit-3" size={16} /></button>
-                                            <button onClick={() => {
-                                                setConfirmDialog({ isOpen: true, title: 'Hapus Tenaga Ahli', message: `Hapus tenaga ahli ${exp.name}?`, type: 'danger', onConfirm: () => handleExpertAction('delete', { id: exp.id }) });
-                                            }} className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-800 rounded-lg" title="Hapus"><Icon name="trash-2" size={16} /></button>
-                                        </div>
+                                        {canEditExperts() && (
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => setModalConfig({ isOpen: true, type: 'expert', mode: 'edit', data: exp })} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-800 rounded-lg" title="Edit Identitas"><Icon name="edit-3" size={16} /></button>
+                                                <button onClick={() => {
+                                                    setConfirmDialog({ isOpen: true, title: 'Hapus Tenaga Ahli', message: `Hapus tenaga ahli ${exp.name}?`, type: 'danger', onConfirm: () => handleExpertAction('delete', { id: exp.id }) });
+                                                }} className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-800 rounded-lg" title="Hapus"><Icon name="trash-2" size={16} /></button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="p-5 space-y-5">
@@ -9372,9 +9423,11 @@ const renderKPIInfoModal = () => {
                                                 <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                                                     <Icon name="shield" size={14} /> Sertifikat Keahlian
                                                 </h5>
-                                                <button onClick={() => setModalConfig({ isOpen: true, type: 'expert_cert', mode: 'add', data: { expertId: exp.id } })} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 px-2 py-1 rounded-md transition-colors flex items-center gap-1">
-                                                    <Icon name="plus" size={10} /> Tambah
-                                                </button>
+                                                {canEditExperts() && (
+                                                    <button onClick={() => setModalConfig({ isOpen: true, type: 'expert_cert', mode: 'add', data: { expertId: exp.id } })} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 px-2 py-1 rounded-md transition-colors flex items-center gap-1">
+                                                        <Icon name="plus" size={10} /> Tambah
+                                                    </button>
+                                                )}
                                             </div>
                                             <div className="space-y-2">
                                                 {(!exp.certificates || exp.certificates.length === 0) ? (
@@ -9391,20 +9444,24 @@ const renderKPIInfoModal = () => {
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex gap-1">
-                                                                    <button onClick={() => setModalConfig({ isOpen: true, type: 'expert_cert', mode: 'edit', data: { expertId: exp.id, certIndex: idx, cert } })} className="text-slate-400 hover:text-blue-600 p-1 rounded transition-colors opacity-0 group-hover/cert:opacity-100"><Icon name="edit-2" size={14} /></button>
-                                                                    <button onClick={() => {
-                                                                        setConfirmDialog({
-                                                                            isOpen: true,
-                                                                            title: 'Hapus Sertifikat',
-                                                                            message: 'Hapus sertifikat ini?',
-                                                                            type: 'danger',
-                                                                            onConfirm: () => {
-                                                                            let updatedCerts = [...exp.certificates];
-                                                                            updatedCerts.splice(idx, 1);
-                                                                            handleExpertAction('update_certificates', { ...exp, certificates: updatedCerts });
-                                                                        }
-                                                                    });
-                                                                }} className="text-slate-400 hover:text-red-600 p-1 rounded transition-colors opacity-0 group-hover/cert:opacity-100"><Icon name="trash-2" size={14} /></button>
+                                                                    {canEditExperts() && (
+                                                                        <>
+                                                                            <button onClick={() => setModalConfig({ isOpen: true, type: 'expert_cert', mode: 'edit', data: { expertId: exp.id, certIndex: idx, cert } })} className="text-slate-400 hover:text-blue-600 p-1 rounded transition-colors opacity-0 group-hover/cert:opacity-100"><Icon name="edit-2" size={14} /></button>
+                                                                            <button onClick={() => {
+                                                                                setConfirmDialog({
+                                                                                    isOpen: true,
+                                                                                    title: 'Hapus Sertifikat',
+                                                                                    message: 'Hapus sertifikat ini?',
+                                                                                    type: 'danger',
+                                                                                    onConfirm: () => {
+                                                                                        let updatedCerts = [...exp.certificates];
+                                                                                        updatedCerts.splice(idx, 1);
+                                                                                        handleExpertAction('update_certificates', { ...exp, certificates: updatedCerts });
+                                                                                    }
+                                                                                });
+                                                                            }} className="text-slate-400 hover:text-red-600 p-1 rounded transition-colors opacity-0 group-hover/cert:opacity-100"><Icon name="trash-2" size={14} /></button>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         );
@@ -9657,9 +9714,9 @@ const renderKPIInfoModal = () => {
                                         <>
                                             <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Project Management & Control</div>
                                             <SidebarItem icon={<Icon name="briefcase" size={20} />} label="List Proyek" isActive={activeTab === 'proyek'} onClick={() => handleTabChange('proyek')} />
-                                            <SidebarItem icon={<Icon name="calendar" size={20} />} label="Master Schedule" isActive={activeTab === 'master-schedule'} onClick={() => handleTabChange('master-schedule')} />
-                                            <SidebarItem icon={<Icon name="users" size={20} />} label="Alokasi Tim" isActive={activeTab === 'tim'} onClick={() => handleTabChange('tim')} />
-                                            <SidebarItem icon={<Icon name="calendar-days" size={20} />} label="Plotting Jadwal" isActive={activeTab === 'gantt'} onClick={() => handleTabChange('gantt')} />
+                                            {canAccessMenu('Time Schedule') && <SidebarItem icon={<Icon name="calendar" size={20} />} label="Master Schedule" isActive={activeTab === 'master-schedule'} onClick={() => handleTabChange('master-schedule')} />}
+                                            {canAccessMenu('Alokasi Tim') && <SidebarItem icon={<Icon name="users" size={20} />} label="Alokasi Tim" isActive={activeTab === 'tim'} onClick={() => handleTabChange('tim')} />}
+                                            {canAccessMenu('Plotting Jadwal') && <SidebarItem icon={<Icon name="calendar-days" size={20} />} label="Plotting Jadwal" isActive={activeTab === 'gantt'} onClick={() => handleTabChange('gantt')} />}
                                         </>
                                     )}
                                     

@@ -85,31 +85,38 @@ export const AuthProvider = ({ children }) => {
         if (!userRole || userRole === 'Guest') return false;
         if (userRole === 'Super Admin') return true;
 
+        if (userRole === 'Manajer Teknis' || userRole === 'Manajer Administrasi' || userRole === 'HRD') {
+            if (menuName === 'Manajemen Pengguna') return false;
+            if (menuName === 'Admin Aset' && userRole !== 'HRD') return false;
+            return true;
+        }
+
         switch (menuName) {
             case 'Proyek':
-            case 'Alokasi Tim':
             case 'Timesheet':
             case 'Time Schedule':
-                // Menu Project Management & Control
-                return ['Manajer Teknis', 'Kordinator Divisi Teknis', 'PIC', 'Team Leader Pekerjaan'].includes(userRole);
+                return ['Kordinator Divisi Teknis', 'PIC', 'Team Leader Pekerjaan', 'Manajer'].includes(userRole);
+                
+            case 'Alokasi Tim':
+            case 'Plotting Jadwal':
+                return ['Kordinator Divisi Teknis', 'PIC', 'Manajer'].includes(userRole);
             
             case 'Tenaga Ahli':
             case 'Rekan Rekanan':
             case 'Manajemen LPSE':
-                // Menu Database & Assignment Expert
-                return ['Manajer Administrasi', 'HRD'].includes(userRole);
+                return ['Manajer'].includes(userRole);
 
             case 'Manajemen Pengguna':
-                return userRole === 'Super Admin';
+                return false;
                 
             case 'Inventaris':
                 return true;
 
             case 'Admin Aset':
-                return ['Kordinator Aset', 'HRD'].includes(userRole);
+                return ['Kordinator Aset', 'Manajer'].includes(userRole);
                 
             case 'KPI':
-                return userRole === 'Super Admin';
+                return ['Manajer'].includes(userRole);
                 
             default:
                 return false;
@@ -117,11 +124,11 @@ export const AuthProvider = ({ children }) => {
     };
 
     const canCreateProject = () => {
-        return ['Super Admin', 'Manajer Teknis', 'Kordinator Divisi Teknis'].includes(userRole);
+        return ['Super Admin', 'Manajer Teknis', 'Kordinator Divisi Teknis', 'PIC', 'Team Leader Pekerjaan'].includes(userRole);
     };
 
     const canDeleteProject = () => {
-        return ['Super Admin', 'Manajer Teknis'].includes(userRole);
+        return ['Super Admin', 'Manajer Teknis', 'Kordinator Divisi Teknis', 'PIC', 'Team Leader Pekerjaan'].includes(userRole);
     };
 
     const canEditProjectAdmin = () => {
@@ -129,21 +136,27 @@ export const AuthProvider = ({ children }) => {
     };
 
     const canEditProjectTechnical = () => {
-        return ['Super Admin', 'Manajer Teknis', 'Kordinator Divisi Teknis'].includes(userRole);
+        return ['Super Admin', 'Manajer Teknis', 'Kordinator Divisi Teknis', 'PIC', 'Team Leader Pekerjaan'].includes(userRole);
     };
 
     const canEditTeamAllocation = () => {
-        // PIC bisa edit alokasi tim, Manajer Teknis juga
-        // Kordinator Divisi Teknis TIDAK BISA edit struktur alokasi tim
-        return ['Super Admin', 'Manajer Teknis', 'PIC'].includes(userRole);
+        return ['Super Admin', 'Manajer Teknis', 'Kordinator Divisi Teknis', 'PIC'].includes(userRole);
     };
 
     const canEditInventory = () => {
-        return ['Super Admin', 'Kordinator Aset'].includes(userRole);
+        return ['Super Admin', 'Kordinator Aset', 'HRD'].includes(userRole);
     };
 
     const canEditExperts = () => {
-        return ['Super Admin', 'Manajer Administrasi'].includes(userRole);
+        return ['Super Admin', 'Manajer Administrasi', 'HRD'].includes(userRole);
+    };
+
+    const canManageAssignments = () => {
+        return ['Super Admin', 'Manajer Administrasi', 'HRD'].includes(userRole);
+    };
+
+    const canManageAsset = () => {
+        return ['Super Admin', 'Kordinator Aset', 'HRD'].includes(userRole);
     };
 
     const value = {
@@ -158,7 +171,9 @@ export const AuthProvider = ({ children }) => {
         canEditProjectTechnical,
         canEditTeamAllocation,
         canEditInventory,
-        canEditExperts
+        canEditExperts,
+        canManageAssignments,
+        canManageAsset
     };
 
     return (
