@@ -219,7 +219,7 @@ import * as XLSX from 'xlsx-js-style';
             const involvedProjects = allInvolvedProjects.filter(p => {
                 const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
                 if (isPengawasan) {
-                    const statusTurun = p.pengawasanDetails?.[employee.name]?.statusTurun;
+                    const statusTurun = p.pengawasanDetails?.[employee.name]?.statusTurun || 'Tidak Turun';
                     if (statusTurun === 'Tidak Turun') return false;
                 }
                 return true;
@@ -332,7 +332,7 @@ import * as XLSX from 'xlsx-js-style';
             const involvedProjects = allInvolvedProjects.filter(p => {
                 const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
                 if (isPengawasan) {
-                    const statusTurun = p.pengawasanDetails?.[employee.name]?.statusTurun;
+                    const statusTurun = p.pengawasanDetails?.[employee.name]?.statusTurun || 'Tidak Turun';
                     if (statusTurun === 'Tidak Turun') return false;
                 }
                 return true;
@@ -2784,7 +2784,11 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                         setPrintData({ type: 'project', id: p.id });
                                                                     }
                                                                 }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg border border-indigo-200 dark:border-indigo-800/50"><Icon name="printer" size={14} /> Cetak PDF</button>
-                                                                {canEditProjectTechnical() && (
+                                                                {canEditProjectTechnical() && 
+                                                                    !(
+                                                                        (p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi')) && 
+                                                                        ['Kordinator Divisi Teknis', 'PIC', 'Team Leader Pekerjaan'].includes(userRole)
+                                                                    ) && (
                                                                     <>
                                                                         <button onClick={() => openModal('project', 'edit', p)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg border border-blue-200 dark:border-blue-800/50"><Icon name="edit" size={14} /> Edit Data</button>
                                                                         {p.sourceAssignmentId ? (
@@ -5041,6 +5045,16 @@ const ModalForm = () => {
         ...currentDetail,
         [field]: value,
       };
+
+      if (field === "role") {
+        const existingDetails = Object.values(prev.pengawasanDetails || {});
+        const match = existingDetails.find(d => d.role === value && d.manMonth);
+        if (match) {
+          newDetail.manMonth = match.manMonth;
+          if (match.deadline) newDetail.deadline = match.deadline;
+        }
+      }
+
       if (field === "manMonth") {
         if (prev.spmk && newDetail.manMonth) {
           const manMonthVal = parseFloat(newDetail.manMonth);
@@ -5181,6 +5195,29 @@ const ModalForm = () => {
           cleanDetails[cat] = finalPayload.categoryDetails[cat];
         }
       });
+
+      if (finalPayload.type === "Pengawasan" || finalPayload.type === "Manajemen Konstruksi") {
+        if (!finalPayload.pengawasanDetails) finalPayload.pengawasanDetails = {};
+        const assignment = typeof assignments !== 'undefined' ? assignments.find((a) => a.id === finalPayload.sourceAssignmentId) : null;
+        const originalNames = (assignment?.experts || []).map((exp) => {
+            const expertObj = typeof experts !== 'undefined' ? experts.find((e) => e.id === exp.expertId) : null;
+            if (!expertObj) return null;
+            return expertObj.linkedResourceName || expertObj.name;
+        }).filter(Boolean);
+
+        (finalPayload.team || []).forEach((memberName) => {
+          if (!finalPayload.pengawasanDetails[memberName]) {
+            const isOriginalSyncedMember = finalPayload.sourceAssignmentId ? originalNames.includes(memberName) : false;
+            finalPayload.pengawasanDetails[memberName] = {
+              role: "Inspector",
+              deadline: "",
+              manMonth: "",
+              statusTurun: isOriginalSyncedMember ? "Tidak Turun" : "Turun",
+            };
+          }
+        });
+      }
+
       const teamDataObj = {
         members: finalPayload.team || [],
         details: cleanDetails,
@@ -5437,7 +5474,7 @@ const ModalForm = () => {
                   )}
                 </div>
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50">
-                  {!isSyncedProject && (
+                  {(!isSyncedProject || isPengawasanForm) && (
                     <>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
                         <label className="block text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -5514,14 +5551,35 @@ const ModalForm = () => {
                             Pencarian tidak ditemukan.
                           </p>
                         ) : isPengawasanForm ? (
-                          <TeamCheckboxGroup
-                            title="Pilih Anggota Tim (Bebas Lintas Jabatan)"
-                            roleFilter={(r) => true}
-                            isOptional={false}
-                            filteredResources={filteredResources}
-                            formData={formData}
-                            setFormData={setFormData}
-                          />
+                          <>
+                            <TeamCheckboxGroup
+                              title="Pilih Pegawai Internal (Alokasi Tim)"
+                              roleFilter={(r) => true}
+                              isOptional={true}
+                              filteredResources={filteredResources}
+                              formData={formData}
+                              setFormData={setFormData}
+                            />
+                            <div className="mt-4">
+                              <TeamCheckboxGroup
+                                title="Pilih Tenaga Ahli (Dari Database)"
+                                roleFilter={(r) => true}
+                                isOptional={true}
+                                filteredResources={(typeof experts !== 'undefined' ? experts : []).filter(e => {
+                                  // Apply search filter if user is typing
+                                  if (!searchTeam) return true;
+                                  return e.name?.toLowerCase().includes(searchTeam.toLowerCase()) || 
+                                         e.bidangIlmu?.toLowerCase().includes(searchTeam.toLowerCase());
+                                }).map((e, idx) => ({ 
+                                  id: e.id || `expert-${idx}`, 
+                                  name: e.name, 
+                                  role: e.bidangIlmu || 'Tenaga Ahli' 
+                                }))}
+                                formData={formData}
+                                setFormData={setFormData}
+                              />
+                            </div>
+                          </>
                         ) : (
                           <>
                             <TeamCheckboxGroup
@@ -5613,79 +5671,7 @@ const ModalForm = () => {
                           />
                         </div>
                       )}
-                      {isPengawasanForm && (
-                        <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            Tambah Personil Freelance Manual
-                          </label>
-                          <p className="text-[10px] text-slate-500 mb-2">
-                            Ketik nama personil freelance lalu tekan Enter.
-                            Personil ini akan otomatis masuk ke Rincian
-                            Penugasan di bawah namun tidak dihitung dalam KPI.
-                          </p>
-                          <div className="flex gap-2 mb-3">
-                            <input
-                              type="text"
-                              value={freelanceInput}
-                              onChange={(e) =>
-                                setFreelanceInput(e.target.value)
-                              }
-                              onKeyDown={handleFreelanceKeyDown}
-                              className="flex-1 p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-blue-500 bg-white dark:bg-slate-800 transition-colors dark:text-slate-200 shadow-sm"
-                              placeholder="Ketik nama freelance..."
-                            />
-                            <button
-                              type="button"
-                              onClick={handleAddFreelance}
-                              className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                            >
-                              Tambah
-                            </button>
-                          </div>
-                          {formData.team &&
-                            formData.team.filter(
-                              (name) => !resources.some((r) => r.name === name),
-                            ).length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {formData.team
-                                  .filter(
-                                    (name) =>
-                                      !resources.some((r) => r.name === name),
-                                  )
-                                  .map((name) => (
-                                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-md text-xs font-semibold text-amber-700 dark:text-amber-400">
-                                      <span>{name}</span>
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          handleEditFreelance(name)
-                                        }
-                                        className="text-amber-500 hover:text-amber-700 transition-colors ml-1"
-                                        title="Edit Nama"
-                                      >
-                                        <Icon name="edit" size={12} />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setFormData((prev) => ({
-                                            ...prev,
-                                            team: prev.team.filter(
-                                              (t) => t !== name,
-                                            ),
-                                          }));
-                                        }}
-                                        className="text-amber-500 hover:text-amber-700 transition-colors"
-                                        title="Hapus"
-                                      >
-                                        <Icon name="x" size={12} />
-                                      </button>
-                                    </div>
-                                  ))}
-                              </div>
-                            )}
-                        </div>
-                      )}
+
                     </>
                   )}
                   {isPengawasanForm && (formData.team || []).length > 0 && (
@@ -5700,6 +5686,17 @@ const ModalForm = () => {
                       </label>
                       <div className="space-y-2 border border-slate-200 dark:border-slate-700/50 rounded-xl p-3 bg-emerald-50/30 dark:bg-emerald-900/10">
                         {formData.team.map((member) => {
+                          const isOriginalSyncedMember = (() => {
+                            if (!isSyncedProject) return false;
+                            const assignment = assignments.find(a => a.id === formData.sourceAssignmentId);
+                            if (!assignment) return false;
+                            const originalNames = (assignment.experts || []).map(exp => {
+                               const expertObj = experts.find(e => e.id === exp.expertId);
+                               if (!expertObj) return null;
+                               return expertObj.linkedResourceName || expertObj.name;
+                            }).filter(Boolean);
+                            return originalNames.includes(member);
+                          })();
                           const detail = formData.pengawasanDetails?.[
                             member
                           ] || {
@@ -5707,7 +5704,7 @@ const ModalForm = () => {
                             deadline: "",
                             manMonth: "",
                             spmk: "",
-                            statusTurun: "Tidak Turun",
+                            statusTurun: isOriginalSyncedMember ? "Tidak Turun" : "Turun",
                           };
                           return (
                             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl flex flex-col gap-3 shadow-sm">
@@ -5736,7 +5733,7 @@ const ModalForm = () => {
                                     Peran / Jabatan
                                   </label>
                                   <select
-                                    className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className={`block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 ${isOriginalSyncedMember ? 'opacity-60 cursor-not-allowed' : ''}`}
                                     value={detail.role || "Inspector"}
                                     onChange={(e) =>
                                       handlePengawasanDetailChange(
@@ -5745,7 +5742,7 @@ const ModalForm = () => {
                                         e.target.value,
                                       )
                                     }
-                                    disabled={isSyncedProject}
+                                    disabled={isOriginalSyncedMember}
                                   >
                                     <option value="Team Leader">
                                       Team Leader
@@ -5772,7 +5769,7 @@ const ModalForm = () => {
                                   </label>
                                   <select
                                     className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200"
-                                    value={detail.statusTurun || "Tidak Turun"}
+                                    value={detail.statusTurun || (isOriginalSyncedMember ? "Tidak Turun" : "Turun")}
                                     onChange={(e) =>
                                       handlePengawasanDetailChange(
                                         member,
@@ -5797,7 +5794,7 @@ const ModalForm = () => {
                                   <input
                                     type="number"
                                     step="0.1"
-                                    className="block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className={`block w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 transition-colors dark:text-slate-200 ${isOriginalSyncedMember ? 'opacity-60 cursor-not-allowed' : ''}`}
                                     value={detail.manMonth || ""}
                                     onChange={(e) =>
                                       handlePengawasanDetailChange(
@@ -5807,7 +5804,7 @@ const ModalForm = () => {
                                       )
                                     }
                                     placeholder="Cth: 1.5"
-                                    disabled={isSyncedProject}
+                                    disabled={isOriginalSyncedMember}
                                   />
                                 </div>
                               </div>
