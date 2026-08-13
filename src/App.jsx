@@ -2,7 +2,7 @@
 import { useAuth } from './AuthContext';
 import Login from './Login';
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, Fragment } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import logoImg from '../LGIHT TRANSPARAN (1).PNG';
 import logoSidamon from './assets/logo-sidamon.png';
@@ -1227,7 +1227,14 @@ import * as XLSX from 'xlsx-js-style';
                 }
 
                 if (impactedEmployees.length === 0 && globalDelayDays <= 0) {
-                    return; // Tidak ada delay sama sekali
+                    window.dispatchEvent(new CustomEvent('show-alert', { 
+                        detail: { 
+                            title: 'Proyek Aman', 
+                            message: 'Tidak ada indikasi keterlambatan pada proyek ini maupun pada individu yang terlibat.', 
+                            type: 'success' 
+                        } 
+                    }));
+                    return;
                 }
 
                 setDominoAnalysis({
@@ -5191,7 +5198,7 @@ const ModalForm = () => {
               </div>
             )}
             {isProject ? (
-              <Fragment>
+              <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="col-span-2 md:col-span-1">
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
@@ -5384,7 +5391,7 @@ const ModalForm = () => {
                 </div>
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50">
                   {!isSyncedProject && (
-                    <Fragment>
+                    <>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
                         <label className="block text-sm font-bold text-slate-800 dark:text-slate-100">
                           Penugasan Personil
@@ -5469,7 +5476,7 @@ const ModalForm = () => {
                             setFormData={setFormData}
                           />
                         ) : (
-                          <Fragment>
+                          <>
                             <TeamCheckboxGroup
                               title="Tim Arsitek"
                               roleFilter={(r) =>
@@ -5542,7 +5549,7 @@ const ModalForm = () => {
                               formData={formData}
                               setFormData={setFormData}
                             />
-                          </Fragment>
+                          </>
                         )}
                       </div>
                       {!isPengawasanForm && resources.length > 0 && (
@@ -5632,7 +5639,7 @@ const ModalForm = () => {
                             )}
                         </div>
                       )}
-                    </Fragment>
+                    </>
                   )}
                   {isPengawasanForm && (formData.team || []).length > 0 && (
                     <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-700/50">
@@ -5822,7 +5829,7 @@ const ModalForm = () => {
                               </div>
                               <div className="w-full sm:w-1/4">
                                 {(details.tasks || []).length > 0 ? (
-                                  <Fragment>
+                                  <>
                                     <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">
                                       Progress Terkunci (%)
                                     </label>
@@ -5839,9 +5846,9 @@ const ModalForm = () => {
                                         {details.progress || 0}%
                                       </span>
                                     </div>
-                                  </Fragment>
+                                  </>
                                 ) : (
-                                  <Fragment>
+                                  <>
                                     <div className="flex items-center justify-between mb-1">
                                       <label className="block text-[9px] font-bold text-slate-500 uppercase">
                                         Progress Manual
@@ -5880,7 +5887,7 @@ const ModalForm = () => {
                                         />
                                       </div>
                                     </div>
-                                  </Fragment>
+                                  </>
                                 )}
                               </div>
                               <div className="w-full sm:w-1/4 sm:border-r border-slate-100 dark:border-slate-700 sm:pr-2">
@@ -6030,7 +6037,7 @@ const ModalForm = () => {
                     </div>
                   </div>
                 )}
-              </Fragment>
+              </>
             ) : isInventory ? (
               modalConfig.mode === "borrow" ? (
                 <div className="grid grid-cols-1 gap-4">
@@ -6280,7 +6287,7 @@ const ModalForm = () => {
                 </div>
               )
             ) : (
-              <Fragment>
+              <>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                     Nama Personil
@@ -6428,7 +6435,7 @@ const ModalForm = () => {
                     List Proyek.
                   </p>
                 </div>
-              </Fragment>
+              </>
             )}
           </form>
         </div>
@@ -6644,6 +6651,121 @@ const renderAlertModal = () => {
             );
         };
 
+
+        const renderPrintZoomProjectModal = () => {
+            if (!printZoomProject) return null;
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 transform scale-in border border-slate-200 dark:border-slate-800">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Icon name="printer" size={32} />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Pilih Format PDF</h3>
+                            <p className="text-sm text-slate-500 mt-2">
+                                Pilih tingkat detail kalender untuk laporan cetak Time Schedule proyek <strong>{printZoomProject.name}</strong>
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => {
+                                    setScheduleZoom("month");
+                                    setPrintData({ type: "project", id: printZoomProject.id });
+                                    setPrintZoomProject(null);
+                                }}
+                                className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all text-left group"
+                            >
+                                <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 text-slate-500 group-hover:text-indigo-600 transition-colors">
+                                    <Icon name="calendar" size={20} />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-slate-700 dark:text-slate-200">Bulanan</div>
+                                    <div className="text-xs text-slate-500">Tampilan ringkas per bulan</div>
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setScheduleZoom("week");
+                                    setPrintData({ type: "project", id: printZoomProject.id });
+                                    setPrintZoomProject(null);
+                                }}
+                                className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all text-left group"
+                            >
+                                <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 text-slate-500 group-hover:text-indigo-600 transition-colors">
+                                    <Icon name="calendar-days" size={20} />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-slate-700 dark:text-slate-200">Mingguan</div>
+                                    <div className="text-xs text-slate-500">Tampilan detail tiap minggu</div>
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => setPrintZoomProject(null)}
+                                className="w-full mt-2 p-3 text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                            >
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+
+        const renderPendingModal = () => {
+            if (!showPendingModal || !pendingProjectData) return null;
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center fade-in p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6 transform scale-in border border-slate-200 dark:border-slate-800">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <Icon name="alert-triangle" className="text-orange-500" />
+                                Pending Proyek
+                            </h3>
+                            <button onClick={() => {
+                                setShowPendingModal(false);
+                                setPendingProjectData(null);
+                                setPendingReasonText("");
+                            }} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <Icon name="x" size={24} />
+                            </button>
+                        </div>
+                        <div className="mb-4">
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                                Anda akan mengubah status proyek <strong className="text-slate-800 dark:text-slate-200">{pendingProjectData.name}</strong> menjadi Pending. Status ini akan membebastugaskan tim sementara waktu.
+                            </p>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                Alasan Pending <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                value={pendingReasonText}
+                                onChange={(e) => setPendingReasonText(e.target.value)}
+                                className="w-full border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                rows="3"
+                                placeholder="Contoh: Menunggu konfirmasi revisi RAB dari klien..."
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2 mt-6">
+                            <button onClick={() => {
+                                setShowPendingModal(false);
+                                setPendingProjectData(null);
+                                setPendingReasonText("");
+                            }} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                                Batal
+                            </button>
+                            <button 
+                                onClick={handleTogglePendingSubmit} 
+                                disabled={!pendingReasonText.trim()}
+                                className="px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white rounded-lg transition-colors flex items-center gap-2"
+                            >
+                                <Icon name="check" size={16} /> Set Pending
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const renderFuturisticConfirm = () => {
   if (!confirmDialog.isOpen) return null;
   return (
@@ -6851,17 +6973,17 @@ const renderDeveloperPromptModal = () => {
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div>
                                                         <h5 className="font-bold text-lg text-slate-800 dark:text-slate-100 tracking-tight">{emp.name}</h5>
-                                                        <p className="text-sm text-slate-500 dark:text-slate-400">{emp.role}</p>
+                                                        <p className="text-sm text-slate-500 dark:text-slate-400">Delay Individu: {emp.delayDays} hari</p>
                                                     </div>
                                                 </div>
                                                 <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50">
                                                     <p className="text-sm text-slate-600 dark:text-slate-300 font-medium mb-2">Berdampak pada proyek berikutnya:</p>
                                                     <ul className="space-y-3">
-                                                        {emp.nextProjects.map((np, j) => (
+                                                        {emp.futureProjects.map((np, j) => (
                                                             <li key={j} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm gap-2 p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                                                                <span className="font-semibold text-slate-800 dark:text-slate-200">{np.projectName}</span>
+                                                                <span className="font-semibold text-slate-800 dark:text-slate-200">{np.name}</span>
                                                                 <span className="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-3 py-1 rounded-md text-xs font-bold whitespace-nowrap">
-                                                                    Mulai: {np.spmkDate}
+                                                                    Deadline: {formatDateIndo(np.deadlineStr)}
                                                                 </span>
                                                             </li>
                                                         ))}
@@ -9428,6 +9550,8 @@ const renderKPIInfoModal = () => {
                         </div>
 
                         <div className="relative z-10 flex w-full h-full">
+                            {renderPrintZoomProjectModal()}
+                            {renderPendingModal()}
                             {renderFuturisticConfirm()}
                             {renderDominoModal()}
 
