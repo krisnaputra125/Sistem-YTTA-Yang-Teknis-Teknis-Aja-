@@ -9577,11 +9577,11 @@ const renderKPIInfoModal = () => {
         <>
             {showCurtain && (
                 <div className="fixed inset-0 z-[9999] flex pointer-events-none overflow-hidden">
-                    <div className={`w-1/2 h-full bg-slate-900 border-r border-emerald-500/30 flex items-center justify-end pr-8 transition-transform duration-1000 ease-[cubic-bezier(0.83,0,0.17,1)] ${animateCurtain ? '-translate-x-full' : 'translate-x-0'}`}>
+                    <div className={`w-1/2 h-full bg-slate-900 border-r border-[#158ed4]/30 flex items-center justify-end pr-8 transition-transform duration-1000 ease-[cubic-bezier(0.83,0,0.17,1)] ${animateCurtain ? '-translate-x-full' : 'translate-x-0'}`}>
                         <div className="text-white text-5xl font-black">SIDA</div>
                     </div>
-                    <div className={`w-1/2 h-full bg-slate-900 border-l border-emerald-500/30 flex items-center justify-start pl-8 transition-transform duration-1000 ease-[cubic-bezier(0.83,0,0.17,1)] ${animateCurtain ? 'translate-x-full' : 'translate-x-0'}`}>
-                        <div className="text-emerald-500 text-5xl font-black">MON.</div>
+                    <div className={`w-1/2 h-full bg-slate-900 border-l border-[#158ed4]/30 flex items-center justify-start pl-8 transition-transform duration-1000 ease-[cubic-bezier(0.83,0,0.17,1)] ${animateCurtain ? 'translate-x-full' : 'translate-x-0'}`}>
+                        <div className="text-[#158ed4] text-5xl font-black">MON.</div>
                     </div>
                 </div>
             )}
