@@ -3564,7 +3564,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                     </td>
                                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{item.type}</td>
                                                     <td className="px-6 py-4 text-center">
-                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${item.condition === 'Baik' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${item.condition === 'Baik' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400' : item.condition === 'Rusak Sedang' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                                                             {item.condition}
                                                         </span>
                                                     </td>
@@ -3930,7 +3930,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                         )}
                                                     </td>
                                                     <td className="px-5 py-4 text-center">
-                                                        <span className={`px-3 py-1 rounded-full text-[11px] font-medium ${item.condition === 'Baik' ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 border border-green-200 dark:border-green-800/50' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800/50'}`}>
+                                                        <span className={`px-3 py-1 rounded-full text-[11px] font-medium ${item.condition === 'Baik' ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 border border-green-200 dark:border-green-800/50' : item.condition === 'Rusak Sedang' ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800/50'}`}>
                                                             {item.condition}
                                                         </span>
                                                     </td>
@@ -3996,6 +3996,61 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+                        
+                        {adminAsetModal.isOpen && (
+                            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setAdminAsetModal({ isOpen: false, mode: 'add', data: null })} />
+                                <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="relative bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-2xl rounded-3xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden">
+                                    <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700/50">
+                                        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{adminAsetModal.mode === 'edit' ? 'Edit Alat/Aset' : 'Tambah Alat/Aset'}</h3>
+                                        <button onClick={() => setAdminAsetModal({ isOpen: false, mode: 'add', data: null })} type="button" className="text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700 p-2 rounded-xl transition-colors"><Icon name="x" size={20} /></button>
+                                    </div>
+                                    <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                                        <form id="adminAsetForm" onSubmit={handleAdminAsetSubmit} className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nama Alat</label>
+                                                    <input type="text" required value={adminAsetFormData.name || ''} onChange={e => setAdminAsetFormData({...adminAsetFormData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Contoh: Theodolite, dll" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">ID Alat</label>
+                                                    <input type="text" value={adminAsetFormData.id || ''} onChange={e => setAdminAsetFormData({...adminAsetFormData, id: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500" placeholder={adminAsetModal.mode === 'add' ? 'Otomatis' : ''} readOnly={adminAsetModal.mode === 'edit'} title={adminAsetModal.mode === 'edit' ? 'ID Alat tidak dapat diubah setelah dibuat' : 'Kosongkan untuk penomoran otomatis'} />
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tipe/Kategori</label>
+                                                    <select value={adminAsetFormData.type || 'Alat Berat'} onChange={e => setAdminAsetFormData({...adminAsetFormData, type: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                                                        <option value="Alat Berat">Alat Berat</option>
+                                                        <option value="Kendaraan">Kendaraan</option>
+                                                        <option value="Peralatan Khusus">Peralatan Khusus</option>
+                                                        <option value="Alat Ukur">Alat Ukur</option>
+                                                        <option value="Elektronik">Elektronik</option>
+                                                        <option value="Lainnya">Lainnya</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Kondisi</label>
+                                                    <select value={adminAsetFormData.condition || 'Baik'} onChange={e => setAdminAsetFormData({...adminAsetFormData, condition: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                                                        <option value="Baik">Baik</option>
+                                                        <option value="Rusak Sedang">Rusak Sedang</option>
+                                                        <option value="Rusak Berat">Rusak Berat</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Catatan Tambahan</label>
+                                                <textarea rows="3" value={adminAsetFormData.notes || ''} onChange={e => setAdminAsetFormData({...adminAsetFormData, notes: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 custom-scrollbar"></textarea>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div className="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end gap-3">
+                                        <button onClick={() => setAdminAsetModal({ isOpen: false, mode: 'add', data: null })} type="button" className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl">Batal</button>
+                                        <button type="submit" form="adminAsetForm" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-md transition-colors">Simpan Data</button>
+                                    </div>
+                                </motion.div>
                             </div>
                         )}
                     </div>
