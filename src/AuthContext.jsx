@@ -37,8 +37,7 @@ export const AuthProvider = ({ children }) => {
                                 db.ref(`pmc_users/${user.uid}`).set({ role: 'Super Admin', email: user.email });
                                 setUserRole('Super Admin');
                             } else {
-                                db.ref(`pmc_users/${user.uid}`).set({ role: 'Guest', email: user.email });
-                                setUserRole('Guest'); // Default role
+                                setUserRole('Guest'); // Default local state, do NOT write to DB so deleted users don't resurrect
                             }
                             setLoading(false);
                         });
