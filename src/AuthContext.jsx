@@ -93,6 +93,7 @@ export const AuthProvider = ({ children }) => {
 
         switch (menuName) {
             case 'Proyek':
+                return ['Kordinator Divisi Teknis', 'PIC', 'Team Leader Pekerjaan', 'Manajer', 'Kordinator Tender'].includes(userRole);
             case 'Timesheet':
             case 'Time Schedule':
                 return ['Kordinator Divisi Teknis', 'PIC', 'Team Leader Pekerjaan', 'Manajer'].includes(userRole);
@@ -102,8 +103,10 @@ export const AuthProvider = ({ children }) => {
                 return ['Kordinator Divisi Teknis', 'PIC', 'Manajer'].includes(userRole);
             
             case 'Tenaga Ahli':
-            case 'Rekan Rekanan':
             case 'Manajemen LPSE':
+                return ['Manajer', 'Kordinator Tender'].includes(userRole);
+
+            case 'Rekan Rekanan':
                 return ['Manajer'].includes(userRole);
 
             case 'Manajemen Pengguna':
@@ -148,11 +151,11 @@ export const AuthProvider = ({ children }) => {
     };
 
     const canEditExperts = () => {
-        return ['Super Admin', 'Manajer Administrasi', 'HRD'].includes(userRole);
+        return ['Super Admin', 'Manajer Administrasi', 'HRD', 'Kordinator Tender'].includes(userRole);
     };
 
     const canManageAssignments = () => {
-        return ['Super Admin', 'Manajer Administrasi', 'HRD'].includes(userRole);
+        return ['Super Admin', 'Manajer Administrasi', 'HRD', 'Kordinator Tender'].includes(userRole);
     };
 
     const canManageAsset = () => {

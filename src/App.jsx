@@ -587,7 +587,7 @@ import * as XLSX from 'xlsx-js-style';
                     if (activeTab === 'tim' && !canAccessMenu('Alokasi Tim')) setActiveTab('dashboard');
                     if (activeTab === 'gantt' && !canAccessMenu('Plotting Jadwal')) setActiveTab('dashboard');
                     if (activeTab === 'ahli' && !canAccessMenu('Tenaga Ahli')) setActiveTab('dashboard');
-                    if (activeTab === 'penugasan' && !canAccessMenu('Rekan Rekanan')) setActiveTab('dashboard');
+                    if (activeTab === 'penugasan' && !canAccessMenu('Manajemen LPSE')) setActiveTab('dashboard');
                     if (activeTab === 'pengguna' && !canAccessMenu('Manajemen Pengguna')) setActiveTab('dashboard');
                     if (activeTab === 'admin-aset' && !canAccessMenu('Admin Aset')) setActiveTab('dashboard');
                     if (activeTab === 'kpi' && !canAccessMenu('KPI')) setActiveTab('dashboard');
@@ -2752,6 +2752,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                             )}
                                                         </td>
                                                         <td className="p-4 text-right lg:opacity-0 lg:group-hover:opacity-100 transition-opacity pt-5">
+                                                            {userRole !== 'Kordinator Tender' && (
                                                             <div className="flex justify-end gap-2 flex-col items-end">
                                                                 {p.computedStatus === 'Terlambat' && (
                                                                     <button onClick={() => handleAnalyzeDomino(p)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 rounded-lg shadow-md animate-pulse hover:animate-none"><Icon name="alert-triangle" size={14} /> Cek Domino</button>
@@ -2799,6 +2800,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                     </>
                                                                 )}
                                                             </div>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 );
@@ -8390,6 +8392,7 @@ const renderKPIInfoModal = () => {
                     "Manajer Teknis",
                     "Manajer Administrasi",
                     "Kordinator Divisi Teknis",
+                    "Kordinator Tender",
                     "Kordinator Aset",
                     "PIC",
                     "Team Leader Pekerjaan",
