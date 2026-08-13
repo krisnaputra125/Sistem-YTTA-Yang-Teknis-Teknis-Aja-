@@ -89,7 +89,7 @@ export default function Login() {
     return (
         <div className="min-h-screen bg-slate-900 flex flex-col md:flex-row font-sans text-slate-100 overflow-hidden relative">
             {/* Background Animations & Orbs */}
-            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-600/20 blur-[120px] pointer-events-none animate-pulse"></div>
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#158ed4]/20 blur-[120px] pointer-events-none animate-pulse"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-blue-600/20 blur-[150px] pointer-events-none animate-pulse" style={{ animationDelay: '2s' }}></div>
 
             {/* Left Side: Branding / Visuals (Hidden on small screens) */}
@@ -101,22 +101,22 @@ export default function Login() {
                         alt="Modern Architecture" 
                         className="w-full h-full object-cover opacity-30 mix-blend-overlay"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-emerald-900/40"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-[#158ed4]/40"></div>
                 </div>
 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-12">
                         <img src={logoSidamon} alt="SIDAMON Logo" className="w-12 h-12 object-contain drop-shadow-md" />
-                        <h1 className="text-3xl font-black tracking-tight text-white">SIDAMON<span className="text-emerald-500">.</span></h1>
+                        <h1 className="text-3xl font-black tracking-tight text-white">SIDAMON<span className="text-[#158ed4]">.</span></h1>
                     </div>
                     
                     <h2 className="text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight text-white mb-6">
                         Enterprise <br /> 
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#158ed4] to-cyan-400">
                             Resource Planning
                         </span>
                     </h2>
-                    <p className="text-lg text-slate-300 max-w-md leading-relaxed border-l-4 border-emerald-500 pl-4">
+                    <p className="text-lg text-slate-300 max-w-md leading-relaxed border-l-4 border-[#158ed4] pl-4">
                         Sistem Informasi Database & Monitoring Gaharu Sempana Group. Kelola proyek, inventaris, dan tenaga ahli dalam satu ekosistem cerdas.
                     </p>
                 </div>
@@ -130,13 +130,13 @@ export default function Login() {
                     {/* Mobile Branding (Visible only on small screens) */}
                     <div className="md:hidden text-center mb-10">
                         <img src={logoSidamon} alt="SIDAMON Logo" className="w-16 h-16 object-contain mx-auto drop-shadow-lg mb-6" />
-                        <h1 className="text-3xl font-black text-white tracking-tight mb-2">SIDAMON<span className="text-emerald-500">.</span></h1>
+                        <h1 className="text-3xl font-black text-white tracking-tight mb-2">SIDAMON<span className="text-[#158ed4]">.</span></h1>
                         <p className="text-sm text-slate-400">Gaharu Sempana Group</p>
                     </div>
 
                     <div className="bg-slate-800/40 backdrop-blur-2xl border border-white/10 p-8 sm:p-10 rounded-[2rem] shadow-2xl relative overflow-hidden">
                         {/* Decorative top gradient line */}
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-500"></div>
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#158ed4] via-cyan-500 to-blue-500"></div>
 
                         <div className="mb-8">
                             <h2 className="text-2xl font-bold text-white mb-2">{isLogin ? 'Selamat Datang' : 'Buat Akun Baru'}</h2>
@@ -153,9 +153,9 @@ export default function Login() {
                         )}
                         
                         {successMsg && (
-                            <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3 fade-in">
-                                <Icon name="check-circle-2" size={18} className="text-emerald-400 shrink-0 mt-0.5" />
-                                <span className="text-emerald-300 text-sm font-medium">{successMsg}</span>
+                            <div className="mb-6 p-4 rounded-xl bg-[#158ed4]/10 border border-[#158ed4]/20 flex items-start gap-3 fade-in">
+                                <Icon name="check-circle-2" size={18} className="text-[#158ed4] shrink-0 mt-0.5" />
+                                <span className="text-[#158ed4] text-sm font-medium">{successMsg}</span>
                             </div>
                         )}
 
@@ -164,12 +164,12 @@ export default function Login() {
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Username</label>
                                     <div className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-emerald-400 transition-colors">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#158ed4] transition-colors">
                                             <Icon name="user" size={18} />
                                         </div>
                                         <input 
                                             type="text" 
-                                            className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner placeholder:text-slate-600"
+                                            className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-[#158ed4] focus:ring-1 focus:ring-[#158ed4] transition-all shadow-inner placeholder:text-slate-600"
                                             placeholder="username_unik"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
@@ -181,12 +181,12 @@ export default function Login() {
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Email</label>
                                 <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-emerald-400 transition-colors">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#158ed4] transition-colors">
                                         <Icon name="mail" size={18} />
                                     </div>
                                     <input 
                                         type="email" 
-                                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner placeholder:text-slate-600"
+                                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-[#158ed4] focus:ring-1 focus:ring-[#158ed4] transition-all shadow-inner placeholder:text-slate-600"
                                         placeholder="nama@email.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -197,12 +197,12 @@ export default function Login() {
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Password</label>
                                 <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-emerald-400 transition-colors">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#158ed4] transition-colors">
                                         <Icon name="lock" size={18} />
                                     </div>
                                     <input 
                                         type={showPassword ? "text" : "password"}
-                                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-12 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner placeholder:text-slate-600"
+                                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-12 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-[#158ed4] focus:ring-1 focus:ring-[#158ed4] transition-all shadow-inner placeholder:text-slate-600"
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -218,12 +218,12 @@ export default function Login() {
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Konfirmasi Password</label>
                                     <div className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-emerald-400 transition-colors">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#158ed4] transition-colors">
                                             <Icon name="lock" size={18} />
                                         </div>
                                         <input 
                                             type={showConfirmPassword ? "text" : "password"}
-                                            className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-12 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner placeholder:text-slate-600"
+                                            className="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl pl-11 pr-12 py-3.5 text-sm text-slate-100 focus:outline-none focus:border-[#158ed4] focus:ring-1 focus:ring-[#158ed4] transition-all shadow-inner placeholder:text-slate-600"
                                             placeholder="••••••••"
                                             value={confirmPassword}
                                             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -239,7 +239,7 @@ export default function Login() {
                             <button 
                                 type="submit" 
                                 disabled={loading}
-                                className="w-full group relative overflow-hidden bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-4 px-4 rounded-2xl transition-all shadow-lg shadow-emerald-900/40 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+                                className="w-full group relative overflow-hidden bg-[#158ed4] hover:bg-[#158ed4] text-white font-bold text-sm py-4 px-4 rounded-2xl transition-all shadow-lg shadow-[#158ed4]/40 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
                             >
                                 <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
                                 <span className="relative flex items-center justify-center gap-2">
@@ -259,9 +259,9 @@ export default function Login() {
                                 className="text-sm text-slate-400 hover:text-white transition-colors font-medium flex items-center justify-center gap-2 mx-auto"
                             >
                                 {isLogin ? (
-                                    <>Belum punya akun? <span className="text-emerald-400 font-bold">Daftar sekarang</span></>
+                                    <>Belum punya akun? <span className="text-[#158ed4] font-bold">Daftar sekarang</span></>
                                 ) : (
-                                    <>Sudah punya akun? <span className="text-emerald-400 font-bold">Masuk di sini</span></>
+                                    <>Sudah punya akun? <span className="text-[#158ed4] font-bold">Masuk di sini</span></>
                                 )}
                             </button>
                         </div>
