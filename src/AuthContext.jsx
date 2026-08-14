@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const canEditTeamAllocation = () => {
-        return ['Super Admin', 'Manajer Teknis', 'Kordinator Divisi Teknis', 'PIC'].includes(userRole);
+        return ['Super Admin', 'Manajer Teknis', 'PIC'].includes(userRole);
     };
 
     const canEditInventory = () => {
