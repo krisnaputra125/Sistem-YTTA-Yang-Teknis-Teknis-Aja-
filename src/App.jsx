@@ -5221,7 +5221,21 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                                 <div className="flex flex-col gap-0 text-xs bg-white/40 dark:bg-slate-900/50 border border-white/50 dark:border-slate-700/50 p-2 rounded-2xl shadow-inner shadow-slate-100/50 dark:shadow-none">
                                                                     {p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi') ? (
                                                                         <div className="space-y-3 mt-1">
-                                                                            {['Team Leader', 'Tenaga Ahli', 'Inspector', 'Laboratory Technician', 'Quantity Surveyor', 'K3', 'Administrasi'].map(role => {
+                                                                            {[...new Set(p.team.map(m => p.pengawasanDetails?.[m]?.role || 'Inspector'))].sort((a, b) => {
+                                                                                const getW = r => {
+                                                                                    const rl = r.toLowerCase();
+                                                                                    if(rl.includes('team leader')) return 1;
+                                                                                    if(rl.includes('ahli')) return 2;
+                                                                                    if(rl.includes('inspector') || rl.includes('pengawas')) return 3;
+                                                                                    if(rl.includes('quantity') || rl.includes('estimator') || rl.includes('qs')) return 4;
+                                                                                    if(rl.includes('laboratory') || rl.includes('surveyor') || rl.includes('drafter')) return 5;
+                                                                                    if(rl.includes('k3')) return 6;
+                                                                                    if(rl.includes('admin')) return 7;
+                                                                                    return 8;
+                                                                                };
+                                                                                const wa = getW(a), wb = getW(b);
+                                                                                return wa !== wb ? wa - wb : a.localeCompare(b);
+                                                                            }).map(role => {
                                                                                 const roleMembers = p.team.filter(m => (p.pengawasanDetails?.[m]?.role || 'Inspector') === role);
                                                                                 if (roleMembers.length === 0) return null;
                                                                                 return (
