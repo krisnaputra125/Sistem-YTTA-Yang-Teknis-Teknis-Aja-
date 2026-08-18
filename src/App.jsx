@@ -10108,19 +10108,30 @@ const renderKPIInfoModal = () => {
                                     </div>
                                 </header>
 
-                                <div className="relative z-10 w-full animate-fade-in pb-24 lg:pb-0">
-                                    {activeTab === 'dashboard' && renderDashboard()}
-                                    {activeTab === 'proyek' && canAccessMenu('Proyek') && renderProyek()}
-                                    {activeTab === 'schedule' && canAccessMenu('Proyek') && renderTimeSchedule()}
-                                    {activeTab === 'master-schedule' && canAccessMenu('Proyek') && renderMasterSchedule()}
-                                    {activeTab === 'tim' && canAccessMenu('Proyek') && renderTim()}
-                                    {activeTab === 'gantt' && canAccessMenu('Proyek') && renderGantt()}
-                                    {activeTab === 'ahli' && canAccessMenu('Tenaga Ahli') && renderTenagaAhli()}
-                                    {activeTab === 'penugasan' && canAccessMenu('Tenaga Ahli') && renderPenugasan()}
-                                    {activeTab === 'inventaris' && canAccessMenu('Inventaris') && renderInventory()}
-                                    {activeTab === 'admin-aset' && canAccessMenu('Admin Aset') && renderAdminAset()}
-                                    {activeTab === 'kpi' && canAccessMenu('KPI') && renderKPI()}
-                                    {activeTab === 'pengguna' && canAccessMenu('Manajemen Pengguna') && renderManajemenPengguna()}
+                                <div className="relative z-10 w-full animate-fade-in pb-24 lg:pb-0 overflow-x-hidden">
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={activeTab}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 10 }}
+                                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                                            className="w-full"
+                                        >
+                                            {activeTab === 'dashboard' && renderDashboard()}
+                                            {activeTab === 'proyek' && canAccessMenu('Proyek') && renderProyek()}
+                                            {activeTab === 'schedule' && canAccessMenu('Proyek') && renderTimeSchedule()}
+                                            {activeTab === 'master-schedule' && canAccessMenu('Proyek') && renderMasterSchedule()}
+                                            {activeTab === 'tim' && canAccessMenu('Proyek') && renderTim()}
+                                            {activeTab === 'gantt' && canAccessMenu('Proyek') && renderGantt()}
+                                            {activeTab === 'ahli' && canAccessMenu('Tenaga Ahli') && renderTenagaAhli()}
+                                            {activeTab === 'penugasan' && canAccessMenu('Tenaga Ahli') && renderPenugasan()}
+                                            {activeTab === 'inventaris' && canAccessMenu('Inventaris') && renderInventory()}
+                                            {activeTab === 'admin-aset' && canAccessMenu('Admin Aset') && renderAdminAset()}
+                                            {activeTab === 'kpi' && canAccessMenu('KPI') && renderKPI()}
+                                            {activeTab === 'pengguna' && canAccessMenu('Manajemen Pengguna') && renderManajemenPengguna()}
+                                        </motion.div>
+                                    </AnimatePresence>
                                 </div>
                             </main>
 
