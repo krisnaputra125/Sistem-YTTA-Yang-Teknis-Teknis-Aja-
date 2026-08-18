@@ -9530,16 +9530,16 @@ const renderKPIInfoModal = () => {
                                                                 else certDisplay += ` & ${cDisplay}`;
                                                             });
                                                             return (
-                                                                <div key={idx} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700/50">
-                                                                    <div>
-                                                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                                                <div key={idx} className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700/50">
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
                                                                             {expertName}
                                                                             {expPlot.role && <span className="font-normal text-slate-500">{" "}({expPlot.role})</span>}
                                                                         </p>
-                                                                        {(expPlot.certificateName || (expPlot.additionalCertificates || []).length > 0) && <p className="text-[10px] text-slate-500">SKA: {certDisplay}</p>}
+                                                                        {(expPlot.certificateName || (expPlot.additionalCertificates || []).length > 0) && <p className="text-[10px] text-slate-500 truncate">SKA: {certDisplay}</p>}
                                                                     </div>
-                                                                    <div className="text-right">
-                                                                        <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-0.5 rounded-full">{expPlot.manMonth} MM</span>
+                                                                    <div className="text-right shrink-0">
+                                                                        <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-0.5 rounded-full whitespace-nowrap">{expPlot.manMonth} MM</span>
                                                                     </div>
                                                                 </div>
                                                             )
