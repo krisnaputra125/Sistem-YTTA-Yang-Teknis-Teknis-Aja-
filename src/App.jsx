@@ -3233,6 +3233,7 @@ function App() {
             const [searchExpertTab, setSearchExpertTab] = useState("");
             const [expertPage, setExpertPage] = useState(1);
             const [searchAssignmentTab, setSearchAssignmentTab] = useState("");
+            const [assignmentTabFilter, setAssignmentTabFilter] = useState("active");
             const [projectPage, setProjectPage] = useState(1);
             const [dominoAnalysis, setDominoAnalysis] = useState(null);
 
@@ -9503,16 +9504,19 @@ const renderKPIInfoModal = () => {
 
             const renderPenugasan = () => {
                 const filteredAssignments = assignments.filter(asg => {
-                    // Filter pekerjaan yang sudah selesai (akhir kontrak < hari ini) agar tampilan tetap clean
+                    // Filter pekerjaan berdasarkan status (Berjalan vs Riwayat Selesai)
                     if (asg.endDate) {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
                         const end = new Date(asg.endDate);
                         end.setHours(0, 0, 0, 0);
 
-                        if (end < today) {
-                            return false;
-                        }
+                        const isCompleted = end < today;
+                        if (assignmentTabFilter === "active" && isCompleted) return false;
+                        if (assignmentTabFilter === "completed" && !isCompleted) return false;
+                    } else if (assignmentTabFilter === "completed") {
+                        // Jika tidak ada endDate, maka dianggap belum selesai (Sedang Berjalan)
+                        return false;
                     }
 
                     const search = searchAssignmentTab.toLowerCase();
@@ -9530,7 +9534,7 @@ const renderKPIInfoModal = () => {
 
                 return (
                     <div className="space-y-6 fade-in pb-12">
-                        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 dark:border-slate-800 p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
+                        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 dark:border-slate-800 p-4 lg:p-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 transition-colors">
                             <div>
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                     <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
@@ -9540,7 +9544,17 @@ const renderKPIInfoModal = () => {
                                 </h3>
                                 <p className="text-sm text-slate-500 mt-1">Kelola plotting penugasan tenaga ahli untuk proyek.</p>
                             </div>
-                            <div className="flex gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+                            <div className="flex gap-2 w-full xl:w-auto flex-wrap sm:flex-nowrap">
+                                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0">
+                                    <button 
+                                        onClick={() => setAssignmentTabFilter('active')} 
+                                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${assignmentTabFilter === 'active' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                    >Berjalan</button>
+                                    <button 
+                                        onClick={() => setAssignmentTabFilter('completed')} 
+                                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${assignmentTabFilter === 'completed' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                    >Selesai</button>
+                                </div>
                                 <div className="relative flex-1 sm:w-64 min-w-[200px]">
                                     <input type="text" placeholder="Cari penugasan..." value={searchAssignmentTab} onChange={(e) => setSearchAssignmentTab(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow" />
                                     <Icon name="search" size={16} className="absolute left-3 top-3 text-slate-400" />
