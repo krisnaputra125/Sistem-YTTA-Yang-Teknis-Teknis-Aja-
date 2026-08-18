@@ -9477,18 +9477,18 @@ const renderKPIInfoModal = () => {
                             {filteredAssignments.map(asg => {
                                 return (
                                     <div key={asg.id} className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-md border border-slate-200 dark:border-slate-800 overflow-hidden transition-all group flex flex-col">
-                                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-900/50">
-                                            <div>
-                                                <h4 className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight mb-2">{asg.jobName}</h4>
+                                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start gap-4 bg-slate-50/50 dark:bg-slate-900/50">
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight mb-2 break-words">{asg.jobName}</h4>
                                                 <div className="flex flex-col items-start gap-2">
-                                                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 break-all sm:break-normal">
                                                         {asg.tenderType}
                                                     </span>
-                                                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{asg.lpseName}</p>
+                                                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 truncate w-full">{asg.lpseName}</p>
                                                 </div>
                                             </div>
                                             {canManageAssignments() && (
-                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex gap-1 shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button onClick={() => setModalConfig({ isOpen: true, type: 'assignment', mode: 'edit', data: asg })} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-800 rounded-lg" title="Edit Penugasan"><Icon name="edit-3" size={16} /></button>
                                                     <button onClick={() => {
                                                         setConfirmDialog({ isOpen: true, title: 'Hapus Pekerjaan', message: `Hapus pekerjaan ${asg.jobName}?`, type: 'danger', onConfirm: () => handleAssignmentAction('delete', { id: asg.id }) });
