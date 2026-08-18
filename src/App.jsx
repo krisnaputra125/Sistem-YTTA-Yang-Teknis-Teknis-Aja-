@@ -7887,11 +7887,10 @@ const renderKPIInfoModal = () => {
                                     <table className="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 mb-1">
                                         <thead>
                                             <tr className="bg-gray-100">
-                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[30%]">Nama Personil</th>
-                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Peran</th>
-                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[15%]">Man Month</th>
-                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Deadline Spesifik</th>
-                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[15%]">Status Lapangan</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[35%]">Nama Personil</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[25%]">Peran</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Man Month</th>
+                                                <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[20%]">Status Lapangan</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -7906,13 +7905,12 @@ const renderKPIInfoModal = () => {
                                                         <td className="border border-slate-300 dark:border-slate-700 p-1.5 font-bold">{member}</td>
                                                         <td className="border border-slate-300 dark:border-slate-700 p-1.5">{details.role || 'Inspector'}</td>
                                                         <td className="border border-slate-300 dark:border-slate-700 p-1.5 text-center">{details.manMonth || '-'}</td>
-                                                        <td className="border border-slate-300 dark:border-slate-700 p-1.5">{details.deadline ? formatDateIndo(details.deadline) : '-'}</td>
                                                         <td className="border border-slate-300 dark:border-slate-700 p-1.5">{details.statusTurun || 'Tidak Turun'}</td>
                                                     </tr>
                                                 )
                                             })}
                                             {(!p.team || p.team.length === 0) && (
-                                                <tr><td colSpan="5" className="border border-slate-300 dark:border-slate-700 p-1.5 text-center italic">Belum ada personil diplot.</td></tr>
+                                                <tr><td colSpan="4" className="border border-slate-300 dark:border-slate-700 p-1.5 text-center italic">Belum ada personil diplot.</td></tr>
                                             )}
                                         </tbody>
                                     </table>
