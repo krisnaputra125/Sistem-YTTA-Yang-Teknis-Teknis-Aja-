@@ -5364,11 +5364,29 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                     <span className="sr-only">Previous</span>
                                                     &larr;
                                                 </button>
-                                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
-                                                    <button key={num} onClick={() => setProjectPage(num)} className={`relative inline-flex items-center px-3 py-1.5 border text-xs font-semibold ${projectPage === num ? 'z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900/30 dark:border-blue-500/50 dark:text-blue-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>
-                                                        {num}
-                                                    </button>
-                                                ))}
+                                                {(() => {
+                                                    let pages = [];
+                                                    if (totalPages <= 7) {
+                                                        pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+                                                    } else {
+                                                        if (projectPage <= 4) {
+                                                            pages = [1, 2, 3, 4, 5, '...', totalPages];
+                                                        } else if (projectPage >= totalPages - 3) {
+                                                            pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                                                        } else {
+                                                            pages = [1, '...', projectPage - 1, projectPage, projectPage + 1, '...', totalPages];
+                                                        }
+                                                    }
+                                                    return pages.map((num, idx) => (
+                                                        num === '...' ? (
+                                                            <span key={`ellipsis-${idx}`} className="relative inline-flex items-center px-3 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">...</span>
+                                                        ) : (
+                                                            <button key={num} onClick={() => setProjectPage(num)} className={`relative inline-flex items-center px-3 py-1.5 border text-xs font-semibold ${projectPage === num ? 'z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900/30 dark:border-blue-500/50 dark:text-blue-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>
+                                                                {num}
+                                                            </button>
+                                                        )
+                                                    ));
+                                                })()}
                                                 <button onClick={() => setProjectPage(Math.min(totalPages, projectPage + 1))} disabled={projectPage === totalPages} className="relative inline-flex items-center px-2 py-1.5 rounded-r-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50">
                                                     <span className="sr-only">Next</span>
                                                     &rarr;
