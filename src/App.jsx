@@ -9647,6 +9647,25 @@ const renderKPIInfoModal = () => {
                                                 )}
                                             </div>
                                         </div>
+                                        {assignmentTabFilter === 'completed' && canManageAssignments() && (
+                                            <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-emerald-50/50 dark:bg-emerald-900/10 flex justify-between items-center">
+                                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Arsipkan Data</span>
+                                                <button 
+                                                    onClick={() => {
+                                                        setConfirmDialog({ 
+                                                            isOpen: true, 
+                                                            title: 'Selesai & Bersihkan Data', 
+                                                            message: `Apakah Anda yakin pekerjaan "${asg.jobName}" sudah 100% selesai di lapangan? Tindakan ini akan menghapus data penugasan ini dari sistem secara permanen agar tidak menumpuk.`, 
+                                                            type: 'danger', 
+                                                            onConfirm: () => handleAssignmentAction('delete', { id: asg.id }) 
+                                                        });
+                                                    }}
+                                                    className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 dark:bg-emerald-900/40 dark:hover:bg-emerald-900/60 dark:text-emerald-400 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 border border-emerald-200 dark:border-emerald-800/50 shadow-sm"
+                                                >
+                                                    <Icon name="check-circle" size={14} /> 100% Selesai
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
