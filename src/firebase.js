@@ -21,3 +21,21 @@ export const db = firebase.database();
 export const auth = firebase.auth();
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(console.error);
 export default firebase;
+
+export const logActivity = async (action, menu, details, userData) => {
+    try {
+        if (!userData) return;
+        const timestamp = new Date().toISOString();
+        await db.ref('pmc_logs').push({
+            userId: userData.uid || 'unknown',
+            username: userData.username || userData.email || 'Unknown User',
+            role: userData.role || 'Unknown Role',
+            action,
+            menu,
+            details,
+            timestamp
+        });
+    } catch (e) {
+        console.error('Gagal mencatat log aktivitas:', e);
+    }
+};

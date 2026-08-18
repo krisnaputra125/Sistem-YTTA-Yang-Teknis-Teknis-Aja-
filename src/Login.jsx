@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { auth, db } from './firebase';
+import { auth, db, logActivity } from './firebase';
 import logoSidamon from './assets/logo-sidamon.png';
 
 const Icon = ({ name, size = 20, className = "" }) => {
@@ -40,7 +40,13 @@ export default function Login() {
 
         try {
             if (isLogin) {
-                await auth.signInWithEmailAndPassword(email, password);
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                // Log activity
+                const userSnap = await db.ref(`pmc_users/${userCredential.user.uid}`).once('value');
+                if (userSnap.exists()) {
+                    const userData = { uid: userCredential.user.uid, ...userSnap.val() };
+                    await logActivity('LOGIN', 'Autentikasi', 'Berhasil masuk ke sistem', userData);
+                }
                 // AuthContext akan otomatis mendeteksi auth state change
             } else {
                 if (!username.trim()) throw new Error("Username harus diisi");

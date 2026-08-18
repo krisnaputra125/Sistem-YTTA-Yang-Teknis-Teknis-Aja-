@@ -9,14 +9,14 @@ export const AppContext = createContext();
 import { motion, AnimatePresence } from 'motion/react';
 import logoImg from '../LGIHT TRANSPARAN (1).PNG';
 import logoSidamon from './assets/logo-sidamon.png';
-import firebase, { db, auth } from './firebase';
-
+import firebase, { db, auth, logActivity } from './firebase';
 import * as XLSX from 'xlsx-js-style';
 
 
         // --- SISTEM ICON INTERNAL ---
         const Icon = ({ name, size = 20, className = "" }) => {
             const paths = {
+                "activity": '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
                 "package": '<line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
                 "layout-dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
                 "briefcase": '<rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
@@ -3059,9 +3059,16 @@ const ImportExcelModal = () => {
 function App() {
     const { currentUser, userRole, username, canAccessMenu, canCreateProject, canDeleteProject, canEditProjectAdmin, canEditProjectTechnical, canEditTeamAllocation, canEditExperts, canManageAssignments, canManageAsset } = useAuth();
     
+            const handleLogout = async () => {
+                const userData = { uid: currentUser?.uid, username, role: userRole, email: currentUser?.email };
+                await logActivity('LOGOUT', 'Autentikasi', 'Keluar dari sistem', userData);
+                auth.signOut();
+            };
+
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
             const [activeTab, setActiveTab] = useState('dashboard');
+            const [activityLogs, setActivityLogs] = useState([]);
             
             const [showCurtain, setShowCurtain] = useState(false);
             const [animateCurtain, setAnimateCurtain] = useState(false);
@@ -3481,6 +3488,39 @@ function App() {
                         setAssignments(asgData.filter(Boolean));
                     });
 
+                    // Listener Khusus untuk Log Aktivitas & Auto Cleanup 30 Hari
+                    firebase.database().ref('pmc_logs').on('value', (snap) => {
+                        let logsData = snap.val();
+                        if (logsData) {
+                            const now = Date.now();
+                            const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                            let hasExpiredLogs = false;
+                            
+                            const logsArray = Object.keys(logsData).map(key => {
+                                const log = { id: key, ...logsData[key] };
+                                const logTime = new Date(log.timestamp).getTime();
+                                if (now - logTime > thirtyDaysMs) {
+                                    hasExpiredLogs = true;
+                                    return null;
+                                }
+                                return log;
+                            }).filter(Boolean);
+                            
+                            if (hasExpiredLogs && userRole === 'Super Admin') {
+                                const validLogsMap = {};
+                                logsArray.forEach(l => { 
+                                    const { id, ...rest } = l;
+                                    validLogsMap[id] = rest; 
+                                });
+                                firebase.database().ref('pmc_logs').set(validLogsMap);
+                            }
+                            
+                            setActivityLogs(logsArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+                        } else {
+                            setActivityLogs([]);
+                        }
+                    });
+
                     // Listener Khusus untuk LPSE List
                     firebase.database().ref('pmc_lpse_list').on('value', (snap) => {
                         const lpseData = snap.val();
@@ -3845,6 +3885,15 @@ function App() {
                     }
 
                     await firebase.database().ref('pmc_inventory').set(newData);
+                    
+                    // --- Hook Audit Trail ---
+                    const uData = { uid: currentUser?.uid, username, role: userRole, email: currentUser?.email };
+                    let actionLabel = action.toUpperCase();
+                    let itemName = payload?.itemName || payload?.name || 'Item';
+                    let actionDetail = action === 'borrow-cart' ? 'Memproses keranjang peminjaman' : `${actionLabel} data inventaris: ${itemName}`;
+                    logActivity(actionLabel, 'Logistik & Inventaris', actionDetail, uData);
+                    // ------------------------
+
                     setInventory(newData);
                     setModalConfig({ isOpen: false, type: null, mode: 'add', data: null });
                 } catch (error) {
@@ -4044,6 +4093,15 @@ function App() {
                         firebase.database().ref('pmc_experts').set(newData).catch(e => console.error(e));
                     }, 800);
                     setExperts(newData);
+
+                    // --- Hook Audit Trail ---
+                    const uData = { uid: currentUser?.uid, username, role: userRole, email: currentUser?.email };
+                    let actionLabel = action.toUpperCase();
+                    let expName = payload?.name || 'Pakar';
+                    if (actionLabel.startsWith('UPDATE_')) actionLabel = 'EDIT';
+                    let actionDetail = `${actionLabel} data tenaga ahli: ${expName}`;
+                    logActivity(actionLabel, 'Tenaga Ahli', actionDetail, uData);
+                    // ------------------------
                     if (action !== 'delete') setModalConfig({ isOpen: false, type: null, mode: 'add', data: null });
                 } catch (error) {
                     console.error("Firebase Expert Write Error:", error);
@@ -4181,6 +4239,15 @@ function App() {
                     }, 800);
 
                     setAssignments(newData);
+                    
+                    // --- Hook Audit Trail ---
+                    const uData = { uid: currentUser?.uid, username, role: userRole, email: currentUser?.email };
+                    let actionLabel = action.toUpperCase();
+                    let asgName = payload?.jobName || 'Penugasan';
+                    let actionDetail = `${actionLabel} data penugasan: ${asgName}`;
+                    logActivity(actionLabel, 'Penugasan', actionDetail, uData);
+                    // ------------------------
+
                     if (action !== 'delete') setModalConfig({ isOpen: false, type: null, mode: 'add', data: null });
 
                     // Sinkronisasi otomatis ke List Proyek (hanya untuk tipe Pengawasan)
@@ -4278,6 +4345,24 @@ function App() {
                             console.error("Failed to auto-create expert from resource:", expError);
                         }
                     }
+
+                    // --- Hook Audit Trail ---
+                    const uData = { uid: currentUser?.uid, username, role: userRole, email: currentUser?.email };
+                    let actionLabel = action.toUpperCase();
+                    let menuLabel = type === 'project' ? 'Data Proyek' : 'Data Tim/Resource';
+                    
+                    let targetName = payload.nama || payload.name;
+                    if (action === 'delete') {
+                        const targetObj = type === 'project' 
+                            ? (currentData.projects || []).find(p => p && p.id === payload.id)
+                            : (currentData.resources || []).find(r => r && r.id === payload.id);
+                        if (targetObj) targetName = targetObj.nama || targetObj.name;
+                    }
+                    targetName = targetName || 'Unknown';
+                    
+                    let actionDetail = `${actionLabel} data ${type}: ${targetName}`;
+                    logActivity(actionLabel, menuLabel, actionDetail, uData);
+                    // ------------------------
 
                     closeModal();
                     // Tidak perlu memanggil fetch ulang, karena on('value') akan otomatis merender state seketika!
@@ -9815,6 +9900,67 @@ const renderKPIInfoModal = () => {
             };
 
 
+            // --- UI LOGBOOK AKTIVITAS ---
+            const renderLogbook = () => (
+                <div className="space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-6 rounded-3xl">
+                        <div>
+                            <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-3">
+                                <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+                                    <Icon name="activity" size={24} />
+                                </div>
+                                Logbook Aktivitas Sistem
+                            </h2>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2 pl-2">Jejak audit otomatis aktivitas user (Hanya Super Admin, Auto-delete &gt;30 hari)</p>
+                        </div>
+                    </div>
+                    
+                    <div className="glass-card rounded-3xl overflow-hidden shadow-sm border border-white/40 dark:border-slate-800/60 p-6">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[800px]">
+                                <thead>
+                                    <tr className="bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-200/50 dark:border-slate-700/50 text-slate-500 dark:text-slate-400">
+                                        <th className="p-4 font-bold text-sm rounded-tl-xl whitespace-nowrap">WAKTU</th>
+                                        <th className="p-4 font-bold text-sm whitespace-nowrap">USER</th>
+                                        <th className="p-4 font-bold text-sm whitespace-nowrap">MODUL</th>
+                                        <th className="p-4 font-bold text-sm whitespace-nowrap">AKSI</th>
+                                        <th className="p-4 font-bold text-sm rounded-tr-xl w-full">DETAIL</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-sm">
+                                    {activityLogs.length > 0 ? activityLogs.map((log) => {
+                                        let actionColor = 'text-slate-600 bg-slate-100 dark:text-slate-300 dark:bg-slate-800';
+                                        if (log.action === 'LOGIN' || log.action === 'LOGOUT') actionColor = 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-900/30';
+                                        else if (log.action === 'ADD') actionColor = 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30';
+                                        else if (log.action === 'EDIT') actionColor = 'text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30';
+                                        else if (log.action === 'DELETE') actionColor = 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
+                                        
+                                        return (
+                                            <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                                <td className="p-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">{formatDateTimeIndo(log.timestamp)}</td>
+                                                <td className="p-4 whitespace-nowrap">
+                                                    <div className="font-semibold text-slate-800 dark:text-slate-200">{log.username || 'Unknown'}</div>
+                                                    <div className="text-xs text-slate-500">{log.role || '-'}</div>
+                                                </td>
+                                                <td className="p-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{log.menu}</td>
+                                                <td className="p-4 whitespace-nowrap">
+                                                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${actionColor}`}>{log.action}</span>
+                                                </td>
+                                                <td className="p-4 text-slate-600 dark:text-slate-300 min-w-[300px]">{log.details}</td>
+                                            </tr>
+                                        )
+                                    }) : (
+                                        <tr>
+                                            <td colSpan="5" className="p-8 text-center text-slate-500">Tidak ada catatan log aktivitas saat ini.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+
             const appContextValue = {
                 modalConfig,
                 setModalConfig,
@@ -9876,7 +10022,7 @@ const renderKPIInfoModal = () => {
                         </div>
                         <h1 className="text-xl font-bold mb-2">Menunggu Persetujuan</h1>
                         <p className="text-sm text-slate-400 mb-6">Akun Anda sedang direview oleh Super Admin. Silakan hubungi Administrator untuk mendapatkan akses.</p>
-                        <button onClick={() => auth.signOut()} className="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium py-2 px-4 rounded-xl transition-colors w-full">Keluar</button>
+                        <button onClick={handleLogout} className="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium py-2 px-4 rounded-xl transition-colors w-full">Keluar</button>
                     </div>
                 </div>
             ) : (
@@ -10034,11 +10180,17 @@ const renderKPIInfoModal = () => {
                                             <SidebarItem icon={<Icon name="settings" size={20} />} label="Manajemen Pengguna" isActive={activeTab === 'pengguna'} onClick={() => handleTabChange('pengguna')} />
                                         </>
                                     )}
+                                    {userRole === 'Super Admin' && (
+                                        <>
+                                            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Audit</div>
+                                            <SidebarItem icon={<Icon name="activity" size={20} />} label="Log Aktivitas" isActive={activeTab === 'logbook'} onClick={() => handleTabChange('logbook')} />
+                                        </>
+                                    )}
                                 </nav>
 
                                 <div className="p-4 border-t border-slate-200/50 dark:border-slate-700/30">
                                     <button 
-                                        onClick={() => auth.signOut()}
+                                        onClick={handleLogout}
                                         className="w-full flex items-center justify-center gap-2 p-3 rounded-xl transition-all bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-red-200 dark:hover:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 group shadow-sm"
                                     >
                                         <Icon name="log-out" size={18} className="transition-transform group-hover:-translate-x-1" />
@@ -10130,6 +10282,7 @@ const renderKPIInfoModal = () => {
                                             {activeTab === 'admin-aset' && canAccessMenu('Admin Aset') && renderAdminAset()}
                                             {activeTab === 'kpi' && canAccessMenu('KPI') && renderKPI()}
                                             {activeTab === 'pengguna' && canAccessMenu('Manajemen Pengguna') && renderManajemenPengguna()}
+                                            {activeTab === 'logbook' && userRole === 'Super Admin' && renderLogbook()}
                                         </motion.div>
                                     </AnimatePresence>
                                 </div>
@@ -10172,9 +10325,12 @@ const renderKPIInfoModal = () => {
                                             {canAccessMenu('Manajemen Pengguna') && (
                                                 <MobileMenuItem icon={<Icon name="settings" size={20} />} label="Pengguna" isActive={activeTab === 'pengguna'} onClick={() => { handleTabChange('pengguna'); setMobileMenuOpen(false); }} />
                                             )}
+                                            {userRole === 'Super Admin' && (
+                                                <MobileMenuItem icon={<Icon name="activity" size={20} />} label="Logbook" isActive={activeTab === 'logbook'} onClick={() => { handleTabChange('logbook'); setMobileMenuOpen(false); }} />
+                                            )}
                                             <div className="col-span-3 h-px bg-slate-200 dark:bg-slate-700 my-2"></div>
                                             <button 
-                                                onClick={() => auth.signOut()}
+                                                onClick={handleLogout}
                                                 className="col-span-3 w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:bg-slate-100 dark:hover:bg-slate-800 text-left group text-red-600 dark:text-red-400"
                                             >
                                                 <div className="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-500 group-hover:bg-red-100 dark:group-hover:bg-red-900/50 transition-colors">
