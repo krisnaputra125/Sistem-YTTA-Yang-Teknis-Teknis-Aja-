@@ -1418,46 +1418,67 @@ import * as XLSX from 'xlsx-js-style';
                         />
                       </div>
                       <div className="border border-slate-200 dark:border-slate-700/50 rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3 max-h-48 overflow-y-auto">
-                        {resources.length === 0 ? (
-                          <p className="text-xs text-slate-400 italic">
-                            Belum ada data tim. Tambahkan di menu Alokasi Tim.
-                          </p>
-                        ) : filteredResources.length === 0 ? (
-                          <p className="text-xs text-slate-400 italic">
-                            Pencarian tidak ditemukan.
-                          </p>
-                        ) : isPengawasanForm ? (
-                          <>
-                            <TeamCheckboxGroup
-                              title="Pilih Pegawai Internal (Alokasi Tim)"
-                              roleFilter={(r) => true}
-                              isOptional={true}
-                              filteredResources={filteredResources}
-                              formData={formData}
-                              setFormData={setFormData}
-                            />
-                            <div className="mt-4">
-                              <TeamCheckboxGroup
-                                title="Pilih Tenaga Ahli (Dari Database)"
-                                roleFilter={(r) => true}
-                                isOptional={true}
-                                filteredResources={(typeof experts !== 'undefined' ? experts : []).filter(e => {
-                                  // Apply search filter if user is typing
-                                  if (!searchTeam) return true;
-                                  return e.name?.toLowerCase().includes(searchTeam.toLowerCase()) || 
-                                         e.bidangIlmu?.toLowerCase().includes(searchTeam.toLowerCase());
-                                }).map((e, idx) => ({ 
-                                  id: e.id || `expert-${idx}`, 
-                                  name: e.name, 
-                                  role: e.bidangIlmu || 'Tenaga Ahli' 
-                                }))}
-                                formData={formData}
-                                setFormData={setFormData}
-                              />
-                            </div>
-                          </>
-                        ) : (
-                          <>
+                        {(() => {
+                          const expertsData = (typeof experts !== 'undefined' ? experts : []).filter(e => {
+                            if (!searchTeam) return true;
+                            return e.name?.toLowerCase().includes(searchTeam.toLowerCase()) || 
+                                   e.bidangIlmu?.toLowerCase().includes(searchTeam.toLowerCase());
+                          }).map((e, idx) => ({ 
+                            id: e.id || `expert-${idx}`, 
+                            name: e.name, 
+                            role: e.bidangIlmu || 'Tenaga Ahli' 
+                          }));
+
+                          if (isPengawasanForm) {
+                            if (resources.length === 0 && expertsData.length === 0) {
+                              return <p className="text-xs text-slate-400 italic">Belum ada data tim atau tenaga ahli. Tambahkan di menu terkait.</p>;
+                            }
+                            if (filteredResources.length === 0 && expertsData.length === 0) {
+                              return <p className="text-xs text-slate-400 italic">Pencarian tidak ditemukan.</p>;
+                            }
+                            return (
+                              <>
+                                {filteredResources.length > 0 && (
+                                  <TeamCheckboxGroup
+                                    title="Pilih Pegawai Internal (Alokasi Tim)"
+                                    roleFilter={(r) => true}
+                                    isOptional={true}
+                                    filteredResources={filteredResources}
+                                    formData={formData}
+                                    setFormData={setFormData}
+                                  />
+                                )}
+                                {expertsData.length > 0 && (
+                                  <div className={filteredResources.length > 0 ? "mt-4" : ""}>
+                                    <TeamCheckboxGroup
+                                      title="Pilih Tenaga Ahli (Dari Database)"
+                                      roleFilter={(r) => true}
+                                      isOptional={true}
+                                      filteredResources={expertsData}
+                                      formData={formData}
+                                      setFormData={setFormData}
+                                    />
+                                  </div>
+                                )}
+                              </>
+                            );
+                          } else {
+                            if (resources.length === 0) {
+                              return (
+                                <p className="text-xs text-slate-400 italic">
+                                  Belum ada data tim. Tambahkan di menu Alokasi Tim.
+                                </p>
+                              );
+                            }
+                            if (filteredResources.length === 0) {
+                              return (
+                                <p className="text-xs text-slate-400 italic">
+                                  Pencarian tidak ditemukan.
+                                </p>
+                              );
+                            }
+                            return (
+                              <>
                             <TeamCheckboxGroup
                               title="Tim Arsitek"
                               roleFilter={(r) =>
@@ -1531,7 +1552,9 @@ import * as XLSX from 'xlsx-js-style';
                               setFormData={setFormData}
                             />
                           </>
-                        )}
+                            );
+                          }
+                        })()}
                       </div>
                       {!isPengawasanForm && resources.length > 0 && (
                         <div className="mt-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
@@ -1588,20 +1611,22 @@ import * as XLSX from 'xlsx-js-style';
                                 <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">
                                   {member}
                                 </h4>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      team: (prev.team || []).filter(
-                                        (t) => t !== member,
-                                      ),
-                                    }));
-                                  }}
-                                  className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold transition-colors bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/50"
-                                >
-                                  <Icon name="trash-2" size={12} /> Hapus
-                                </button>
+                                {!isOriginalSyncedMember && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        team: (prev.team || []).filter(
+                                          (t) => t !== member,
+                                        ),
+                                      }));
+                                    }}
+                                    className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold transition-colors bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/50"
+                                  >
+                                    <Icon name="trash-2" size={12} /> Hapus
+                                  </button>
+                                )}
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[4fr_3fr_3fr] gap-3">
                                 <div className="flex flex-col justify-end">
