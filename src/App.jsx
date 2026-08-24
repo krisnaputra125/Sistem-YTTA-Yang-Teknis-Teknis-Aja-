@@ -8709,6 +8709,7 @@ const renderKPIInfoModal = () => {
                                                                         <h3 className="font-bold uppercase text-base">{asg.jobName}</h3>
                                                                         <p className="text-xs uppercase mt-0.5 font-bold">{asg.tenderType} | {asg.lpseName}</p>
                                                                         <p className="text-xs mt-0.5">Tipe Proyek & Kontrak: {asg.projectType || 'Pengawasan'} - {asg.contractType}</p>
+                                                                        <p className="text-xs mt-0.5">Perusahaan: <span className="font-bold">{asg.perusahaan || '-'}</span> | Nilai Kontrak: <span className="font-bold">Rp {asg.nilaiKontrak ? asg.nilaiKontrak.toLocaleString('id-ID') : '0'}</span></p>
                                                                         <p className="text-xs mt-0.5">SPMK - Berakhir: {asg.startDate ? formatDateIndo(asg.startDate) : '-'} s/d {asg.endDate ? formatDateIndo(asg.endDate) : '-'} ({asg.duration || 0} Hari)</p>
                                                                     </div>
                                                                 </div>
@@ -8716,15 +8717,16 @@ const renderKPIInfoModal = () => {
                                                                 <table className="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 mt-3">
                                                                     <thead>
                                                                         <tr className="bg-gray-100">
-                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[40%]">Nama</th>
-                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[30%]">Sertifikat (SKA)</th>
+                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[35%]">Nama</th>
+                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-left w-[25%]">Sertifikat (SKA)</th>
                                                                             <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-center w-[15%]">Peran</th>
-                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-center w-[15%]">Man Month</th>
+                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-center w-[10%]">MM</th>
+                                                                            <th className="border border-slate-300 dark:border-slate-700 p-1.5 text-right w-[15%]">Billing Rate</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
                                                                         {(asg.experts || []).length === 0 ? (
-                                                                            <tr><td colSpan="4" className="border border-slate-300 dark:border-slate-700 p-1.5 text-center italic">Belum ada tenaga ahli.</td></tr>
+                                                                            <tr><td colSpan="5" className="border border-slate-300 dark:border-slate-700 p-1.5 text-center italic">Belum ada tenaga ahli.</td></tr>
                                                                         ) : [...(asg.experts || [])].sort((a, b) => getLPSEHierarchyScore(a.role) - getLPSEHierarchyScore(b.role) || (experts.find(e => e.id === a.expertId)?.name || '').localeCompare(experts.find(e => e.id === b.expertId)?.name || '')).map((expPlot, idx) => {
                                                                             const exp = experts.find(e => e.id === expPlot.expertId);
                                                                             const expertName = exp ? exp.name : 'Unknown';
@@ -8745,6 +8747,7 @@ const renderKPIInfoModal = () => {
                                                                                     <td className="border border-slate-300 dark:border-slate-700 p-1.5">{certDisplay}</td>
                                                                                     <td className="border border-slate-300 dark:border-slate-700 p-1.5 text-center">{expPlot.role || '-'}</td>
                                                                                     <td className="border border-slate-300 dark:border-slate-700 p-1.5 text-center font-bold">{expPlot.manMonth}</td>
+                                                                                    <td className="border border-slate-300 dark:border-slate-700 p-1.5 text-right font-bold whitespace-nowrap">Rp {expPlot.billingRate ? expPlot.billingRate.toLocaleString('id-ID') : '0'}</td>
                                                                                 </tr>
                                                                             )
                                                                         })}
