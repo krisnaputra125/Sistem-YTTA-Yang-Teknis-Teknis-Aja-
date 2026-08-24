@@ -2403,7 +2403,7 @@ const ExpertModalForm = () => {
 
                 const [formData, setFormData] = useState(() => {
                     if (isEdit && modalConfig.data) return { ...modalConfig.data };
-                    return { id: '', name: '', phone: '', status: 'Tersedia', jenjang: '', bidangIlmu: '', perusahaan: '', linkedResourceName: '' };
+                    return { id: '', name: '', phone: '', status: 'Tersedia', jenjang: '', bidangIlmu: '', perusahaan: '', linkedResourceName: '', keterangan: '' };
                 });
 
                 const handleSubmit = (e) => {
@@ -2454,6 +2454,10 @@ const ExpertModalForm = () => {
                                             ))}
                                         </datalist>
                                         <p className="text-[10px] text-slate-500 mt-1">Pilih ini jika nama Tenaga Ahli di kontrak berbeda dengan nama di menu Alokasi Tim agar tetap terbaca & tersinkron pada beban kerja.</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5"><Icon name="file-text" size={14} className="text-slate-500"/> Keterangan</label>
+                                        <textarea rows="3" value={formData.keterangan || ''} onChange={e => setFormData({ ...formData, keterangan: e.target.value })} placeholder="Tambahkan keterangan tambahan (opsional)..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all resize-none"></textarea>
                                     </div>
                                 </form>
                             </div>
@@ -2649,7 +2653,7 @@ const AssignmentModalForm = () => {
                     if (isEdit && modalConfig.data) {
                         return { ...modalConfig.data, experts: modalConfig.data.experts || [] };
                     }
-                    return { jobName: '', projectType: 'Pengawasan', contractType: 'Waktu Penugasan', tenderType: 'Tender', lpseName: '', startDate: '', duration: '', experts: [] };
+                    return { jobName: '', projectType: 'Pengawasan', contractType: 'Waktu Penugasan', tenderType: 'Tender', lpseName: '', startDate: '', duration: '', contractValue: '', company: '', experts: [] };
                 });
 
                 // Auto hitung end date jika start date & durasi diisi
@@ -2759,7 +2763,7 @@ const AssignmentModalForm = () => {
                 const handleAddExpertRow = () => {
                     setFormData(prev => ({
                         ...prev,
-                        experts: [...(prev.experts || []), { expertId: '', role: '', certificateName: '', additionalCertificates: [], manMonth: '' }]
+                        experts: [...(prev.experts || []), { expertId: '', role: '', certificateName: '', additionalCertificates: [], manMonth: '', billingRate: '' }]
                     }));
                 };
 
@@ -2823,6 +2827,27 @@ const AssignmentModalForm = () => {
                                                     </button>
                                                 </div>
                                             </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Perusahaan</label>
+                                                <input type="text" value={formData.company || ''} onChange={e => setFormData({ ...formData, company: e.target.value })} placeholder="Cth: PT. XYZ" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nilai Kontrak</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">Rp</span>
+                                                    <input 
+                                                        type="text" 
+                                                        value={formData.contractValue || ''} 
+                                                        onChange={e => {
+                                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                                            const formatted = val ? new Intl.NumberFormat('id-ID').format(val) : '';
+                                                            setFormData({ ...formData, contractValue: formatted });
+                                                        }} 
+                                                        placeholder="0" 
+                                                        className="w-full pl-9 p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" 
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                         {/* Banner info sinkronisasi otomatis */}
                                         {(formData.projectType === 'Pengawasan' || formData.projectType === 'Manajemen Konstruksi') && (
@@ -2847,10 +2872,14 @@ const AssignmentModalForm = () => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Jenis Tender</label>
+                                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Jenis Paket</label>
                                                 <select required value={formData.tenderType} onChange={e => setFormData({ ...formData, tenderType: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
                                                     <option value="Tender">Tender</option>
-                                                    <option value="PL">Penunjukan Langsung (PL)</option>
+                                                    <option value="PL">PL</option>
+                                                    <option value="RO">RO</option>
+                                                    <option value="PBG">PBG</option>
+                                                    <option value="SLF">SLF</option>
+                                                    <option value="PBG & SLF">PBG & SLF</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -2906,8 +2935,8 @@ const AssignmentModalForm = () => {
                                                     const availableCerts = selectedExpertObj?.certificates || [];
 
                                                     return (
-                                                        <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-3 relative group">
-                                                            <div className="flex-1">
+                                                        <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-12 gap-4 relative group">
+                                                            <div className="md:col-span-4 lg:col-span-3">
                                                                 <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Nama</label>
                                                                 <input
                                                                     type="text"
@@ -2934,7 +2963,7 @@ const AssignmentModalForm = () => {
                                                                     {experts.map(e => <option key={e.id} value={e.name} />)}
                                                                 </datalist>
                                                             </div>
-                                                            <div className="flex-1">
+                                                            <div className="md:col-span-4 lg:col-span-3">
                                                                 <div className="flex items-center justify-between mb-1">
                                                                     <label className="block text-[10px] uppercase font-bold text-slate-500">Jabatan</label>
                                                                     {idx === 0 && (
@@ -2950,10 +2979,31 @@ const AssignmentModalForm = () => {
                                                                     ))}
                                                                 </select>
                                                             </div>
-                                                            <div className="flex-1 flex flex-col gap-2">
+                                                            <div className="md:col-span-2 lg:col-span-2">
+                                                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Man Month</label>
+                                                                <input type="text" required value={expPlot.manMonth} onChange={e => handleExpertRowChange(idx, 'manMonth', e.target.value)} placeholder="Cth: 1.5" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
+                                                            </div>
+                                                            <div className="md:col-span-2 lg:col-span-4">
+                                                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Billing Rate</label>
+                                                                <div className="relative">
+                                                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">Rp</span>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        value={expPlot.billingRate || ''} 
+                                                                        onChange={e => {
+                                                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                                                            const formatted = val ? new Intl.NumberFormat('id-ID').format(val) : '';
+                                                                            handleExpertRowChange(idx, 'billingRate', formatted);
+                                                                        }} 
+                                                                        placeholder="0" 
+                                                                        className="w-full pl-8 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" 
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div className="md:col-span-12 flex flex-col gap-2 pt-2 border-t border-slate-200 dark:border-slate-700/50">
                                                                 <div>
                                                                     <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Sertifikat Utama</label>
-                                                                    <select value={expPlot.certificateName || ''} onChange={e => handleExpertRowChange(idx, 'certificateName', e.target.value)} className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
+                                                                    <select value={expPlot.certificateName || ''} onChange={e => handleExpertRowChange(idx, 'certificateName', e.target.value)} className="w-full md:w-1/2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all">
                                                                         <option value="">-- Tidak Pakai / Kosong --</option>
                                                                         {availableCerts.map((c, i) => {
                                                                             const isExpired = c.expiredDate && new Date(c.expiredDate) < new Date();
@@ -2966,7 +3016,7 @@ const AssignmentModalForm = () => {
                                                                     </select>
                                                                 </div>
                                                                 {(expPlot.additionalCertificates || []).map((addCert, cIdx) => (
-                                                                    <div key={`add-cert-${cIdx}`} className="flex gap-2">
+                                                                    <div key={`add-cert-${cIdx}`} className="flex gap-2 w-full md:w-1/2">
                                                                         <div className="flex-1">
                                                                             <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Sertifikat Tambahan {cIdx + 1}</label>
                                                                             <select value={addCert || ''} onChange={e => {
@@ -3003,11 +3053,6 @@ const AssignmentModalForm = () => {
                                                                     <Icon name="plus" size={12} /> Tambah Sertifikat Tambahan
                                                                 </button>
                                                             </div>
-                                                            <div className="w-full md:w-24">
-                                                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Man Month</label>
-                                                                <input type="text" required value={expPlot.manMonth} onChange={e => handleExpertRowChange(idx, 'manMonth', e.target.value)} placeholder="Cth: 1.5" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 shadow-inner transition-all" />
-                                                            </div>
-
                                                             <button type="button" onClick={() => handleRemoveExpertRow(idx)} className="absolute -top-2 -right-2 p-1.5 bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-400 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity" title="Hapus Baris">
                                                                 <Icon name="x" size={14} />
                                                             </button>
@@ -9627,6 +9672,16 @@ const renderKPIInfoModal = () => {
                                                     <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-0.5">Tipe Proyek & Kontrak</p>
                                                     <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">{asg.projectType || 'Pengawasan'} - {asg.contractType}</p>
                                                 </div>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Perusahaan</p>
+                                                        <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">{asg.company || '-'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Nilai Kontrak</p>
+                                                        <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">{asg.contractValue ? `Rp ${asg.contractValue}` : '-'}</p>
+                                                    </div>
+                                                </div>
                                                 <div>
                                                     <p className="text-[10px] text-slate-500 font-bold mb-0.5">SPMK - Berakhir - Durasi</p>
                                                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -9662,8 +9717,11 @@ const renderKPIInfoModal = () => {
                                                                         </p>
                                                                         {(expPlot.certificateName || (expPlot.additionalCertificates || []).length > 0) && <p className="text-[10px] text-slate-500 truncate">SKA: {certDisplay}</p>}
                                                                     </div>
-                                                                    <div className="text-right shrink-0">
+                                                                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
                                                                         <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-0.5 rounded-full whitespace-nowrap">{expPlot.manMonth} MM</span>
+                                                                        {expPlot.billingRate && (
+                                                                            <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">Rp {expPlot.billingRate}</span>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             )
@@ -9786,6 +9844,11 @@ const renderKPIInfoModal = () => {
                                                 {exp.perusahaan && (
                                                     <p className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1.5" title="Perusahaan / Instansi">
                                                         <Icon name="building-2" size={12} /> {exp.perusahaan}
+                                                    </p>
+                                                )}
+                                                {exp.keterangan && (
+                                                    <p className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1.5 mt-0.5" title="Keterangan">
+                                                        <Icon name="file-text" size={12} className="mt-0.5 shrink-0" /> <span className="line-clamp-2 break-words">{exp.keterangan}</span>
                                                     </p>
                                                 )}
                                             </div>
