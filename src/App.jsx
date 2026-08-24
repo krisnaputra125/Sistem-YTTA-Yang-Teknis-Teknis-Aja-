@@ -5444,7 +5444,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                             )}
                                                         </td>
                                                         <td className="p-4 text-right lg:opacity-0 lg:group-hover:opacity-100 transition-opacity pt-5">
-                                                            {userRole !== 'Kordinator Tender' && (
+                                                            {userRole !== 'Admin Tender' && (
                                                             <div className="flex justify-end gap-2 flex-col items-end">
                                                                 {p.computedStatus === 'Terlambat' && (
                                                                     <button onClick={() => handleAnalyzeDomino(p)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 rounded-lg shadow-md animate-pulse hover:animate-none"><Icon name="alert-triangle" size={14} /> Cek Domino</button>
@@ -8789,7 +8789,7 @@ const renderKPIInfoModal = () => {
                     "Manajer Teknis",
                     "Manajer Administrasi",
                     "Kordinator Divisi Teknis",
-                    "Kordinator Tender",
+                    "Admin Tender",
                     "Kordinator Aset",
                     "PIC",
                     "Team Leader Pekerjaan",
