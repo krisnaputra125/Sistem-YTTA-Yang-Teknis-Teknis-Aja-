@@ -4220,27 +4220,50 @@ function App() {
                         return expertObj ? (expertObj.linkedResourceName || expertObj.name) : null;
                     }).filter(Boolean))];
 
-                    // Bangun pengawasanDetails baru dari data experts di assignment
-                    // Pertahankan statusTurun yang sudah ada sebelumnya
+                    // Bangun pengawasanDetails baru dengan mempertahankan plotting manual dari List Proyek
                     const existingProject = allProjects.find(p => p.sourceAssignmentId === assignment.id);
+                    
+                    let existingMembers = [];
+                    if (existingProject) {
+                        const rawString = Array.isArray(existingProject.team) ? existingProject.team.join(';') : (existingProject.team || '');
+                        if (rawString.startsWith('{')) {
+                            try { existingMembers = JSON.parse(rawString).members || []; } catch(e) {}
+                        } else {
+                            existingMembers = existingProject.team || [];
+                        }
+                    }
+
                     const existingPengawasanDetails = existingProject ? (() => {
-                        // Decode existing details
                         const raw = existingProject.pengawasanDetails || {};
                         const decoded = {};
                         for (const k in raw) decoded[decodeKey(k)] = raw[k];
                         return decoded;
                     })() : {};
 
+                    // Gabungkan member dari assignment dan member manual
+                    const finalMembers = [...new Set([...existingMembers, ...expertNames])];
                     const newPengawasanDetails = {};
+                    
+                    // 1. Masukkan semua orang yang sudah ada (manual plot) beserta statusnya
+                    finalMembers.forEach(name => {
+                        const existingDetail = existingPengawasanDetails[name] || {};
+                        newPengawasanDetails[encodeKey(name)] = {
+                            role: existingDetail.role || 'Inspector',
+                            manMonth: existingDetail.manMonth || '',
+                            statusTurun: existingDetail.statusTurun || 'Tidak Turun',
+                            deadline: existingDetail.deadline || '',
+                        };
+                    });
+
+                    // 2. Timpa/Update data spesifik dari assignment (Sertifikat/Ahli yang resmi dikontrak)
                     (assignment.experts || []).forEach(exp => {
                         const expertObj = experts.find(e => e.id === exp.expertId);
                         if (!expertObj) return;
                         const name = expertObj.linkedResourceName || expertObj.name;
                         const existingDetail = existingPengawasanDetails[name] || {};
-                        // Pertahankan statusTurun yang sudah di-set user, default "Tidak Turun"
                         newPengawasanDetails[encodeKey(name)] = {
-                            role: exp.role || 'Inspector',
-                            manMonth: exp.manMonth || '',
+                            role: exp.role || existingDetail.role || 'Inspector',
+                            manMonth: exp.manMonth || existingDetail.manMonth || '',
                             statusTurun: existingDetail.statusTurun || 'Tidak Turun',
                             deadline: existingDetail.deadline || '',
                         };
@@ -4248,14 +4271,22 @@ function App() {
 
                     // Serialisasi team data ke JSON string (sesuai format sistem)
                     const teamDataObj = {
-                        members: expertNames,
+                        members: finalMembers,
                         details: {},
                         leader: '',
                         individualStatus: existingProject ? (existingProject.individualStatus || {}) : {},
                         pengawasanDetails: newPengawasanDetails
                     };
 
-                    const projectPayload = {
+                    const projectPayload = existingProject ? {
+                        ...existingProject,
+                        name: assignment.jobName || 'Tanpa Nama',
+                        client: assignment.clientName || assignment.lpseName || '',
+                        type: assignment.projectType || 'Pengawasan',
+                        spmk: assignment.startDate || '',
+                        deadline: assignment.endDate || '',
+                        team: JSON.stringify(teamDataObj).replace(/;/g, ','),
+                    } : {
                         name: assignment.jobName || 'Tanpa Nama',
                         client: assignment.clientName || assignment.lpseName || '',
                         type: assignment.projectType || 'Pengawasan',
@@ -4263,10 +4294,10 @@ function App() {
                         spmk: assignment.startDate || '',
                         deadline: assignment.endDate || '',
                         sourceAssignmentId: assignment.id,
-                        description: existingProject ? (existingProject.description || '') : '',
-                        descriptionUpdatedAt: existingProject ? (existingProject.descriptionUpdatedAt || '') : '',
-                        notStarted: existingProject ? (existingProject.notStarted || false) : false,
-                        isPending: existingProject ? (existingProject.isPending || false) : false,
+                        description: '',
+                        descriptionUpdatedAt: '',
+                        notStarted: false,
+                        isPending: false,
                         team: JSON.stringify(teamDataObj).replace(/;/g, ','),
                     };
 
