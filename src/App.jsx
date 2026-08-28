@@ -93,6 +93,71 @@ import * as XLSX from 'xlsx-js-style';
             }
         };
 
+        const fuzzyMatchName = (name1, name2) => {
+            if (!name1 || !name2) return false;
+            let n1 = name1.toLowerCase().trim();
+            let n2 = name2.toLowerCase().trim();
+            if (n1 === n2) return true;
+            
+            const normalizeAbbreviations = (name) => {
+                let s = name;
+                s = s.replace(/\ba\.a\./g, 'anak agung ');
+                s = s.replace(/\baa\b/g, 'anak agung ');
+                s = s.replace(/\bi\.b\./g, 'ida bagus ');
+                s = s.replace(/\bib\b/g, 'ida bagus ');
+                s = s.replace(/\bi\.a\./g, 'ida ayu ');
+                s = s.replace(/\bia\b/g, 'ida ayu ');
+                s = s.replace(/\btjok\b/g, 'cokorda ');
+                s = s.replace(/\bgde\b/g, 'gede ');
+                s = s.replace(/\bwyn\b/g, 'wayan ');
+                s = s.replace(/\bnym\b/g, 'nyoman ');
+                return s;
+            };
+            
+            n1 = normalizeAbbreviations(n1);
+            n2 = normalizeAbbreviations(n2);
+            
+            const clean1 = n1.replace(/[,.]/g, ' ').replace(/\b(st|mt|ir|dr|prof|se|sh|spd|mpd|amd|sars|mars|ssi|msi|stm)\b/g, ' ').trim();
+            const clean2 = n2.replace(/[,.]/g, ' ').replace(/\b(st|mt|ir|dr|prof|se|sh|spd|mpd|amd|sars|mars|ssi|msi|stm)\b/g, ' ').trim();
+            
+            let w1 = clean1.split(/\s+/).filter(w => w.length > 2);
+            let w2 = clean2.split(/\s+/).filter(w => w.length > 2);
+            
+            const balineseTitles = ['anak', 'agung', 'istri', 'putu', 'made', 'komang', 'ketut', 'wayan', 'kadek', 'nyoman', 'gede', 'bagus', 'ida', 'tjokorda', 'cokorda', 'gusti', 'ngurah', 'dewa', 'ayu', 'desak', 'sagung', 'cok', 'tjok', 'luh', 'nengah', 'cening'];
+            
+            const sig1 = w1.filter(w => !balineseTitles.includes(w));
+            const sig2 = w2.filter(w => !balineseTitles.includes(w));
+            
+            if (sig1.length > 0 && sig2.length > 0) {
+                w1 = sig1;
+                w2 = sig2;
+            }
+            
+            let matchCount = 0;
+            for (const w of w1) {
+                if (w2.includes(w)) matchCount++;
+            }
+            
+            if (w1.length === 0 || w2.length === 0) return false;
+            
+            const ratio = matchCount / Math.max(w1.length, w2.length);
+            return ratio >= 0.7;
+        };
+
+        const getLinkedResourceName = (expertObj, resourcesList) => {
+            if (!expertObj) return null;
+            if (expertObj.linkedResourceName) return expertObj.linkedResourceName;
+            
+            if (resourcesList && resourcesList.length > 0) {
+                for (const res of resourcesList) {
+                    if (fuzzyMatchName(expertObj.name, res.name)) {
+                        return res.name;
+                    }
+                }
+            }
+            return expertObj.name;
+        };
+
         const formatDateIndo = (dateString) => {
             if (!dateString) return "-";
             try {
@@ -208,8 +273,8 @@ import * as XLSX from 'xlsx-js-style';
             const isKordinator = employee.level?.startsWith('Kordinator Divisi');
             const kordinatorDivisi = isKordinator ? employee.level.replace('Kordinator Divisi ', 'Divisi ') : null;
 
-            const ledProjects = allProjects.filter(p => p.teamLeader === employee.name);
-            const subProjects = allProjects.filter(p => p.team && p.team.includes(employee.name));
+            const ledProjects = allProjects.filter(p => fuzzyMatchName(p.teamLeader, employee.name));
+            const subProjects = allProjects.filter(p => (p.team || []).some(m => fuzzyMatchName(m, employee.name)));
             const kontrolProjects = isKordinator ? allProjects.filter(p => p.type?.toLowerCase().includes('perencana') && p.divisiKontrol === kordinatorDivisi) : [];
 
             // Gabungkan proyek dan hapus duplikat
@@ -239,7 +304,7 @@ import * as XLSX from 'xlsx-js-style';
             let staffDoneBonus = 0;
 
             involvedProjects.forEach(p => {
-                const isLeader = p.teamLeader === employee.name || (isKordinator && p.divisiKontrol === kordinatorDivisi);
+                const isLeader = fuzzyMatchName(p.teamLeader, employee.name) || (isKordinator && p.divisiKontrol === kordinatorDivisi);
                 const empCat = getEffectiveEmpCategory(p, employee.name, employee.role);
 
                 if (isLeader) {
@@ -711,8 +776,7 @@ import * as XLSX from 'xlsx-js-style';
           (p) =>
             p.computedStatus !== "Done" &&
             p.computedStatus !== "Pending" &&
-            p.team &&
-            p.team.includes(cand.name),
+            (p.team || []).some(m => fuzzyMatchName(m, cand.name)),
         ).length;
         const workload = activeProjCount * 25;
         const isLeaderMode = cand.level === "Team Leader";
@@ -1078,7 +1142,7 @@ import * as XLSX from 'xlsx-js-style';
         const originalNames = (assignment?.experts || []).map((exp) => {
             const expertObj = typeof experts !== 'undefined' ? experts.find((e) => e.id === exp.expertId) : null;
             if (!expertObj) return null;
-            return expertObj.linkedResourceName || expertObj.name;
+            return getLinkedResourceName(expertObj, typeof resources !== 'undefined' ? resources : []);
         }).filter(Boolean);
 
         (finalPayload.team || []).forEach((memberName) => {
@@ -1592,7 +1656,7 @@ import * as XLSX from 'xlsx-js-style';
                             const originalNames = (assignment.experts || []).map(exp => {
                                const expertObj = experts.find(e => e.id === exp.expertId);
                                if (!expertObj) return null;
-                               return expertObj.linkedResourceName || expertObj.name;
+                               return getLinkedResourceName(expertObj, typeof resources !== 'undefined' ? resources : []);
                             }).filter(Boolean);
                             return originalNames.includes(member);
                           })();
@@ -3386,10 +3450,10 @@ function App() {
                                 if (statusTurun === 'Tidak Turun') return;
                             }
 
-                            if (p.teamLeader === res.name) {
+                            if (fuzzyMatchName(p.teamLeader, res.name)) {
                                 numProjects++;
                                 if (p.computedStatus !== 'Pending') numActiveProjects++;
-                            } else if (p.team && p.team.includes(res.name)) {
+                            } else if ((p.team || []).some(m => fuzzyMatchName(m, res.name))) {
                                 let isIndividuallyDone = p.individualStatus?.[res.name] === true;
 
                                 if (isPengawasan) {
@@ -3421,6 +3485,43 @@ function App() {
 
             const problematicProjectsCount = computedProjects.filter(p => p.computedStatus === 'Terlambat' || p.computedStatus === 'Beresiko').length;
             const completedProjectsCount = computedProjects.filter(p => p.computedStatus === 'Done').length;
+
+            useEffect(() => {
+                if (!firebaseDbRef || !computedProjects.length) return;
+                let hasUpdates = false;
+                const now = new Date().toISOString();
+                const updatedProjects = projects.map(p => {
+                    const cp = computedProjects.find(c => c.id === p.id);
+                    if (!cp) return p;
+                    const isDone = cp.computedStatus === 'Done' || cp.status === 'Done';
+                    if (isDone && !p.completedAt) {
+                        hasUpdates = true;
+                        return { ...p, completedAt: now };
+                    } else if (!isDone && p.completedAt) {
+                        hasUpdates = true;
+                        const newP = { ...p };
+                        delete newP.completedAt;
+                        return newP;
+                    }
+                    return p;
+                });
+                if (hasUpdates) {
+                    firebaseDbRef.update({ projects: updatedProjects.map(proj => {
+                        const newP = { ...proj };
+                        if (newP.pengawasanDetails) {
+                            const cleanP = {};
+                            for (const k in newP.pengawasanDetails) cleanP[encodeKey(k)] = newP.pengawasanDetails[k];
+                            newP.pengawasanDetails = cleanP;
+                        }
+                        if (newP.individualStatus) {
+                            const cleanI = {};
+                            for (const k in newP.individualStatus) cleanI[encodeKey(k)] = newP.individualStatus[k];
+                            newP.individualStatus = cleanI;
+                        }
+                        return newP;
+                    }) });
+                }
+            }, [computedProjects]);
 
 
             // FETCH DATA FROM FIREBASE
@@ -4217,7 +4318,7 @@ function App() {
                     // Buat atau perbarui proyek dari data assignment
                     const expertNames = [...new Set((assignment.experts || []).map(exp => {
                         const expertObj = experts.find(e => e.id === exp.expertId);
-                        return expertObj ? (expertObj.linkedResourceName || expertObj.name) : null;
+                        return expertObj ? getLinkedResourceName(expertObj, typeof resources !== 'undefined' ? resources : []) : null;
                     }).filter(Boolean))];
 
                     // Bangun pengawasanDetails baru dengan mempertahankan plotting manual dari List Proyek
@@ -5594,7 +5695,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 const empCategory = getCategoryFromRole(viewingEmployee.role);
 
                 const activeAssignedProjects = computedProjects.filter(p => {
-                    if (!p.team || !p.team.includes(viewingEmployee.name) || p.computedStatus === 'Done' || p.notStarted) return false;
+                    if (!(p.team || []).some(m => fuzzyMatchName(m, viewingEmployee.name)) || p.computedStatus === 'Done' || p.notStarted) return false;
                     const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
                     let isIndividuallyDone = p.individualStatus?.[viewingEmployee.name] === true;
 
@@ -5612,7 +5713,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 });
 
                 const completedAssignedProjects = computedProjects.filter(p => {
-                    if (!p.team || !p.team.includes(viewingEmployee.name) || p.computedStatus === 'Done' || p.notStarted) return false;
+                    if (!(p.team || []).some(m => fuzzyMatchName(m, viewingEmployee.name)) || p.computedStatus === 'Done' || p.notStarted) return false;
                     const isPengawasan = p.type?.toLowerCase().includes('pengawas') || p.type?.toLowerCase().includes('manajemen konstruksi');
                     let isIndividuallyDone = p.individualStatus?.[viewingEmployee.name] === true;
 
@@ -5630,7 +5731,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                 });
 
                 const ledProjects = computedProjects.filter(p =>
-                    p.teamLeader === viewingEmployee.name &&
+                    fuzzyMatchName(p.teamLeader, viewingEmployee.name) &&
                     p.computedStatus !== 'Done' && !p.notStarted
                 );
 
@@ -5943,7 +6044,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
 
                         // Khusus untuk Team Leader, abaikan deadline utama proyek. 
                         // Hanya ambil deadline dari perannya sebagai anggota Sub-Tim.
-                        if (p.team && p.team.includes(res.name)) {
+                        if ((p.team || []).some(m => fuzzyMatchName(m, res.name))) {
                             const effectiveCat = getEffectiveEmpCategory(p, res.name, res.role);
                             const isIndividuallyDone = p.individualStatus?.[res.name] === true;
                             if (!isIndividuallyDone && p.categoryDetails?.[effectiveCat]?.deadline) {
@@ -7545,7 +7646,19 @@ const renderKPIInfoModal = () => {
                 );
             };
             const handleExportExcel = (options) => {
-                let filteredProjects = [...computedProjects].filter(p => p.computedStatus !== 'Done' && !p.notStarted);
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                let filteredProjects = [...computedProjects].filter(p => {
+                    if (p.notStarted) return false;
+                    if (p.computedStatus === 'Done') {
+                        if (p.completedAt) {
+                            const d = new Date(p.completedAt);
+                            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) return true;
+                        }
+                        return false;
+                    }
+                    return true;
+                });
                 let filteredResources = [...calculatedResources];
                 let title = "Laporan Eksekutif";
 
@@ -7756,7 +7869,12 @@ const renderKPIInfoModal = () => {
                         const bagianBStart = rowIndex;
                         const resourcesBySubTeam = {};
                         filteredResources.forEach(res => {
-                            const activeProjectsForRes = filteredProjects.filter(p => (p.team?.includes(res.name) || p.teamLeader === res.name || p.surveyorTeam?.includes(res.name)) && !p.notStarted);
+                            const activeProjectsForRes = filteredProjects.filter(p => {
+                                const inTeam = (p.team || []).some(m => fuzzyMatchName(m, res.name));
+                                const isLeader = fuzzyMatchName(p.teamLeader, res.name);
+                                const inSurveyor = (p.surveyorTeam || []).some(m => fuzzyMatchName(m, res.name));
+                                return (inTeam || isLeader || inSurveyor) && !p.notStarted;
+                            });
                             if (options.projectType !== 'Semua' && activeProjectsForRes.length === 0) return;
                             
                             const subTeam = getCategoryFromRole(res.role);
@@ -7789,11 +7907,12 @@ const renderKPIInfoModal = () => {
                                             let statusLapangan = '-';
                                             let manMonthStr = '-';
 
-                                            if (p.teamLeader === res.name) {
+                                            if (fuzzyMatchName(p.teamLeader, res.name)) {
                                                 roleStr = 'Team Leader';
                                                 if (isPengawasan) {
                                                     deadlineStr = p.deadline ? formatDateIndo(p.deadline) : '-';
-                                                    const details = p.pengawasanDetails?.[res.name] || {};
+                                                    const detailsKey = Object.keys(p.pengawasanDetails || {}).find(k => fuzzyMatchName(k, res.name));
+                                                    const details = detailsKey ? p.pengawasanDetails[detailsKey] : {};
                                                     statusLapangan = details.statusTurun || 'Tidak Turun';
                                                     manMonthStr = details.manMonth || '-';
                                                 } else {
@@ -7826,7 +7945,8 @@ const renderKPIInfoModal = () => {
                                                     deadlineStr = maxDate ? formatDateIndo(maxDate.toISOString().split('T')[0]) : (p.deadline ? formatDateIndo(p.deadline) : '-');
                                                 }
                                             } else if (isPengawasan) {
-                                                const details = p.pengawasanDetails?.[res.name] || {};
+                                                const detailsKey = Object.keys(p.pengawasanDetails || {}).find(k => fuzzyMatchName(k, res.name));
+                                                const details = detailsKey ? p.pengawasanDetails[detailsKey] : {};
                                                 deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
                                                 roleStr = details.role || 'Inspector';
                                                 statusLapangan = details.statusTurun || 'Tidak Turun';
@@ -8018,17 +8138,29 @@ const renderKPIInfoModal = () => {
                 if (!printData) return null;
 
                 let title = "Laporan Eksekutif Status Proyek & Penugasan Personil";
-                let filteredProjects = [...computedProjects].filter(p => p.computedStatus !== 'Done' && !p.notStarted);
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                let filteredProjects = [...computedProjects].filter(p => {
+                    if (p.notStarted) return false;
+                    if (p.computedStatus === 'Done') {
+                        if (p.completedAt) {
+                            const d = new Date(p.completedAt);
+                            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) return true;
+                        }
+                        return false;
+                    }
+                    return true;
+                });
                 let filteredResources = [...calculatedResources];
 
                 if (printData.type === 'project') {
                     filteredProjects = filteredProjects.filter(p => p.id === printData.id);
                     title = `Laporan Rincian Proyek: ${filteredProjects[0]?.name}`;
-                    filteredResources = filteredResources.filter(r => filteredProjects[0]?.team?.includes(r.name));
+                    filteredResources = filteredResources.filter(r => (filteredProjects[0]?.team || []).some(m => fuzzyMatchName(m, r.name)));
                 } else if (printData.type === 'personnel') {
                     filteredResources = filteredResources.filter(r => r.name === printData.name);
                     title = `Laporan Rekam Penugasan Personil: ${filteredResources[0]?.name}`;
-                    filteredProjects = filteredProjects.filter(p => (p.team?.includes(filteredResources[0]?.name) || p.teamLeader === filteredResources[0]?.name) && !p.notStarted);
+                    filteredProjects = filteredProjects.filter(p => ((p.team || []).some(m => fuzzyMatchName(m, filteredResources[0]?.name)) || fuzzyMatchName(p.teamLeader, filteredResources[0]?.name)) && !p.notStarted);
                 } else if (printData.type === 'expert_assignment') {
                     title = "Laporan Eksekutif Penugasan Tenaga Ahli";
                 } else if (printData.type === 'custom') {
@@ -8528,7 +8660,12 @@ const renderKPIInfoModal = () => {
                                                     {(() => {
                                                         const resourcesBySubTeam = {};
                                                         filteredResources.forEach(res => {
-                                                            const activeProjectsForRes = filteredProjects.filter(p => (p.team?.includes(res.name) || p.teamLeader === res.name || p.surveyorTeam?.includes(res.name)) && !p.notStarted);
+                                                            const activeProjectsForRes = filteredProjects.filter(p => {
+                                                                const inTeam = (p.team || []).some(m => fuzzyMatchName(m, res.name));
+                                                                const isLeader = fuzzyMatchName(p.teamLeader, res.name);
+                                                                const inSurveyor = (p.surveyorTeam || []).some(m => fuzzyMatchName(m, res.name));
+                                                                return (inTeam || isLeader || inSurveyor) && !p.notStarted;
+                                                            });
                                                             if (printData.type === 'custom' && printData.options.projectType !== 'Semua' && activeProjectsForRes.length === 0) return;
 
                                                             const subTeam = getCategoryFromRole(res.role);
@@ -8617,11 +8754,12 @@ const renderKPIInfoModal = () => {
                                                                                                     let statusLapangan = '-';
                                                                                                     let manMonthStr = '-';
 
-                                                                                                    if (p.teamLeader === res.name) {
+                                                                                                    if (fuzzyMatchName(p.teamLeader, res.name)) {
                                                                                                         roleStr = 'Team Leader';
                                                                                                         if (isPengawasan) {
                                                                                                             deadlineStr = p.deadline ? formatDateIndo(p.deadline) : '-';
-                                                                                                            const details = p.pengawasanDetails?.[res.name] || {};
+                                                                                                            const detailsKey = Object.keys(p.pengawasanDetails || {}).find(k => fuzzyMatchName(k, res.name));
+                                                                                                            const details = detailsKey ? p.pengawasanDetails[detailsKey] : {};
                                                                                                             statusLapangan = details.statusTurun || 'Tidak Turun';
                                                                                                             manMonthStr = details.manMonth || '-';
                                                                                                         } else {
@@ -8659,7 +8797,8 @@ const renderKPIInfoModal = () => {
                                                                                                             deadlineStr = maxDate ? formatDateIndo(maxDate.toISOString().split('T')[0]) : (p.deadline ? formatDateIndo(p.deadline) : '-');
                                                                                                         }
                                                                                                     } else if (isPengawasan) {
-                                                                                                        const details = p.pengawasanDetails?.[res.name] || {};
+                                                                                                        const detailsKey = Object.keys(p.pengawasanDetails || {}).find(k => fuzzyMatchName(k, res.name));
+                                                                                                        const details = detailsKey ? p.pengawasanDetails[detailsKey] : {};
                                                                                                         deadlineStr = details.deadline ? formatDateIndo(details.deadline) : '-';
                                                                                                         roleStr = details.role || 'Inspector';
                                                                                                         statusLapangan = details.statusTurun || 'Tidak Turun';
