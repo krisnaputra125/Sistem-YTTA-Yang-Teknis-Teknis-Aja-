@@ -8879,7 +8879,7 @@ const renderKPIInfoModal = () => {
                                                                         <h3 className="font-bold uppercase text-base">{asg.jobName}</h3>
                                                                         <p className="text-xs uppercase mt-0.5 font-bold">{asg.tenderType} | {asg.lpseName}</p>
                                                                         <p className="text-xs mt-0.5">Tipe Proyek & Kontrak: {asg.projectType || 'Pengawasan'} - {asg.contractType}</p>
-                                                                        <p className="text-xs mt-0.5">Perusahaan: <span className="font-bold">{asg.perusahaan || '-'}</span> | Nilai Kontrak: <span className="font-bold">Rp {asg.nilaiKontrak ? asg.nilaiKontrak.toLocaleString('id-ID') : '0'}</span></p>
+                                                                        <p className="text-xs mt-0.5">Perusahaan: <span className="font-bold">{asg.company || '-'}</span> | Nilai Kontrak: <span className="font-bold">Rp {asg.contractValue || '0'}</span></p>
                                                                         <p className="text-xs mt-0.5">SPMK - Berakhir: {asg.startDate ? formatDateIndo(asg.startDate) : '-'} s/d {asg.endDate ? formatDateIndo(asg.endDate) : '-'} ({asg.duration || 0} Hari)</p>
                                                                     </div>
                                                                 </div>
