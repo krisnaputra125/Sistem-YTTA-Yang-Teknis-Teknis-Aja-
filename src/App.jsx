@@ -1029,7 +1029,7 @@ import * as XLSX from 'xlsx-js-style';
         .map((memberName) => {
           if (isPerencanaanForm && surveyorTeamList.includes(memberName))
             return null;
-          const res = resources.find((r) => r.name === memberName);
+          const res = resources.find((r) => fuzzyMatchName(r.name, memberName));
           return res ? getCategoryFromRole(res.role) : "Lainnya";
         })
         .filter((cat) => cat !== null),
@@ -1115,7 +1115,7 @@ import * as XLSX from 'xlsx-js-style';
       }
       const activeCats = new Set(
         (finalPayload.team || []).map((memberName) => {
-          const res = resources.find((r) => r.name === memberName);
+          const res = resources.find((r) => fuzzyMatchName(r.name, memberName));
           return res ? getCategoryFromRole(res.role) : "Lainnya";
         }),
       );
@@ -1808,7 +1808,7 @@ import * as XLSX from 'xlsx-js-style';
                                   (formData.surveyorTeam || []).includes(m)
                                 )
                                   return false;
-                                const r = resources.find((x) => x.name === m);
+                                const r = resources.find((x) => fuzzyMatchName(x.name, m));
                                 return r && getCategoryFromRole(r.role) === cat;
                               });
                         return (
@@ -3388,7 +3388,7 @@ function App() {
                     if (p.team && p.team.length > 0) {
                         const catMembers = {};
                         p.team.forEach(m => {
-                            const res = resources.find(r => r.name === m);
+                            const res = resources.find(r => fuzzyMatchName(r.name, m));
                             const cat = res ? getCategoryFromRole(res.role) : 'Lainnya';
                             if (!catMembers[cat]) catMembers[cat] = [];
                             catMembers[cat].push(m);
@@ -3821,7 +3821,7 @@ function App() {
                                 if (!oldName) return oldName;
                                 const exactMatch = processedResources.find(r => r.name === oldName);
                                 if (exactMatch) return oldName;
-                                const fuzzyMatch = processedResources.find(r => normalizeName(r.name) === normalizeName(oldName));
+                                const fuzzyMatch = processedResources.find(r => fuzzyMatchName(r.name, oldName));
                                 return fuzzyMatch ? fuzzyMatch.name : oldName;
                             };
 
@@ -3905,7 +3905,7 @@ function App() {
                     project.team.forEach(memberName => {
                         const isIndividuallyDone = project.individualStatus?.[memberName] === true;
                         if (!isIndividuallyDone) {
-                            const res = resources.find(r => r.name === memberName);
+                            const res = resources.find(r => fuzzyMatchName(r.name, memberName));
                             let memberDeadlineStr = null;
 
                             if (res) {
@@ -5365,7 +5365,7 @@ const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done"
                                                             return; // Memastikan mereka tidak muncul di sub-tim aslinya (hide from default category)
                                                         }
 
-                                                        const resInfo = resources.find(r => r.name === teamMemberName);
+                                                        const resInfo = resources.find(r => fuzzyMatchName(r.name, teamMemberName));
                                                         if (resInfo) {
                                                             const cat = getCategoryFromRole(resInfo.role);
                                                             if (teamGroups[cat]) teamGroups[cat].push(resInfo.name);
@@ -7803,7 +7803,7 @@ const renderKPIInfoModal = () => {
                                             catMembers = (p.team || []).filter(m => {
                                                 const isSurveyor = (p.surveyorTeam || []).includes(m);
                                                 if (isSurveyor) return false;
-                                                const r = calculatedResources.find(res => res.name === m);
+                                                const r = calculatedResources.find(res => fuzzyMatchName(res.name, m));
                                                 if (cat === 'Lainnya') {
                                                     const matchesOther = ['Arsitek', 'Struktur', 'MEP', 'QS', 'Tata Ruang'].some(other => getCategoryFromRole(r?.role) === other);
                                                     return !matchesOther;
@@ -8271,7 +8271,7 @@ const renderKPIInfoModal = () => {
                                                     catMembers = (p.team || []).filter(m => {
                                                         const isSurveyor = (p.surveyorTeam || []).includes(m);
                                                         if (isSurveyor) return false;
-                                                        const r = resources.find(res => res.name === m);
+                                                        const r = resources.find(res => fuzzyMatchName(res.name, m));
 
                                                         if (cat === 'Lainnya') {
                                                             const matchesOther = ['Arsitek', 'Struktur', 'MEP', 'QS', 'Tata Ruang'].some(other => getCategoryFromRole(r?.role) === other);
@@ -9116,7 +9116,7 @@ const renderKPIInfoModal = () => {
 
                         // Cari assignees (orang yang perannya masuk ke kategori ini dan ada di p.team)
                         const assignees = p.team ? p.team.filter(mName => {
-                            const res = resources.find(r => r.name === mName);
+                            const res = resources.find(r => fuzzyMatchName(r.name, mName));
                             if (res) {
                                 return getEffectiveEmpCategory(p, mName, res.role) === cat;
                             }
