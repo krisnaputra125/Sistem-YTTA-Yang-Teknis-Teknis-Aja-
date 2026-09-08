@@ -5095,7 +5095,7 @@ function App() {
             <div className="flex flex-col h-full fade-in">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 shrink-0">
                     <div>
-                        <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">SOP Perusahaan</h2>
+                        <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Daftar Dokumen</h2>
                         <p className="text-slate-500 dark:text-slate-400 mt-1">Standar Operasional Prosedur & Dokumen Panduan</p>
                     </div>
 
@@ -10751,8 +10751,8 @@ function App() {
                                                 <SidebarItem icon={<Icon name="bar-chart" size={20} />} label="KPI & Evaluasi" isActive={activeTab === 'kpi'} onClick={() => handleTabChange('kpi')} />
                                             </>
                                         )}
-                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Dokumen</div>
-                                        <SidebarItem icon={<Icon name="file-text" size={20} />} label="SOP Perusahaan" isActive={activeTab === 'sop'} onClick={() => handleTabChange('sop')} />
+                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Documents</div>
+                                        <SidebarItem icon={<Icon name="file-text" size={20} />} label="Dokumen" isActive={activeTab === 'sop'} onClick={() => handleTabChange('sop')} />
 
                                         {canAccessMenu('Manajemen Pengguna') && (
                                             <>
@@ -10805,7 +10805,7 @@ function App() {
                                                     {activeTab === 'admin-aset' && 'Manajemen Aset Gudang'}
                                                     {activeTab === 'kpi' && 'KPI & Evaluasi Kinerja'}
                                                     {activeTab === 'pengguna' && 'Manajemen Pengguna'}
-                                                    {activeTab === 'sop' && 'Standar Operasional Prosedur'}
+                                                    {activeTab === 'sop' && 'Dokumen Perusahaan'}
                                                 </h2>
                                                 <p className="text-sm text-slate-500 font-medium mt-1 tracking-wide">
                                                     Aplikasi Manajemen Proyek & Personil Tim Teknis
