@@ -5157,7 +5157,14 @@ function App() {
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between gap-2">
                                     <button
-                                        onClick={() => setSelectedPdf(doc)}
+                                        onClick={() => {
+                                            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                                            if (isMobile) {
+                                                handleDownloadPdf(doc);
+                                            } else {
+                                                setSelectedPdf(doc);
+                                            }
+                                        }}
                                         className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/40 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-medium transition-colors"
                                     >
                                         <Icon name="eye" size={16} /> Lihat
