@@ -4994,7 +4994,7 @@ function App() {
         }
 
         if (file.size > 2 * 1024 * 1024) {
-            alert('Ukuran file terlalu besar! Untuk penyimpanan Database gratis, maksimal file adalah 2MB.');
+            setAlertModal({ isOpen: true, title: 'Batas Ukuran', message: 'Ukuran file terlalu besar! Untuk penyimpanan Database gratis, maksimal file adalah 2MB.' });
             return;
         }
 
@@ -5023,40 +5023,44 @@ function App() {
                     
                     // Reset input
                     if (fileInputRef.current) fileInputRef.current.value = '';
-                    alert('SOP berhasil disimpan ke dalam Database!');
+                    setAlertModal({ isOpen: true, title: 'Berhasil', message: 'SOP berhasil disimpan ke dalam Database!' });
                 } catch (err) {
                     console.error('Error saving SOP data:', err);
-                    alert('Gagal menyimpan data SOP: ' + err.message);
+                    setAlertModal({ isOpen: true, title: 'Gagal', message: 'Gagal menyimpan data SOP: ' + err.message });
                 } finally {
                     setUploadingSOP(false);
                 }
             };
             reader.onerror = (error) => {
                 console.error('Error reading file:', error);
-                alert('Gagal membaca file.');
+                setAlertModal({ isOpen: true, title: 'Gagal', message: 'Gagal membaca file.' });
                 setUploadingSOP(false);
             };
 
 
         } catch (error) {
             console.error('Initial error starting upload:', error);
-            alert('Terjadi kesalahan pada inisialisasi unggahan: ' + error.message);
+            setAlertModal({ isOpen: true, title: 'Gagal', message: 'Terjadi kesalahan pada inisialisasi unggahan: ' + error.message });
             setUploadingSOP(false);
         }
     };
 
-    const handleDeleteSOP = async (doc) => {
-        if (!window.confirm(`Yakin ingin menghapus dokumen SOP "${doc.title}"?`)) return;
-
-        try {
-            // Hapus dari Realtime DB (karena file Base64 tersimpan di dalamnya)
-            await db.ref(`pmc_sops/${doc.id}`).remove();
-
-            logActivity('DELETE_SOP', 'SOP Perusahaan', `Menghapus dokumen SOP: ${doc.title}`, { uid: currentUser?.uid, username, role: userRole });
-        } catch (error) {
-            console.error('Error deleting SOP:', error);
-            alert('Gagal menghapus SOP: ' + error.message);
-        }
+    const handleDeleteSOP = (doc) => {
+        setConfirmDialog({
+            isOpen: true,
+            title: 'Hapus Dokumen',
+            message: `Yakin ingin menghapus dokumen SOP "${doc.title}"?`,
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    await db.ref(`pmc_sops/${doc.id}`).remove();
+                    logActivity('DELETE_SOP', 'SOP Perusahaan', `Menghapus dokumen SOP: ${doc.title}`, { uid: currentUser?.uid, username, role: userRole });
+                } catch (error) {
+                    console.error('Error deleting SOP:', error);
+                    setAlertModal({ isOpen: true, title: 'Gagal', message: 'Gagal menghapus SOP: ' + error.message });
+                }
+            }
+        });
     };
 
     const handleDownloadPdf = (pdf) => {
@@ -5073,7 +5077,7 @@ function App() {
             document.body.removeChild(a);
         } catch (e) {
             console.error('Download error:', e);
-            alert('Gagal mengunduh dokumen.');
+            setAlertModal({ isOpen: true, title: 'Gagal', message: 'Gagal mengunduh dokumen.' });
         }
     };
 
