@@ -3489,7 +3489,8 @@ function App() {
         return mapped.sort((a, b) => b.workload - a.workload);
     }, [computedProjects, resources]);
 
-    const problematicProjectsCount = computedProjects.filter(p => p.computedStatus === 'Terlambat' || p.computedStatus === 'Beresiko').length;
+    const atRiskProjectsCount = computedProjects.filter(p => p.computedStatus === 'Beresiko').length;
+    const lateProjectsCount = computedProjects.filter(p => p.computedStatus === 'Terlambat').length;
     const completedProjectsCount = computedProjects.filter(p => p.computedStatus === 'Done').length;
 
     useEffect(() => {
@@ -5096,7 +5097,9 @@ function App() {
                     <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-amber-50 dark:bg-amber-900/20 rounded-3xl border border-slate-200 dark:border-amber-800/50 p-5 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-amber-800 dark:text-amber-400 font-semibold mb-1 text-sm">Perlu Pantauan</p>
-                            <h3 className="text-amber-900 dark:text-amber-100 text-3xl font-bold">{problematicProjectsCount} <span className="text-lg font-medium">Beresiko</span></h3>
+                            <h3 className="text-amber-900 dark:text-amber-100 text-3xl font-bold flex items-baseline gap-2">
+                                {atRiskProjectsCount} <span className="text-lg font-medium">Beresiko</span>
+                            </h3>
                         </div>
                         <div className="w-14 h-14 rounded-2xl bg-amber-200/50 dark:bg-amber-800/50 flex items-center justify-center text-amber-700 dark:text-amber-300">
                             <Icon name="alert-triangle" size={28} />
@@ -5117,7 +5120,20 @@ function App() {
                         </div>
                     </div>
 
-                    {/* BENTO CELL 6: Logistik & Inventaris */}
+                    {/* BENTO CELL 6: Terlambat */}
+                    <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-red-50 dark:bg-red-900/20 rounded-3xl border border-slate-200 dark:border-red-800/50 p-5 shadow-sm flex items-center justify-between hover:border-red-300 dark:hover:border-red-700/80 transition-colors">
+                        <div>
+                            <p className="text-red-800 dark:text-red-400 font-semibold mb-1 text-sm">Status Kritis</p>
+                            <h3 className="text-red-900 dark:text-red-100 text-3xl font-bold flex items-baseline gap-2">
+                                {lateProjectsCount} <span className="text-lg font-medium">Terlambat</span>
+                            </h3>
+                        </div>
+                        <div className="w-14 h-14 rounded-2xl bg-red-200/50 dark:bg-red-800/50 flex items-center justify-center text-red-700 dark:text-red-300">
+                            <Icon name="alert-triangle" size={28} />
+                        </div>
+                    </div>
+
+                    {/* BENTO CELL 7: Logistik & Inventaris */}
                     <div onClick={() => setActiveTab('inventaris')} className="col-span-1 md:col-span-2 lg:col-span-2 bg-blue-900 dark:bg-blue-950 rounded-3xl p-6 shadow-xl shadow-blue-900/20 dark:shadow-none text-white cursor-pointer hover:scale-[1.02] transition-transform flex items-center justify-between overflow-hidden relative group">
                         <div className="absolute right-0 bottom-0 opacity-10 translate-x-2 translate-y-2 group-hover:rotate-12 transition-transform duration-500">
                             <Icon name="box" size={100} />
@@ -9496,7 +9512,7 @@ function App() {
     };
 
     const renderMasterSchedule = () => {
-        let displayedProjects = projects.filter(p => p.spmk && p.deadline && p.type?.toLowerCase().includes('perencanaan') && Number(p.progress || 0) < 100 && p.status !== 'Done');
+        let displayedProjects = computedProjects.filter(p => p.spmk && p.deadline && p.type?.toLowerCase().includes('perencanaan') && Number(p.progress || 0) < 100 && p.status !== 'Done');
 
         if (displayedProjects.length === 0) {
             return (
@@ -9669,14 +9685,7 @@ function App() {
 
                                         const progress = Number(p.progress || 0);
 
-                                        let pStatus = "On Progress";
-                                        if (p.isPending) {
-                                            pStatus = "Pending";
-                                        } else if (progress >= 100) {
-                                            pStatus = "Done";
-                                        } else if (p.deadline) {
-                                            pStatus = getMicroStatus(progress, p.deadline);
-                                        }
+                                        const pStatus = p.computedStatus || "On Progress";
 
                                         let bgColor = '#3b82f6'; // blue-500
                                         let textColor = 'text-white';
