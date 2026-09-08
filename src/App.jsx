@@ -208,7 +208,7 @@ const calculateComputedStatus = (project) => {
     if (diffDays < 0) {
         if (isPengawasan) return "Done";
         return "Terlambat";
-    } else if (diffDays <= 14) {
+    } else if (diffDays <= 7) {
         if (isPengawasan) return "On Progress";
         return "Beresiko";
     }
