@@ -5208,20 +5208,24 @@ function App() {
                                 </div>
                             </div>
                             <div className="flex-1 bg-slate-100 dark:bg-slate-950 relative p-2 sm:p-4">
-                                <div className="absolute inset-2 sm:inset-4 overflow-auto rounded-xl border border-slate-300 dark:border-slate-700 shadow-inner bg-white" style={{ WebkitOverflowScrolling: 'touch' }}>
-                                    <object 
-                                        data={`${selectedPdf.url}#toolbar=0`}
-                                        type="application/pdf" 
-                                        className="w-full h-full min-h-[80vh] sm:min-h-full"
-                                        title={selectedPdf.title}
-                                    >
-                                        <iframe 
-                                            src={`${selectedPdf.url}#toolbar=0`} 
-                                            className="w-full h-full min-h-[80vh] sm:min-h-full"
-                                            title={selectedPdf.title}
-                                        />
-                                    </object>
-                                </div>
+                                {(/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes('Mac') && 'ontouchend' in document)) ? (
+                                    <div className="absolute inset-2 sm:inset-4 flex flex-col items-center justify-center gap-4 text-center p-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-700 shadow-inner">
+                                        <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2">
+                                            <Icon name="file-text" size={32} className="text-slate-400 dark:text-slate-500" />
+                                        </div>
+                                        <h4 className="font-bold text-xl text-slate-800 dark:text-slate-200">Pratinjau Tidak Didukung</h4>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">Sistem operasi perangkat Anda (iOS/iPadOS) membatasi tampilan pratinjau dokumen PDF secara langsung di dalam aplikasi. Silakan unduh dokumen untuk membacanya.</p>
+                                        <button onClick={() => handleDownloadPdf(selectedPdf)} className="mt-4 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 w-full max-w-xs">
+                                            <Icon name="download" size={20} /> Unduh Dokumen
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="absolute inset-2 sm:inset-4 overflow-auto rounded-xl border border-slate-300 dark:border-slate-700 shadow-inner bg-white" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                        <object data={`${selectedPdf.url}#toolbar=0`} type="application/pdf" className="w-full h-full min-h-[500px] sm:min-h-full" title={selectedPdf.title}>
+                                            <iframe src={`${selectedPdf.url}#toolbar=0`} className="w-full h-full min-h-[500px] sm:min-h-full" title={selectedPdf.title} />
+                                        </object>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
