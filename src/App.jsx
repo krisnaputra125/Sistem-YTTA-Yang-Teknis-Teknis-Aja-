@@ -5059,6 +5059,24 @@ function App() {
         }
     };
 
+    const handleDownloadPdf = (pdf) => {
+        try {
+            if (!pdf.url.startsWith('data:')) {
+                window.open(pdf.url, '_blank');
+                return;
+            }
+            const a = document.createElement('a');
+            a.href = pdf.url;
+            a.download = pdf.fileName || `${pdf.title}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } catch (e) {
+            console.error('Download error:', e);
+            alert('Gagal mengunduh dokumen.');
+        }
+    };
+
     const formatBytesSOP = (bytes, decimals = 2) => {
         if (!+bytes) return '0 Bytes';
         const k = 1024;
@@ -5170,15 +5188,13 @@ function App() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
-                                    <a
-                                        href={selectedPdf.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <button
+                                        onClick={() => handleDownloadPdf(selectedPdf)}
                                         className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full transition-colors"
-                                        title="Buka di Tab Baru / Download"
+                                        title="Download Dokumen"
                                     >
                                         <Icon name="download" size={18} />
-                                    </a>
+                                    </button>
                                     <button
                                         onClick={() => setSelectedPdf(null)}
                                         className="w-10 h-10 flex items-center justify-center bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-full transition-colors"
