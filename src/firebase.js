@@ -1,6 +1,7 @@
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 import 'firebase/compat/auth';
+import 'firebase/compat/storage';
 
 const firebaseConfig = {
     authDomain: "project-management-control.firebaseapp.com",
@@ -19,6 +20,7 @@ if (!firebase.apps.length) {
 
 export const db = firebase.database();
 export const auth = firebase.auth();
+export const storage = firebase.storage();
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(console.error);
 export default firebase;
 

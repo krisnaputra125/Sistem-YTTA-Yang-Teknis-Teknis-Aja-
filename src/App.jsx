@@ -9,7 +9,7 @@ export const AppContext = createContext();
 import { motion, AnimatePresence } from 'motion/react';
 import logoImg from '../LGIHT TRANSPARAN (1).PNG';
 import logoSidamon from './assets/logo-sidamon.png';
-import firebase, { db, auth, logActivity } from './firebase';
+import firebase, { db, auth, storage, logActivity } from './firebase';
 import * as XLSX from 'xlsx-js-style';
 
 
@@ -68,7 +68,10 @@ const Icon = ({ name, size = 20, className = "" }) => {
         "pie-chart": '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
         "pause": '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
         "settings": '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
-        "link": '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'
+        "link": '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+        "upload-cloud": '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
+        "download": '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+        "eye": '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
     };
     return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: paths[name] || '' }} />;
 };
@@ -2728,6 +2731,8 @@ const AssignmentModalForm = () => {
 
     // Auto hitung end date jika start date & durasi diisi
     const [endDate, setEndDate] = useState('');
+    
+
     useEffect(() => {
         if (formData.startDate && formData.duration) {
             const start = new Date(formData.startDate);
@@ -3213,6 +3218,13 @@ function App() {
     const [showCurtain, setShowCurtain] = useState(false);
     const [animateCurtain, setAnimateCurtain] = useState(false);
 
+    const [sopDocuments, setSopDocuments] = useState([]);
+    const [loadingSOP, setLoadingSOP] = useState(true);
+    const [uploadingSOP, setUploadingSOP] = useState(false);
+    const [selectedPdf, setSelectedPdf] = useState(null);
+    const fileInputRef = useRef(null);
+    const canManageSOP = userRole?.toLowerCase() === 'super admin' || userRole?.toLowerCase() === 'manajer';
+
     useEffect(() => {
         if (!currentUser) {
             // Reset state when logged out so it triggers again on next login
@@ -3566,6 +3578,22 @@ function App() {
             firebase.database().ref('pmc_inventory').on('value', (snap) => {
                 const invData = snap.val() || [];
                 setInventory(invData.filter(Boolean));
+            });
+
+            
+            // Listener Khusus untuk SOP
+            firebase.database().ref('pmc_sops').on('value', (snap) => {
+                const data = snap.val();
+                if (data) {
+                    const docs = Object.keys(data).map(key => ({
+                        id: key,
+                        ...data[key]
+                    })).sort((a, b) => b.uploadDate.localeCompare(a.uploadDate));
+                    setSopDocuments(docs);
+                } else {
+                    setSopDocuments([]);
+                }
+                setLoadingSOP(false);
             });
 
             // Listener Khusus untuk Manajemen Pengguna
@@ -4955,6 +4983,224 @@ function App() {
     };
 
     // --- KOMPONEN TAB: DASHBOARD ---
+    
+    const handleFileUploadSOP = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.type !== 'application/pdf') {
+            alert('Hanya file PDF yang diizinkan!');
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file terlalu besar! Untuk penyimpanan Database gratis, maksimal file adalah 2MB.');
+            return;
+        }
+
+        setUploadingSOP(true);
+        const fileId = Date.now().toString();
+        
+        try {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                try {
+                    const base64Data = reader.result;
+                    
+                    // Save metadata and base64 to Realtime Database
+                    const newDoc = {
+                        title: file.name.replace('.pdf', ''),
+                        fileName: file.name,
+                        url: base64Data, // Menyimpan file langsung sebagai teks Base64
+                        uploadDate: new Date().toISOString(),
+                        uploadedBy: username || currentUser?.email || 'Unknown',
+                        size: file.size
+                    };
+
+                    await db.ref('pmc_sops').push(newDoc);
+                    logActivity('UPLOAD_SOP', 'SOP Perusahaan', `Mengunggah dokumen SOP: ${file.name}`, { uid: currentUser?.uid, username, role: userRole });
+                    
+                    // Reset input
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                    alert('SOP berhasil disimpan ke dalam Database!');
+                } catch (err) {
+                    console.error('Error saving SOP data:', err);
+                    alert('Gagal menyimpan data SOP: ' + err.message);
+                } finally {
+                    setUploadingSOP(false);
+                }
+            };
+            reader.onerror = (error) => {
+                console.error('Error reading file:', error);
+                alert('Gagal membaca file.');
+                setUploadingSOP(false);
+            };
+
+
+        } catch (error) {
+            console.error('Initial error starting upload:', error);
+            alert('Terjadi kesalahan pada inisialisasi unggahan: ' + error.message);
+            setUploadingSOP(false);
+        }
+    };
+
+    const handleDeleteSOP = async (doc) => {
+        if (!window.confirm(`Yakin ingin menghapus dokumen SOP "${doc.title}"?`)) return;
+
+        try {
+            // Hapus dari Realtime DB (karena file Base64 tersimpan di dalamnya)
+            await db.ref(`pmc_sops/${doc.id}`).remove();
+
+            logActivity('DELETE_SOP', 'SOP Perusahaan', `Menghapus dokumen SOP: ${doc.title}`, { uid: currentUser?.uid, username, role: userRole });
+        } catch (error) {
+            console.error('Error deleting SOP:', error);
+            alert('Gagal menghapus SOP: ' + error.message);
+        }
+    };
+
+    const formatBytesSOP = (bytes, decimals = 2) => {
+        if (!+bytes) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    };
+
+    const renderSOP = () => {
+        return (
+            <div className="flex flex-col h-full fade-in">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 shrink-0">
+                    <div>
+                        <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">SOP Perusahaan</h2>
+                        <p className="text-slate-500 dark:text-slate-400 mt-1">Standar Operasional Prosedur & Dokumen Panduan</p>
+                    </div>
+
+                    {canManageSOP && (
+                        <div>
+                            <input
+                                type="file"
+                                accept="application/pdf"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleFileUploadSOP}
+                                disabled={uploadingSOP}
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploadingSOP}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-500/30 text-white transition-all transform hover:scale-105 active:scale-95 ${uploadingSOP ? 'bg-indigo-400 cursor-wait' : 'bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700'}`}
+                            >
+                                <Icon name="upload-cloud" size={18} />
+                                {uploadingSOP ? 'Mengunggah...' : 'Upload Document'}
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {loadingSOP ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    </div>
+                ) : sopDocuments.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-[2rem] border border-slate-100 dark:border-slate-700/50 p-8 text-center">
+                        <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4 shrink-0">
+                            <Icon name="file-text" size={40} className="text-indigo-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2">Belum Ada Dokumen SOP</h3>
+                        <p className="text-slate-500 dark:text-slate-400">Dokumen panduan SOP perusahaan yang diunggah akan tampil di sini.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6 overflow-y-auto custom-scrollbar pr-2">
+                        {sopDocuments.map(doc => (
+                            <div key={doc.id} className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow group flex flex-col h-full">
+                                <div className="flex-1 flex flex-col">
+                                    <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center mb-4 shrink-0">
+                                        <Icon name="file-text" size={24} />
+                                    </div>
+                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-lg mb-2 line-clamp-2" title={doc.title}>
+                                        {doc.title}
+                                    </h4>
+                                    <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-700/50">
+                                        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                            <span>Diunggah oleh:</span>
+                                            <span className="font-medium">{doc.uploadedBy.split('@')[0]}</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                                            <span>Ukuran:</span>
+                                            <span className="font-medium">{formatBytesSOP(doc.size)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between gap-2">
+                                    <button
+                                        onClick={() => setSelectedPdf(doc)}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/40 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-medium transition-colors"
+                                    >
+                                        <Icon name="eye" size={16} /> Lihat
+                                    </button>
+                                    {canManageSOP && (
+                                        <button
+                                            onClick={() => handleDeleteSOP(doc)}
+                                            className="w-10 h-10 flex items-center justify-center bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg transition-colors shrink-0"
+                                            title="Hapus Dokumen"
+                                        >
+                                            <Icon name="trash-2" size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Embedded PDF Viewer Modal */}
+                {selectedPdf && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 sm:p-6 animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0 text-red-600">
+                                        <Icon name="file-text" size={20} />
+                                    </div>
+                                    <div className="overflow-hidden">
+                                        <h3 className="font-bold text-slate-800 dark:text-white truncate">{selectedPdf.title}</h3>
+                                        <p className="text-xs text-slate-500 truncate">{formatBytesSOP(selectedPdf.size)} • Diunggah pada {new Date(selectedPdf.uploadDate).toLocaleDateString('id-ID')}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <a
+                                        href={selectedPdf.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full transition-colors"
+                                        title="Buka di Tab Baru / Download"
+                                    >
+                                        <Icon name="download" size={18} />
+                                    </a>
+                                    <button
+                                        onClick={() => setSelectedPdf(null)}
+                                        className="w-10 h-10 flex items-center justify-center bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-full transition-colors"
+                                    >
+                                        <Icon name="x" size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-2 sm:p-4 overflow-hidden relative">
+                                <iframe 
+                                    src={`${selectedPdf.url}#toolbar=0`} 
+                                    className="w-full h-full rounded-xl border border-slate-300 dark:border-slate-700 shadow-inner bg-white"
+                                    title={selectedPdf.title}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const renderDashboard = () => {
         const statusPriority = { "Terlambat": 1, "Beresiko": 2, "On Progress": 3, "Done": 4 };
         const sortedProjectsForDashboard = [...computedProjects].sort((a, b) =>
@@ -10485,6 +10731,9 @@ function App() {
                                                 <SidebarItem icon={<Icon name="bar-chart" size={20} />} label="KPI & Evaluasi" isActive={activeTab === 'kpi'} onClick={() => handleTabChange('kpi')} />
                                             </>
                                         )}
+                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Dokumen</div>
+                                        <SidebarItem icon={<Icon name="file-text" size={20} />} label="SOP Perusahaan" isActive={activeTab === 'sop'} onClick={() => handleTabChange('sop')} />
+
                                         {canAccessMenu('Manajemen Pengguna') && (
                                             <>
                                                 <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 mt-4 px-2">Settings</div>
@@ -10536,6 +10785,7 @@ function App() {
                                                     {activeTab === 'admin-aset' && 'Manajemen Aset Gudang'}
                                                     {activeTab === 'kpi' && 'KPI & Evaluasi Kinerja'}
                                                     {activeTab === 'pengguna' && 'Manajemen Pengguna'}
+                                                    {activeTab === 'sop' && 'Standar Operasional Prosedur'}
                                                 </h2>
                                                 <p className="text-sm text-slate-500 font-medium mt-1 tracking-wide">
                                                     Aplikasi Manajemen Proyek & Personil Tim Teknis
@@ -10594,6 +10844,7 @@ function App() {
                                                 {activeTab === 'kpi' && canAccessMenu('KPI') && renderKPI()}
                                                 {activeTab === 'pengguna' && canAccessMenu('Manajemen Pengguna') && renderManajemenPengguna()}
                                                 {activeTab === 'logbook' && userRole === 'Super Admin' && renderLogbook()}
+                                                {activeTab === 'sop' && renderSOP()}
                                             </motion.div>
                                         </AnimatePresence>
                                     </div>
