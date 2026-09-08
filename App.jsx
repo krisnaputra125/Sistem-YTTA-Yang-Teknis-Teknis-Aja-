@@ -5019,7 +5019,7 @@ function App() {
                     };
 
                     await db.ref('pmc_sops').push(newDoc);
-                    logActivity('UPLOAD_SOP', 'SOP Perusahaan', `Mengunggah dokumen SOP: ${file.name}`, { uid: currentUser?.uid, username, role: userRole });
+                    logActivity('UPLOAD_DOC', 'Dokumen', `Mengunggah dokumen: ${file.name}`, { uid: currentUser?.uid, username, role: userRole });
                     
                     // Reset input
                     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -5054,7 +5054,7 @@ function App() {
             onConfirm: async () => {
                 try {
                     await db.ref(`pmc_sops/${doc.id}`).remove();
-                    logActivity('DELETE_SOP', 'SOP Perusahaan', `Menghapus dokumen SOP: ${doc.title}`, { uid: currentUser?.uid, username, role: userRole });
+                    logActivity('DELETE_DOC', 'Dokumen', `Menghapus dokumen: ${doc.title}`, { uid: currentUser?.uid, username, role: userRole });
                 } catch (error) {
                     console.error('Error deleting SOP:', error);
                     setAlertModal({ isOpen: true, title: 'Gagal', message: 'Gagal menghapus SOP: ' + error.message });
