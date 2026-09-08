@@ -5019,7 +5019,7 @@ function App() {
                     };
 
                     await db.ref('pmc_sops').push(newDoc);
-                    logActivity('UPLOAD_SOP', 'SOP Perusahaan', `Mengunggah dokumen SOP: ${file.name}`, { uid: currentUser?.uid, username, role: userRole });
+                    logActivity('UPLOAD_DOC', 'Dokumen', `Mengunggah dokumen: ${file.name}`, { uid: currentUser?.uid, username, role: userRole });
                     
                     // Reset input
                     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -5054,7 +5054,7 @@ function App() {
             onConfirm: async () => {
                 try {
                     await db.ref(`pmc_sops/${doc.id}`).remove();
-                    logActivity('DELETE_SOP', 'SOP Perusahaan', `Menghapus dokumen SOP: ${doc.title}`, { uid: currentUser?.uid, username, role: userRole });
+                    logActivity('DELETE_DOC', 'Dokumen', `Menghapus dokumen: ${doc.title}`, { uid: currentUser?.uid, username, role: userRole });
                 } catch (error) {
                     console.error('Error deleting SOP:', error);
                     setAlertModal({ isOpen: true, title: 'Gagal', message: 'Gagal menghapus SOP: ' + error.message });
@@ -5207,12 +5207,21 @@ function App() {
                                     </button>
                                 </div>
                             </div>
-                            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-2 sm:p-4 overflow-hidden relative">
-                                <iframe 
-                                    src={`${selectedPdf.url}#toolbar=0`} 
-                                    className="w-full h-full rounded-xl border border-slate-300 dark:border-slate-700 shadow-inner bg-white"
-                                    title={selectedPdf.title}
-                                />
+                            <div className="flex-1 bg-slate-100 dark:bg-slate-950 relative p-2 sm:p-4">
+                                <div className="absolute inset-2 sm:inset-4 overflow-auto rounded-xl border border-slate-300 dark:border-slate-700 shadow-inner bg-white" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                    <object 
+                                        data={`${selectedPdf.url}#toolbar=0`}
+                                        type="application/pdf" 
+                                        className="w-full h-full min-h-[80vh] sm:min-h-full"
+                                        title={selectedPdf.title}
+                                    >
+                                        <iframe 
+                                            src={`${selectedPdf.url}#toolbar=0`} 
+                                            className="w-full h-full min-h-[80vh] sm:min-h-full"
+                                            title={selectedPdf.title}
+                                        />
+                                    </object>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -10826,10 +10835,12 @@ function App() {
                                                     <span className="hidden sm:inline">Offline</span>
                                                 </div>
                                             )}
-                                            <button onClick={() => setShowPrintModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-sm shadow-sm hover:shadow-md">
-                                                <Icon name="printer" size={18} />
-                                                <span>Ekspor Laporan</span>
-                                            </button>
+                                            {activeTab === 'proyek' && (
+                                                <button onClick={() => setShowPrintModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-sm shadow-sm hover:shadow-md">
+                                                    <Icon name="printer" size={18} />
+                                                    <span>Ekspor Laporan</span>
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => { if (initFirebaseListener) initFirebaseListener(); }}
                                                 className={`p-2.5 rounded-xl border border-indigo-100 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 transition-all shadow-sm group flex-shrink-0 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
